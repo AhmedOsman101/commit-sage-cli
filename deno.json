@@ -1,13 +1,14 @@
 {
   "tasks": {
-    "dev": "deno run -A --watch main.ts"
+    "dev": "deno run -A --watch main.ts",
+    "compile": "deno compile --allow-all -o main.out main.ts"
   },
   "imports": {
-    "@std/assert": "jsr:@std/assert@1"
+    "@std/fmt": "jsr:@std/fmt"
   },
   "lint": {
     "rules": {
-      "exclude": ["no-unused-vars"]
+      "exclude": ["no-unused-vars", "no-explicit-any"]
     }
   }
 }
