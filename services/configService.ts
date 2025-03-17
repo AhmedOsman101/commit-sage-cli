@@ -7,16 +7,16 @@ type Config = {
   onlyStaged: boolean;
 };
 
-const configService = {
+const ConfigService = {
   configPath: `${scriptDir}/config.json`,
   load(): Record<string, JsonValue> {
     const configFile = Deno.readTextFileSync(this.configPath);
     return JSON.parse(configFile);
   },
-  get(key: string, defaultValue = null): string | null {
+  get(key: keyof Config, defaultValue = null): JsonValue {
     const configFile = Deno.readTextFileSync(this.configPath);
     const config = JSON.parse(configFile);
-    return config[key] || defaultValue;
+    return config[key] ?? defaultValue;
   },
   set(key: keyof Config, value: JsonValue): void {
     const config = this.load();
@@ -26,4 +26,4 @@ const configService = {
   },
 };
 
-export default configService;
+export default ConfigService;
