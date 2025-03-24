@@ -71,10 +71,13 @@ const ConfigService = {
     const configFile = Deno.readTextFileSync(this.configPath);
     return JSON.parse(configFile) as Config;
   },
-  get(key: keyof Config, defaultValue = null): JsonValue {
-    const configFile = Deno.readTextFileSync(this.configPath);
-    const config = JSON.parse(configFile);
-    return config[key] ?? defaultValue;
+  get<T extends ConfigSection>(
+    section: T,
+    key: ConfigKey<T>,
+    defaultValue: JsonValue = null
+  ): JsonValue {
+    const config = this.load();
+    return config[section][key] ?? defaultValue;
   },
   set(key: keyof Config, value: JsonValue): void {
     const config = this.load();
