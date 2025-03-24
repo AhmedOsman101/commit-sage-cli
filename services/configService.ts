@@ -65,10 +65,11 @@ type ConfigValue<
 > = Config[T][G];
 
 const ConfigService = {
+  cache: new Map<string, CacheValue>(),
   configPath: `${scriptDir}/config.json`,
-  load(): Record<string, JsonValue> {
+  load(): Config {
     const configFile = Deno.readTextFileSync(this.configPath);
-    return JSON.parse(configFile);
+    return JSON.parse(configFile) as Config;
   },
   get(key: keyof Config, defaultValue = null): JsonValue {
     const configFile = Deno.readTextFileSync(this.configPath);
