@@ -79,9 +79,14 @@ const ConfigService = {
     const config = this.load();
     return config[section][key] ?? defaultValue;
   },
-  set(key: keyof Config, value: JsonValue): void {
+  set<T extends ConfigSection, G extends ConfigKey<T>>(
+    section: T,
+    key: G,
+    value: ConfigValue<T, G>
+  ): void {
     const config = this.load();
-    config[key] = value;
+
+    config[section][key] = value;
 
     Deno.writeTextFileSync(this.configPath, JSON.stringify(config));
   },
