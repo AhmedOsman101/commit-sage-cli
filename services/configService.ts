@@ -57,6 +57,13 @@ type Config = {
   provider: ProviderConfig;
 };
 
+type ConfigSection = keyof Config;
+type ConfigKey<T extends ConfigSection> = keyof Config[T];
+type ConfigValue<
+  T extends ConfigSection,
+  G extends ConfigKey<T>,
+> = Config[T][G];
+
 const ConfigService = {
   configPath: `${scriptDir}/config.json`,
   load(): Record<string, JsonValue> {
