@@ -1,3 +1,37 @@
+import type { Config } from "../services/configServiceTypes.d.ts";
+
+export const defaultConfig: Config = {
+  general: {
+    maxRetries: 3,
+    initialRetryDelayMs: 1000,
+  },
+  gemini: {
+    model: "gemini-2.0-flash-exp",
+  },
+  ollama: {
+    model: "llama3.2",
+    baseUrl: "http://localhost:11434",
+  },
+  codestral: {
+    model: "codestral-2405",
+  },
+  openai: {
+    model: "gpt-3.5-turbo",
+    baseUrl: "https://api.openai.com/v1",
+  },
+  commit: {
+    autoCommit: false,
+    autoPush: false,
+    commitFormat: "conventional",
+    onlyStagedChanges: true,
+    commitLanguage: "english",
+    promptForRefs: false,
+  },
+  provider: {
+    type: "gemini",
+  },
+};
+
 export const messages = {
   fetchingDiff: "Fetching Git changes...",
   analyzingChanges: "Analyzing code changes...",

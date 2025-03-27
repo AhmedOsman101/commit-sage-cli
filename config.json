@@ -1,4 +1,8 @@
 {
+  "general": {
+    "maxRetries": 3,
+    "initialRetryDelayMs": 1000
+  },
   "gemini": {
     "model": "gemini-2.0-flash-exp"
   },
