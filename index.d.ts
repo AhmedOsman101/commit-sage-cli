@@ -5,3 +5,8 @@ export type CommandOutput = {
   stderr: string;
   code: number;
 };
+
+export type CommitMessage = {
+  message: string;
+  model: string;
+};
