@@ -4,7 +4,8 @@
     "compile": "deno compile --allow-all -o main.out main.ts"
   },
   "imports": {
-    "@std/fmt": "jsr:@std/fmt"
+    "@std/fmt": "jsr:@std/fmt",
+    "axios": "npm:axios@^1.8.4"
   },
   "lint": {
     "rules": {
