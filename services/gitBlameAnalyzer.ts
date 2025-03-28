@@ -1,8 +1,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { repoPath } from "../main.ts";
-import { logError, logInfo } from "../utils/Logger.ts";
 import { errorMessages } from "../utils/constants.ts";
+import { logError, logInfo } from "../utils/Logger.ts";
 import GitService from "./gitService.ts";
 
 type BlameInfo = {

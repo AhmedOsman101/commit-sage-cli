@@ -1,3 +1,3 @@
-const CodestralService  = {};
+const CodestralService = {};
 
 export default CodestralService;

@@ -1,3 +1,3 @@
-const GeminiService  = {};
+const GeminiService = {};
 
 export default GeminiService;
