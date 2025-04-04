@@ -66,3 +66,5 @@ export type ConfigValue<
   T extends ConfigSection,
   G extends ConfigKey<T>,
 > = Config[T][G];
+
+export type ApiService = "Gemini" | "OpenAI" | "Codestral";
