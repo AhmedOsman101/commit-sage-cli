@@ -1,7 +1,8 @@
 import axios from "axios";
 import type { ApiError, CommitMessage, ErrorWithResponse } from "../index.d.ts";
-import { logInfo, logWarning } from "../utils/Logger.ts";
+import { logInfo } from "../utils/Logger.ts";
 import ConfigService from "./configService.ts";
+import { ModelService } from "./modelService.ts";
 
 type OllamaResponse = {
   message: {
@@ -9,9 +10,8 @@ type OllamaResponse = {
   };
 };
 
-const OllamaService = {
-  maxRetryBackoff: 10_000 as const,
-  async generateCommitMessage(
+class OllamaService extends ModelService {
+  static override async generateCommitMessage(
     prompt: string,
     attempt = 1
   ): Promise<CommitMessage> {
@@ -28,7 +28,7 @@ const OllamaService = {
     };
 
     const payload = {
-      model: model,
+      model,
       messages: [{ role: "user", content: prompt }],
       stream: false,
     };
@@ -44,55 +44,32 @@ const OllamaService = {
 
       void logInfo("Ollama API response received successfully");
 
-      const commitMessage = this.extractCommitMessage(response.data);
+      const commitMessage = OllamaService.extractCommitMessage(response.data);
       void logInfo(`Commit message generated using ${model} model`);
       return { message: commitMessage, model };
     } catch (error) {
-      return await this.handleGenerationError(
+      return await OllamaService.handleGenerationError(
         error as ErrorWithResponse,
         prompt,
         attempt
       );
     }
-  },
-  extractCommitMessage(response: OllamaResponse): string {
+  }
+
+  static override extractCommitMessage(response: OllamaResponse): string {
     if (response.message?.content) {
-      const commitMessage = this.cleanCommitMessage(response.message.content);
+      const commitMessage = OllamaService.cleanCommitMessage(
+        response.message.content
+      );
       if (!commitMessage.trim()) {
         throw new Error("Generated commit message is empty.");
       }
       return commitMessage;
     }
     throw new Error("Invalid response format from Ollama API");
-  },
-  cleanCommitMessage(message: string): string {
-    return message.trim();
-  },
-  calculateRetryDelay(attempt: number): number {
-    return Math.min(1000 * 2 ** (attempt - 1), this.maxRetryBackoff);
-  },
-  delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  },
-  async handleGenerationError(
-    error: ErrorWithResponse,
-    prompt: string,
-    attempt: number
-  ): Promise<CommitMessage> {
-    void logWarning(`Generation attempt ${attempt} failed:`, error);
-    const { errorMessage, shouldRetry } = this.handleApiError(error);
+  }
 
-    if (shouldRetry && attempt < ConfigService.get("general", "maxRetries")) {
-      const delayMs = this.calculateRetryDelay(attempt);
-      void logInfo(`Retrying in ${delayMs / 1000} seconds...`);
-      await this.delay(delayMs);
-
-      return this.generateCommitMessage(prompt, attempt + 1);
-    }
-
-    throw new Error(`Failed to generate commit message: ${errorMessage}`);
-  },
-  handleApiError(error: ErrorWithResponse): ApiError {
+  static override handleApiError(error: ErrorWithResponse): ApiError {
     if (error.response) {
       const { status } = error.response;
       const responseData = JSON.stringify(error.response.data);
@@ -133,7 +110,7 @@ const OllamaService = {
       errorMessage: error.message,
       shouldRetry: false,
     };
-  },
-};
+  }
+}
 
 export default OllamaService;
