@@ -1,7 +1,9 @@
 import { scriptDir } from "../main.ts";
-import { ConfigurationError } from "../models/errors.ts";
+import { AiServiceError, ConfigurationError } from "../models/errors.ts";
+import KeyValidationService from "../utils/apiKeyValidator.ts";
 import { defaultConfig } from "../utils/constants.ts";
-import { logInfo } from "../utils/Logger.ts";
+import { logError, logInfo } from "../utils/Logger.ts";
+import CommandService from "./commandService.ts";
 import type {
   ApiService,
   CacheValue,
@@ -42,20 +44,93 @@ const ConfigService = {
 
     Deno.writeTextFileSync(this.configPath, JSON.stringify(config));
   },
-  getApiKey(service: ApiService): string {
-    let key = Deno.env.get(`${service.toUpperCase()}_API_KEY`);
+  async getApiKey(service: ApiService): Promise<string> {
+    try {
+      const key =
+        Deno.env.get(`${service.toUpperCase()}_API_KEY`) ||
+        (await this.promptForApiKey(service));
 
-    if (!key) {
-      key = prompt(`Enter your ${service} API Key: `) ?? undefined;
+      // if (!key) key = await this.promptForApiKey(service);
+
+      if (key) {
+        const parts = Deno.env.get("SHELL")?.split("/") || ["bash"];
+        const shell = parts[parts.length - 1];
+
+        this.setApiKey(service, key, shell);
+      } else {
+        throw new ConfigurationError(`${service} API key input was cancelled`);
+      }
+
+      return key;
+    } catch (error) {
+      void logError("Error getting API key:", error);
+      throw new AiServiceError(
+        `Failed to get API key: ${(error as Error).message}`
+      );
     }
-    if (key) {
-      const parts = Deno.env.get("SHELL")?.split("/") || ["bash"];
-      const shell = parts[parts.length - 1];
-      logInfo(infoMessage(service, shell));
-    } else {
-      throw new ConfigurationError(`${service} API key input was cancelled`);
+  },
+  async promptForApiKey(service: ApiService) {
+    // key = prompt(`Enter your ${service} API Key: `) ?? undefined;
+    const [cmdOutput, cmdErr] = await CommandService.execute("gum", [
+      "input",
+      "--header",
+      `"Enter your ${service} API Key: "`,
+      "--placeholder=''",
+      "--password",
+    ]);
+
+    if (cmdErr !== null) {
+      throw new ConfigurationError(
+        `Failed to capture the API key for ${service}`
+      );
     }
+
+    const { code: cmdCode, stdout: cmdOut, stderr: cmdError } = cmdOutput;
+
+    switch (cmdCode) {
+      case 1:
+        throw new ConfigurationError(
+          `${service} API key input was ${cmdError}`
+        );
+      case 130:
+        throw new ConfigurationError(`${service} API key input was cancelled`);
+    }
+
+    const key = cmdOut ?? "";
+
+    const [, validationErr] = KeyValidationService.baseValidation(key);
+
+    if (validationErr !== null) throw new ConfigurationError(validationErr);
     return key;
+  },
+  setApiKey(service: ApiService, key: string, shell: string): void {
+    try {
+      switch (service) {
+        case "Codestral": {
+          const [, err] = KeyValidationService.validateCodestralApiKey(key);
+          if (err !== null) throw new AiServiceError(err);
+          break;
+        }
+        case "Gemini": {
+          const [, err] = KeyValidationService.validateGeminiApiKey(key);
+          if (err !== null) throw new AiServiceError(err);
+          break;
+        }
+        case "OpenAI": {
+          const [, err] = KeyValidationService.validateOpenAIApiKey(key);
+          if (err !== null) throw new AiServiceError(err);
+          break;
+        }
+      }
+
+      logInfo(
+        `${service} API key has been successfully validated and saved for this session`
+      );
+      logInfo(infoMessage(service, shell));
+    } catch (error) {
+      void logError("Failed to validate and set Google API key:", error);
+      throw error;
+    }
   },
 };
 
