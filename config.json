@@ -21,7 +21,7 @@
     "autoCommit": false,
     "autoPush": false,
     "commitFormat": "conventional",
-    "onlyStagedChanges": true,
+    "onlyStagedChanges": false,
     "commitLanguage": "english",
     "promptForRefs": false
   },
