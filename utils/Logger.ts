@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: <explanation> */
 import {
   blue,
   bold,
