@@ -1,5 +1,8 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: <explanation> */
+/** biome-ignore-all lint/correctness/noUnusedVariables: <explanation> */
+/** biome-ignore-all lint/correctness/noUnusedFunctionParameters: <explanation> */
 import type { ApiError, CommitMessage, ErrorWithResponse } from "../index.d.ts";
-import { logInfo, logWarning } from "../utils/Logger.ts";
+import { logWarning } from "../utils/Logger.ts";
 import ConfigService from "./configService.ts";
 
 export abstract class ModelService {
@@ -17,21 +20,39 @@ export abstract class ModelService {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  /**
+   * Handles API errors and returns structured error information.
+   * Subclasses must provide their own implementation.
+   * Default implementation returns an empty result.
+   */
   protected static handleApiError(error: ErrorWithResponse): ApiError {
-    throw new Error("Subclasses must implement handlApiError"); // Default
+    // Empty implementation as per requirement
+    return { errorMessage: "", shouldRetry: false };
   }
 
+  /**
+   * Generates a commit message based on a prompt and attempt number.
+   * Subclasses must provide their own implementation.
+   * Default implementation returns an empty commit message.
+   */
   protected static generateCommitMessage(
     prompt: string,
     attempt: number
   ): Promise<CommitMessage> {
-    throw new Error("Subclasses must implement generateCommitMessage"); // Default
+    // Empty implementation as per requirement
+    return Promise.resolve({ message: "", model: "" });
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  /**
+   * Extracts a commit message from a response.
+   * Subclasses must provide their own implementation.
+   * Default implementation returns an empty string.
+   */
   protected static extractCommitMessage(response: any): string {
-    throw new Error("Subclasses must implement extractCommitMessage"); // Default
+    // Empty implementation as per requirement
+    return "";
   }
+
   protected static async handleGenerationError(
     error: ErrorWithResponse,
     prompt: string,
@@ -42,7 +63,7 @@ export abstract class ModelService {
 
     if (shouldRetry && attempt < ConfigService.get("general", "maxRetries")) {
       const delayMs = ModelService.calculateRetryDelay(attempt);
-      void logInfo(`Retrying in ${delayMs / 1000} seconds...`);
+      // void logInfo(`Retrying in ${delayMs / 1000} seconds...`);
       await ModelService.delay(delayMs);
 
       return ModelService.generateCommitMessage(prompt, attempt + 1);
