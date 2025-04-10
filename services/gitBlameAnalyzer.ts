@@ -2,7 +2,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { repoPath } from "../main.ts";
 import { errorMessages } from "../utils/constants.ts";
-import { logError, logInfo } from "../utils/Logger.ts";
+import { logError } from "../utils/Logger.ts";
+import CommandService from "./commandService.ts";
 import GitService from "./gitService.ts";
 
 type BlameInfo = {
@@ -17,7 +18,7 @@ type BlameInfo = {
 const GitBlameAnalyzer = {
   async getGitBlame(filePath: string): Promise<BlameInfo[]> {
     try {
-      const absoluteFilePath = path.resolve(repoPath, filePath);
+      const absoluteFilePath = path.resolve(repoPath as string, filePath);
       if (!fs.existsSync(absoluteFilePath)) {
         throw new Error(`${errorMessages.fileNotFound}: ${absoluteFilePath}`);
       }
@@ -29,7 +30,6 @@ const GitBlameAnalyzer = {
       if (await GitService.isNewFile(filePath)) {
         throw new Error(errorMessages.fileNotCommitted);
       }
-
       const blameOutput = await this.executeGitBlame(filePath);
       return this.parseBlameOutput(blameOutput);
     } catch (error) {
@@ -73,11 +73,11 @@ const GitBlameAnalyzer = {
     return blameInfos;
   },
   async executeGitBlame(filePath: string): Promise<string> {
-    const [output, err] = await GitService.execGit([
-      "blame",
-      "--line-porcelain",
-      filePath,
-    ]);
+    const [output, err] = await CommandService.execute(
+      "git",
+      ["blame", "--line-porcelain", filePath],
+      repoPath
+    );
 
     if (err !== null) throw new Error(err);
     return output.stdout;
@@ -100,14 +100,10 @@ const GitBlameAnalyzer = {
       const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
 
       if (await GitService.isFileDeleted(normalizedPath)) {
-        void logInfo(
-          `Skipping blame analysis for deleted file: ${normalizedPath}`
-        );
         return `Deleted file: ${normalizedPath}`;
       }
 
       if (await GitService.isNewFile(normalizedPath)) {
-        void logInfo(`Skipping blame analysis for new file: ${normalizedPath}`);
         return `New file: ${normalizedPath}`;
       }
 

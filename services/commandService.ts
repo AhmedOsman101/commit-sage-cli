@@ -37,8 +37,7 @@ const CommandService = {
       // Clean up readers
       stdoutReader.releaseLock();
       stderrReader.releaseLock();
-
-      return [{ stdout, stderr, code }, null];
+      return [{ stdout: stdout.trim(), stderr, code }, null];
     } catch (error) {
       const e: Error = error as unknown as Error;
       return [null, e.message];
