@@ -27,11 +27,14 @@ const STAGED_STATUS_CODES: GitStatusCode[] = [
 class GitService {
   static repoPath = "";
 
-  static async initialize() {
+  static async initialize(): Promise<string | undefined> {
     const [output, err] = await this.getRepoPath();
 
     if (err !== null) logError(err);
-    else this.setRepoPath(output);
+    else {
+      this.setRepoPath(output);
+      return output;
+    }
   }
   static async execGit(args: string[]): Promise<Option<CommandOutput>> {
     const [output, err] = await CommandService.execute(
@@ -203,10 +206,13 @@ class GitService {
 
         const { stdout: unstagedFiles } = output;
 
-        unstagedFiles.split("\n").filter(file => file.trim());
+        const unstagedFilesArray = unstagedFiles
+          .split("\n")
+          .filter(file => file.trim());
 
-        for (const file of unstagedFiles) {
-          if (!(await this.isSubmodule(file))) {
+        for (const file of unstagedFilesArray) {
+          const isSubModule = await this.isSubmodule(file);
+          if (!isSubModule) {
             const [output, err] = await this.execGit([
               "diff",
               "--cached",
@@ -335,7 +341,7 @@ class GitService {
         })
         .map(line => {
           const status = line.substring(0, 2);
-          let filePath = line.substring(3).trim();
+          let filePath = line.trim().substring(2).trim();
 
           // Handle renamed files (they have format "R100 old-name -> new-name")
           if (status.startsWith("R")) {
@@ -343,7 +349,7 @@ class GitService {
           }
 
           // Log file status for debugging
-          void console.log(`File ${filePath} has status: ${status}`);
+          // void console.log(`File ${filePath} has status: ${status}`);
 
           // Return relative path as git status returns it
           return filePath;
