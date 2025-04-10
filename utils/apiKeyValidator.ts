@@ -21,42 +21,42 @@ const apiValidation = {
 const KeyValidationService = {
   baseValidation(value: string): Option<string> {
     if (!value) {
-      return ["API key cannot be empty", null];
+      return [null, "API key cannot be empty"];
     }
     if (value.length < 32) {
-      return ["API key is too short", null];
+      return [null, "API key is too short"];
     }
     if (!/^[A-Za-z0-9_-]+$/.test(value)) {
-      return ["API key contains invalid characters", null];
+      return [null, "API key contains invalid characters"];
     }
-    return [null, value];
+    return [value, null];
   },
   validateOpenAIApiKey(key: string): Option<string> {
     if (!key) {
-      return [apiValidation.errorMessages.emptyKey, null];
+      return [null, apiValidation.errorMessages.emptyKey];
     }
     if (!key.startsWith("sk-")) {
-      return [apiValidation.errorMessages.invalidOpenaiKey, null];
+      return [null, apiValidation.errorMessages.invalidOpenaiKey];
     }
-    return [null, key];
+    return [key, null];
   },
   validateGeminiApiKey(key: string): Option<string> {
     if (!key) {
-      return [apiValidation.errorMessages.emptyKey, null];
+      return [null, apiValidation.errorMessages.emptyKey];
     }
     if (!apiValidation.keyFormat.test(key)) {
-      return [apiValidation.errorMessages.invalidChars, null];
+      return [null, apiValidation.errorMessages.invalidChars];
     }
-    return [null, key];
+    return [key, null];
   },
   validateCodestralApiKey(key: string): Option<string> {
     if (!key) {
-      return [apiValidation.errorMessages.emptyKey, null];
+      return [null, apiValidation.errorMessages.emptyKey];
     }
     if (!apiValidation.keyFormat.test(key)) {
-      return [apiValidation.errorMessages.invalidChars, null];
+      return [null, apiValidation.errorMessages.invalidChars];
     }
-    return [null, key];
+    return [key, null];
   },
 };
 

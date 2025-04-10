@@ -1,4 +1,4 @@
-import type { CommitLanguage } from "../services/configService.ts";
+import type { CommitLanguage } from "../services/configServiceTypes.d.ts";
 import { logWarning } from "../utils/Logger.ts";
 import { angularTemplate } from "./formats/angular.ts";
 import { conventionalTemplate } from "./formats/conventional.ts";
