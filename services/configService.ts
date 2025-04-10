@@ -1,4 +1,4 @@
-import { scriptDir } from "../main.ts";
+import { configPath } from "../main.ts";
 import { AiServiceError, ConfigurationError } from "../models/errors.ts";
 import KeyValidationService from "../utils/apiKeyValidator.ts";
 import { defaultConfig } from "../utils/constants.ts";
@@ -6,7 +6,6 @@ import { logError, logInfo } from "../utils/Logger.ts";
 import CommandService from "./commandService.ts";
 import type {
   ApiService,
-  CacheValue,
   Config,
   ConfigKey,
   ConfigSection,
@@ -14,16 +13,15 @@ import type {
 } from "./configServiceTypes.d.ts";
 
 const infoMessage = (service: ApiService, shell: string) => `
-To set the API key for future use, add the following line to your ${shell} configuration file (~/.${shell}rc for ${shell}):
+To set the API key for future use, add the following line to your ~/.${shell}rc file:
 $ export ${service.toUpperCase()}_API_KEY='your_api_key'
-Replace 'your_api_key' with your actual API keys.
-After adding these lines, restart your terminal or run 'source <config_file>' (e.g., 'source ~/.${shell}rc') to apply the changes.`;
+Replace 'your_api_key' with your actual API key.
+After adding these lines, restart your terminal or run 'source ~/.${shell}rc' to apply the changes.`;
 
 const ConfigService = {
-  cache: new Map<string, CacheValue>(),
-  configPath: `${scriptDir}/config.json`,
+  shell: "",
   load(): Config {
-    const configFile = Deno.readTextFileSync(this.configPath);
+    const configFile = Deno.readTextFileSync(configPath);
     return JSON.parse(configFile) as Config;
   },
   get<T extends ConfigSection, G extends ConfigKey<T>>(
@@ -42,21 +40,20 @@ const ConfigService = {
 
     config[section][key] = value;
 
-    Deno.writeTextFileSync(this.configPath, JSON.stringify(config));
+    Deno.writeTextFileSync(configPath, JSON.stringify(config));
   },
   async getApiKey(service: ApiService): Promise<string> {
     try {
+      if (!this.shell) {
+        const parts = Deno.env.get("SHELL")?.split("/") || ["bash"];
+        this.shell = parts[parts.length - 1];
+      }
       const key =
         Deno.env.get(`${service.toUpperCase()}_API_KEY`) ||
         (await this.promptForApiKey(service));
 
-      // if (!key) key = await this.promptForApiKey(service);
-
       if (key) {
-        const parts = Deno.env.get("SHELL")?.split("/") || ["bash"];
-        const shell = parts[parts.length - 1];
-
-        this.setApiKey(service, key, shell);
+        this.setApiKey(service, key);
       } else {
         throw new ConfigurationError(`${service} API key input was cancelled`);
       }
@@ -70,7 +67,6 @@ const ConfigService = {
     }
   },
   async promptForApiKey(service: ApiService) {
-    // key = prompt(`Enter your ${service} API Key: `) ?? undefined;
     const [cmdOutput, cmdErr] = await CommandService.execute("gum", [
       "input",
       "--header",
@@ -101,9 +97,15 @@ const ConfigService = {
     const [, validationErr] = KeyValidationService.baseValidation(key);
 
     if (validationErr !== null) throw new ConfigurationError(validationErr);
+
+    logInfo(
+      `${service} API key has been successfully validated and saved for this session`
+    );
+    logInfo(infoMessage(service, this.shell));
+
     return key;
   },
-  setApiKey(service: ApiService, key: string, shell: string): void {
+  setApiKey(service: ApiService, key: string): void {
     try {
       switch (service) {
         case "Codestral": {
@@ -113,6 +115,7 @@ const ConfigService = {
         }
         case "Gemini": {
           const [, err] = KeyValidationService.validateGeminiApiKey(key);
+
           if (err !== null) throw new AiServiceError(err);
           break;
         }
@@ -122,13 +125,8 @@ const ConfigService = {
           break;
         }
       }
-
-      logInfo(
-        `${service} API key has been successfully validated and saved for this session`
-      );
-      logInfo(infoMessage(service, shell));
     } catch (error) {
-      void logError("Failed to validate and set Google API key:", error);
+      void logError("Failed to validate and set API key:", error);
       throw error;
     }
   },
