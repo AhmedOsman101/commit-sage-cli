@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type { CommandOutput, Option } from "../index.d.ts";
+import type { CommandOutput, Result } from "../index.d.ts";
 import { NoChangesDetectedError } from "../models/errors.ts";
 import { logError } from "../utils/Logger.ts";
 import CommandService from "./commandService.ts";
@@ -27,8 +27,8 @@ const STAGED_STATUS_CODES: GitStatusCode[] = [
 class GitService {
   static repoPath = "";
 
-  static async initialize(): Promise<string | undefined> {
-    const [output, err] = await this.getRepoPath();
+  static initialize(): string | undefined {
+    const [output, err] = this.getRepoPath();
 
     if (err !== null) logError(err);
     else {
@@ -36,12 +36,8 @@ class GitService {
       return output;
     }
   }
-  static async execGit(args: string[]): Promise<Option<CommandOutput>> {
-    const [output, err] = await CommandService.execute(
-      "git",
-      args,
-      this.repoPath
-    );
+  static execGit(args: string[]): Result<CommandOutput> {
+    const [output, err] = CommandService.execute("git", args, this.repoPath);
     if (err !== null) return [null, err];
 
     const { stderr, code } = output;
@@ -59,14 +55,14 @@ class GitService {
     const hash = Buffer.from(content).toString("base64");
     return hash.substring(0, 7);
   }
-  static async hasHead(): Promise<boolean> {
-    const [output, err] = await this.execGit(["rev-parse", "HEAD"]);
+  static hasHead(): boolean {
+    const [output, err] = this.execGit(["rev-parse", "HEAD"]);
     if (err !== null) return false;
     return output.code === 0;
   }
-  static async hasChanges(
+  static hasChanges(
     type: "staged" | "unstaged" | "untracked" | "deleted"
-  ): Promise<boolean> {
+  ): boolean {
     let command: string[];
     switch (type) {
       case "staged":
@@ -85,20 +81,16 @@ class GitService {
         throw new Error(`Invalid change type: ${type}`);
     }
 
-    const [output, err] = await this.execGit(command);
+    const [output, err] = this.execGit(command);
     if (err !== null) {
       console.error(`Error checking for ${type} changes`);
       return false;
     }
+
     return output.stdout.trim().length > 0;
   }
-  static async isSubmodule(file: string): Promise<boolean> {
-    const [output, err] = await this.execGit([
-      "ls-files",
-      "--stage",
-      "--",
-      file,
-    ]);
+  static isSubmodule(file: string): boolean {
+    const [output, err] = this.execGit(["ls-files", "--stage", "--", file]);
 
     if (err !== null) return false;
     return output.stdout.includes("160000");
@@ -148,8 +140,8 @@ class GitService {
         stagedFiles.split("\n").filter(file => file.trim());
 
         for (const file of stagedFiles) {
-          if (!(await this.isSubmodule(file))) {
-            const [output, err] = await this.execGit([
+          if (!this.isSubmodule(file)) {
+            const [output, err] = this.execGit([
               "diff",
               "--cached",
               "--",
@@ -169,26 +161,23 @@ class GitService {
 
       // Otherwise, get all changes
       if (hasStagedChanges) {
-        const [output, err] = await this.execGit([
-          "diff",
-          "--cached",
-          "--name-only",
-        ]);
-        if (err !== null) throw new Error(err);
+        const [output, err] = this.execGit(["diff", "--cached", "--name-only"]);
+        if (err !== null) throw new Error(`${err} hasStagedChanges`);
 
         const { stdout: stagedFiles } = output;
 
         stagedFiles.split("\n").filter(file => file.trim());
 
         for (const file of stagedFiles) {
-          if (!(await this.isSubmodule(file))) {
-            const [output, err] = await this.execGit([
+          if (!this.isSubmodule(file)) {
+            const [output, err] = this.execGit([
               "diff",
               "--cached",
               "--",
               file,
             ]);
-            if (err !== null) throw new Error(err);
+            if (err !== null)
+              throw new Error(`${err} hasStagedChanges ${file} loop`);
 
             const { stdout: fileDiff } = output;
 
@@ -200,7 +189,7 @@ class GitService {
       }
 
       if (hasUnstagedChanges) {
-        const [output, err] = await this.execGit(["diff", "--name-only"]);
+        const [output, err] = this.execGit(["diff", "--name-only"]);
 
         if (err !== null) throw new Error(err);
 
@@ -211,14 +200,8 @@ class GitService {
           .filter(file => file.trim());
 
         for (const file of unstagedFilesArray) {
-          const isSubModule = await this.isSubmodule(file);
-          if (!isSubModule) {
-            const [output, err] = await this.execGit([
-              "diff",
-              "--cached",
-              "--",
-              file,
-            ]);
+          if (!this.isSubmodule(file)) {
+            const [output, err] = this.execGit(["diff", "--", file]);
             if (err !== null) throw new Error(err);
 
             const { stdout: fileDiff } = output;
@@ -231,7 +214,7 @@ class GitService {
       }
 
       if (hasUntrackedFiles) {
-        const [output, err] = await this.execGit([
+        const [output, err] = this.execGit([
           "ls-files",
           "--others",
           "--exclude-standard",
@@ -272,7 +255,7 @@ class GitService {
       }
 
       if (hasDeletedFiles) {
-        const [output, err] = await this.execGit(["ls-files", "--deleted"]);
+        const [output, err] = this.execGit(["ls-files", "--deleted"]);
 
         if (err !== null) throw new Error(err);
         const { stdout: deletedFiles } = output;
@@ -281,12 +264,9 @@ class GitService {
           deletedFiles
             .split("\n")
             .filter(file => file.trim())
-            .map(async file => {
+            .map(file => {
               try {
-                const [output, err] = await this.execGit([
-                  "show",
-                  `HEAD:${file}`,
-                ]);
+                const [output, err] = this.execGit(["show", `HEAD:${file}`]);
 
                 if (err !== null) throw new Error(err);
                 const { stdout: oldContent } = output;
@@ -305,21 +285,18 @@ class GitService {
 
       const combinedDiff = diffs.join("\n\n").trim();
       if (!combinedDiff) {
-        throw new NoChangesDetectedError();
+        throw new NoChangesDetectedError("No changes detected.");
       }
 
       return combinedDiff;
     } catch (error) {
-      if (error instanceof NoChangesDetectedError) {
-        throw error;
-      }
-      void console.error("Error getting diff:", error as Error);
+      void logError(`Failed to get diff: ${(error as Error).message}`);
       throw new Error(`Failed to get diff: ${(error as Error).message}`);
     }
   }
-  static async getChangedFiles(onlyStaged = false): Promise<string[]> {
+  static getChangedFiles(onlyStaged = false): string[] {
     try {
-      const [output, err] = await this.execGit(["status", "--porcelain"]);
+      const [output, err] = this.execGit(["status", "--porcelain"]);
 
       if (err !== null) throw new Error(err);
 
@@ -359,9 +336,9 @@ class GitService {
       return [];
     }
   }
-  static async isNewFile(filePath: string): Promise<boolean> {
+  static isNewFile(filePath: string): boolean {
     const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
-    const [output, err] = await this.execGit([
+    const [output, err] = this.execGit([
       "status",
       "--porcelain",
       normalizedPath,
@@ -374,9 +351,9 @@ class GitService {
     const status = stdout.slice(0, 2);
     return status === "??" || status === "A ";
   }
-  static async isFileDeleted(filePath: string): Promise<boolean> {
+  static isFileDeleted(filePath: string): boolean {
     const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
-    const [output, err] = await this.execGit([
+    const [output, err] = this.execGit([
       "status",
       "--porcelain",
       normalizedPath,
@@ -389,8 +366,8 @@ class GitService {
     const status = stdout.slice(0, 2);
     return status === " D" || status === "D ";
   }
-  static async isGitRepo(): Promise<boolean> {
-    const [output, err] = await CommandService.execute("git", [
+  static isGitRepo(): boolean {
+    const [output, err] = CommandService.execute("git", [
       "rev-parse",
       "--is-inside-work-tree",
     ]);
@@ -403,10 +380,10 @@ class GitService {
 
     return stdout.startsWith("true");
   }
-  static async getRepoPath(): Promise<Option<string>> {
-    if (!(await this.isGitRepo())) return [null, "Directory is not a git repo"];
+  static getRepoPath(): Result<string> {
+    if (!this.isGitRepo()) return [null, "Directory is not a git repo"];
 
-    const [output, err] = await this.execGit(["rev-parse", "--show-toplevel"]);
+    const [output, err] = this.execGit(["rev-parse", "--show-toplevel"]);
 
     if (err !== null || output.stderr || output.code !== 0) {
       return [null, "Unable to determine the Git repository root directory."];
