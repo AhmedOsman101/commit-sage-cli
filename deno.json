@@ -2,7 +2,7 @@
   "tasks": {
     "dev": "deno run -A --watch main.ts",
     "run": "deno run -A main.ts",
-    "compile": "deno compile --allow-all -o main.out main.ts"
+    "compile": "deno compile --allow-all -o /home/othman/.local/bin/commit-sage.out main.ts"
   },
   "imports": {
     "@std/fmt": "jsr:@std/fmt",

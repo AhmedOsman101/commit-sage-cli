@@ -18,10 +18,10 @@
     "baseUrl": "https://api.openai.com/v1"
   },
   "commit": {
+    "onlyStagedChanges": true,
     "autoCommit": false,
     "autoPush": false,
     "commitFormat": "conventional",
-    "onlyStagedChanges": false,
     "commitLanguage": "english",
     "promptForRefs": false
   },
