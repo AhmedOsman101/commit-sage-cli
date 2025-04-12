@@ -89,7 +89,13 @@ Commit Sage provides clear error messages for common issues:
 Contributions are welcome! Please feel free to submit a Pull Request.
 By contributing to commit-sage, you agree to license your contributions under the GNU General Public License v3.0.
 
-## Acknowledgments
+## Limitations
+
+The following are known limitations in the current version of commit-sage, with plans to address them in future updates:
+
+- [ ] Handle files with spaces in their names. Currently, the program may fail or behave unexpectedly when processing files containing spaces.
+
+## Acknowledgment
 
 This project, `commit-sage`, drew significant inspiration from the [CommitSage VS Code extension](https://marketplace.visualstudio.com/items/?itemName=VizzleTF.geminicommit) by Ivan K ([GitHub](https://github.com/VizzleTF/CommitSage)).
 Their innovative approach to enhancing commit workflows motivated me to create a Deno-based tool with similar goals, tailored for command-line use.
