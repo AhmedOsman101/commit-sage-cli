@@ -1,4 +1,4 @@
-import type { Option } from "../index.d.ts";
+import type { Result } from "../index.d.ts";
 
 const apiValidation = {
   keyFormat: /^[A-Za-z0-9_-]+$/,
@@ -19,7 +19,7 @@ const apiValidation = {
 } as const;
 
 const KeyValidationService = {
-  baseValidation(value: string): Option<string> {
+  baseValidation(value: string): Result<string> {
     if (!value) {
       return [null, "API key cannot be empty"];
     }
@@ -31,7 +31,7 @@ const KeyValidationService = {
     }
     return [value, null];
   },
-  validateOpenAIApiKey(key: string): Option<string> {
+  validateOpenAIApiKey(key: string): Result<string> {
     if (!key) {
       return [null, apiValidation.errorMessages.emptyKey];
     }
@@ -40,7 +40,7 @@ const KeyValidationService = {
     }
     return [key, null];
   },
-  validateGeminiApiKey(key: string): Option<string> {
+  validateGeminiApiKey(key: string): Result<string> {
     if (!key) {
       return [null, apiValidation.errorMessages.emptyKey];
     }
@@ -49,7 +49,7 @@ const KeyValidationService = {
     }
     return [key, null];
   },
-  validateCodestralApiKey(key: string): Option<string> {
+  validateCodestralApiKey(key: string): Result<string> {
     if (!key) {
       return [null, apiValidation.errorMessages.emptyKey];
     }
