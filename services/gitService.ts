@@ -97,23 +97,15 @@ class GitService {
   }
   static async getDiff(onlyStagedChanges: boolean): Promise<string> {
     try {
-      const hasHead = await this.hasHead();
+      const hasHead = this.hasHead();
 
-      const hasStagedChanges = await this.hasChanges("staged");
+      const hasStagedChanges = this.hasChanges("staged");
 
-      const hasUnstagedChanges =
-        !onlyStagedChanges && (await this.hasChanges("unstaged"));
+      const hasUnstagedChanges = this.hasChanges("unstaged");
 
-      const hasUntrackedFiles =
-        !onlyStagedChanges &&
-        !hasStagedChanges &&
-        (await this.hasChanges("untracked"));
+      const hasUntrackedFiles = this.hasChanges("untracked");
 
-      const hasDeletedFiles =
-        hasHead &&
-        !onlyStagedChanges &&
-        !hasStagedChanges &&
-        (await this.hasChanges("deleted"));
+      const hasDeletedFiles = hasHead && this.hasChanges("deleted");
 
       if (
         !hasStagedChanges &&
@@ -121,25 +113,23 @@ class GitService {
         !hasUntrackedFiles &&
         !hasDeletedFiles
       ) {
-        throw new NoChangesDetectedError();
+        throw new NoChangesDetectedError("No changes detected.");
       }
       const diffs: string[] = [];
 
       // Skip submodule changes
       // If we only want staged changes and there are some, return only those
       if (onlyStagedChanges && hasStagedChanges) {
-        const [output, err] = await this.execGit([
-          "diff",
-          "--cached",
-          "--name-only",
-        ]);
+        const [output, err] = this.execGit(["diff", "--cached", "--name-only"]);
         if (err !== null) throw new Error(err);
 
         const { stdout: stagedFiles } = output;
 
-        stagedFiles.split("\n").filter(file => file.trim());
+        const stagedFilesArray = stagedFiles
+          .split("\n")
+          .filter(file => file.trim());
 
-        for (const file of stagedFiles) {
+        for (const file of stagedFilesArray) {
           if (!this.isSubmodule(file)) {
             const [output, err] = this.execGit([
               "diff",
@@ -166,9 +156,11 @@ class GitService {
 
         const { stdout: stagedFiles } = output;
 
-        stagedFiles.split("\n").filter(file => file.trim());
+        const stagedFilesArray = stagedFiles
+          .split("\n")
+          .filter(file => file.trim());
 
-        for (const file of stagedFiles) {
+        for (const file of stagedFilesArray) {
           if (!this.isSubmodule(file)) {
             const [output, err] = this.execGit([
               "diff",
