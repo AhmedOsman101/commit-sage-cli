@@ -1,1 +1,199 @@
-/home/othman/dotfiles/Configs/biome/.config/biome.jsonc
+{
+  "$schema": "https://biomejs.dev/schemas/2.0.0-beta.1/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true,
+    "defaultBranch": "main"
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": [
+      "**",
+      "!**/node_modules/**",
+      "!**/dist/**",
+      "!**/.git/**",
+      "!**/.vscode/**",
+      "!**/*.vue",
+      "!**/*.vue",
+      "!**/deno.json",
+      "!**/fresh.gen.ts"
+    ]
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "recommended": true,
+        "organizeImports": "on",
+        "useSortedAttributes": "on",
+        "useSortedProperties": "on",
+        "useSortedKeys": "off"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "useEditorconfig": true,
+    "formatWithErrors": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 80,
+    "bracketSameLine": true,
+    "attributePosition": "multiline",
+    "includes": ["**", "!**/*.vue"],
+    "bracketSpacing": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "style": {
+        "noParameterAssign": "info",
+        "noNonNullAssertion": "info",
+        "useEnumInitializers": "off",
+        "useLiteralEnumMembers": "error",
+        "noCommaOperator": "error",
+        "useNodejsImportProtocol": "error",
+        "useAsConstAssertion": "error",
+        "useNumericLiterals": "error",
+        "useSelfClosingElements": "error",
+        "useConst": "error",
+        "useSingleVarDeclarator": "error",
+        "noUnusedTemplateLiteral": "error",
+        "useNumberNamespace": "error",
+        "noInferrableTypes": "error",
+        "useExponentiationOperator": "error",
+        "useTemplate": "error",
+        "useDefaultParameterLast": "error",
+        "noArguments": "error",
+        "useImportType": "error",
+        "useExportType": "error",
+        "noUselessElse": "error",
+        "useShorthandFunctionType": "error"
+      },
+      "a11y": {
+        "useButtonType": "off"
+      },
+      "correctness": {
+        "noUnusedFunctionParameters": "warn",
+        "noUnusedImports": "warn",
+        "noUnusedVariables": "warn"
+      },
+      "complexity": {
+        "noUselessCatch": "warn",
+        "noUselessConstructor": "warn",
+        "noUselessStringConcat": "error",
+        "useDateNow": "warn",
+        "noStaticOnlyClass": "off",
+        "noThisInStatic": {
+          "fix": "safe",
+          "level": "off"
+        }
+      },
+      "suspicious": {
+        "noImplicitAnyLet": "warn",
+        "noDoubleEquals": {
+          "level": "warn",
+          "fix": "safe",
+          "options": {
+            "ignoreNull": false
+          }
+        },
+        "noAssignInExpressions": "off"
+      },
+      "nursery": {
+        "noBitwiseOperators": "off",
+        "useSortedClasses": {
+          "fix": "safe",
+          "level": "info",
+          "options": {
+            "attributes": ["classList", "class", "className"]
+          }
+        },
+        "noAwaitInLoop": "info",
+        "noConstantBinaryExpression": "info",
+        "noFloatingPromises": "info",
+        "noImportCycles": "error",
+        "noTsIgnore": "on",
+        "useConsistentObjectDefinition": {
+          "level": "warn",
+          "options": {
+            "syntax": "shorthand"
+          }
+        }
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "jsxQuoteStyle": "double",
+      "quoteProperties": "asNeeded",
+      "trailingCommas": "es5",
+      "semicolons": "always",
+      "arrowParentheses": "asNeeded",
+      "bracketSameLine": false,
+      "quoteStyle": "double",
+      "attributePosition": "auto",
+      "bracketSpacing": true,
+      "indentStyle": "space",
+      "indentWidth": 2
+    }
+  },
+  "json": {
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineEnding": "lf",
+      "trailingCommas": "none"
+    },
+    "parser": {
+      "allowComments": true,
+      "allowTrailingCommas": false
+    }
+  },
+  "html": {
+    "formatter": {
+      "enabled": true,
+      "attributePosition": "auto",
+      "indentScriptAndStyle": false,
+      "whitespaceSensitivity": "css",
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineEnding": "lf",
+      "bracketSameLine": false
+    }
+  },
+  "css": {
+    "assist": {
+      "enabled": true
+    },
+    "formatter": {
+      "enabled": true,
+      "quoteStyle": "double",
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineEnding": "lf"
+    },
+    "linter": {
+      "enabled": true
+    }
+  },
+  "graphql": {
+    "assist": {
+      "enabled": true
+    },
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineEnding": "lf",
+      "quoteStyle": "double",
+      "bracketSpacing": true
+    },
+    "linter": {
+      "enabled": true
+    }
+  }
+}
