@@ -1,4 +1,11 @@
 import type { Config } from "../services/configServiceTypes.d.ts";
+import GitService from "../services/gitService.ts";
+
+const homedir = Deno.env.get("HOME");
+
+export const configPath = `${homedir}/commitSage/config.json`;
+
+export const repoPath = GitService.initialize();
 
 export const defaultConfig: Config = {
   general: {
