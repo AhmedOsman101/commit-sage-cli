@@ -57,9 +57,9 @@ const AiService = {
     }
   },
   async generateAndApplyMessage() {
-    await GitService.initialize();
+    GitService.initialize();
     const onlyStagedSetting = ConfigService.get("commit", "onlyStagedChanges");
-    const hasStagedChanges = await GitService.hasChanges("staged");
+    const hasStagedChanges = GitService.hasChanges("staged");
 
     const useStagedChanges = onlyStagedSetting || hasStagedChanges;
 
@@ -67,15 +67,12 @@ const AiService = {
 
     if (!diff) logError("No changes to commit");
 
-    const changedFiles = await GitService.getChangedFiles(useStagedChanges);
+    const changedFiles = GitService.getChangedFiles(useStagedChanges);
 
-    const blameAnalyses: Awaited<
-      ReturnType<typeof GitBlameAnalyzer.analyzeChanges>
-    >[] = [];
+    const blameAnalyses: string[] = [];
 
     for (const file of changedFiles) {
-      // biome-ignore lint/nursery/noAwaitInLoop: <explanation>
-      const analysisResult = await GitBlameAnalyzer.analyzeChanges(file);
+      const analysisResult = GitBlameAnalyzer.analyzeChanges(file);
       blameAnalyses.push(analysisResult);
     }
 

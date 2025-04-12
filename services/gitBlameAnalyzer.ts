@@ -1,7 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { repoPath } from "../main.ts";
-import { errorMessages } from "../utils/constants.ts";
+import { errorMessages, repoPath } from "../utils/constants.ts";
 import { logError } from "../utils/Logger.ts";
 import CommandService from "./commandService.ts";
 import GitService from "./gitService.ts";
@@ -16,21 +15,21 @@ type BlameInfo = {
 };
 
 const GitBlameAnalyzer = {
-  async getGitBlame(filePath: string): Promise<BlameInfo[]> {
+  getGitBlame(filePath: string): BlameInfo[] {
     try {
       const absoluteFilePath = path.resolve(repoPath as string, filePath);
       if (!fs.existsSync(absoluteFilePath)) {
         throw new Error(`${errorMessages.fileNotFound}: ${absoluteFilePath}`);
       }
 
-      if (!(await GitService.hasHead())) {
+      if (!GitService.hasHead()) {
         throw new Error(errorMessages.noCommitsYet);
       }
 
-      if (await GitService.isNewFile(filePath)) {
+      if (GitService.isNewFile(filePath)) {
         throw new Error(errorMessages.fileNotCommitted);
       }
-      const blameOutput = await this.executeGitBlame(filePath);
+      const blameOutput = this.executeGitBlame(filePath);
       return this.parseBlameOutput(blameOutput);
     } catch (error) {
       void logError("Error getting blame info:", error as Error);
@@ -72,8 +71,8 @@ const GitBlameAnalyzer = {
 
     return blameInfos;
   },
-  async executeGitBlame(filePath: string): Promise<string> {
-    const [output, err] = await CommandService.execute(
+  executeGitBlame(filePath: string): string {
+    const [output, err] = CommandService.execute(
       "git",
       ["blame", "--line-porcelain", filePath],
       repoPath
@@ -83,8 +82,8 @@ const GitBlameAnalyzer = {
     return output.stdout;
   },
 
-  async getDiff(filePath: string): Promise<string> {
-    const [output, err] = await GitService.execGit([
+  getDiff(filePath: string): string {
+    const [output, err] = GitService.execGit([
       "diff",
       "--unified=0",
       "--",
@@ -93,24 +92,24 @@ const GitBlameAnalyzer = {
     if (err !== null) throw new Error(err);
     return output.stdout;
   },
-  async analyzeChanges(filePath: string): Promise<string> {
+  analyzeChanges(filePath: string): string {
     try {
       // First check if file is deleted or new, as these don't need blame analysis
       // Use git status to check file state
       const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
 
-      if (await GitService.isFileDeleted(normalizedPath)) {
+      if (GitService.isFileDeleted(normalizedPath)) {
         return `Deleted file: ${normalizedPath}`;
       }
 
-      if (await GitService.isNewFile(normalizedPath)) {
+      if (GitService.isNewFile(normalizedPath)) {
         return `New file: ${normalizedPath}`;
       }
 
       // For existing files, we need to get blame info
-      const blame = await GitBlameAnalyzer.getGitBlame(normalizedPath);
+      const blame = GitBlameAnalyzer.getGitBlame(normalizedPath);
 
-      const diff = await GitBlameAnalyzer.getDiff(normalizedPath);
+      const diff = GitBlameAnalyzer.getDiff(normalizedPath);
 
       const changedLines = GitBlameAnalyzer.parseChangedLines(diff);
       const authorChanges = GitBlameAnalyzer.analyzeBlameInfo(
@@ -182,21 +181,21 @@ const GitBlameAnalyzer = {
       )
       .join("\n");
   },
-  async getBlameInfo(filePath: string): Promise<BlameInfo[]> {
+  getBlameInfo(filePath: string): BlameInfo[] {
     try {
-      if (!(await GitService.hasHead())) {
+      if (!GitService.hasHead()) {
         throw new Error(errorMessages.noCommitsYet);
       }
 
-      if (await GitService.isNewFile(filePath)) {
+      if (GitService.isNewFile(filePath)) {
         throw new Error(errorMessages.fileNotCommitted);
       }
 
-      if (await GitService.isFileDeleted(filePath)) {
+      if (GitService.isFileDeleted(filePath)) {
         throw new Error(errorMessages.fileDeleted);
       }
 
-      const blameOutput = await GitBlameAnalyzer.executeGitBlame(filePath);
+      const blameOutput = GitBlameAnalyzer.executeGitBlame(filePath);
       return GitBlameAnalyzer.parseBlameOutput(blameOutput);
     } catch (error) {
       void logError("Error getting blame info:", error as Error);

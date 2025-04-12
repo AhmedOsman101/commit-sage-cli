@@ -1,7 +1,6 @@
-import { configPath } from "../main.ts";
 import { AiServiceError, ConfigurationError } from "../models/errors.ts";
 import KeyValidationService from "../utils/apiKeyValidator.ts";
-import { defaultConfig } from "../utils/constants.ts";
+import { configPath, defaultConfig } from "../utils/constants.ts";
 import { logError, logInfo } from "../utils/Logger.ts";
 import CommandService from "./commandService.ts";
 import type {
@@ -42,7 +41,7 @@ const ConfigService = {
 
     Deno.writeTextFileSync(configPath, JSON.stringify(config));
   },
-  async getApiKey(service: ApiService): Promise<string> {
+  getApiKey(service: ApiService): string {
     try {
       if (!this.shell) {
         const parts = Deno.env.get("SHELL")?.split("/") || ["bash"];
@@ -50,7 +49,7 @@ const ConfigService = {
       }
       const key =
         Deno.env.get(`${service.toUpperCase()}_API_KEY`) ||
-        (await this.promptForApiKey(service));
+        this.promptForApiKey(service);
 
       if (key) {
         this.setApiKey(service, key);
@@ -66,8 +65,8 @@ const ConfigService = {
       );
     }
   },
-  async promptForApiKey(service: ApiService) {
-    const [cmdOutput, cmdErr] = await CommandService.execute("gum", [
+  promptForApiKey(service: ApiService) {
+    const [cmdOutput, cmdErr] = CommandService.execute("gum", [
       "input",
       "--header",
       `"Enter your ${service} API Key: "`,
