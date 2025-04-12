@@ -1,11 +1,11 @@
-import type { CommandOutput, Option } from "../index.d.ts";
+import type { CommandOutput, Result } from "../index.d.ts";
 
 const CommandService = {
-  async execute(
+  execute(
     cmd: string,
     args: string[] = [],
     cwd = Deno.cwd()
-  ): Promise<Option<CommandOutput>> {
+  ): Result<CommandOutput> {
     try {
       const command = new Deno.Command(cmd, {
         args,
@@ -14,33 +14,37 @@ const CommandService = {
         cwd,
       });
 
-      const childProcess = command.spawn();
+      const output = command.outputSync();
 
-      // Capture stdout
-      const stdoutReader = childProcess.stdout
-        .pipeThrough(new TextDecoderStream())
-        .getReader();
-      const stdoutResult = await stdoutReader.read();
-      const stdout = stdoutResult.value || ""; // Default to null if no output
+      const stdout = new TextDecoder().decode(output.stdout).trim();
+      const stderr = new TextDecoder().decode(output.stderr).trim();
+      const code = output.code;
 
-      // Capture stderr
-      const stderrReader = childProcess.stderr
-        .pipeThrough(new TextDecoderStream())
-        .getReader();
-      const stderrResult = await stderrReader.read();
-      const stderr = stderrResult.value || ""; // Default to null if no error output
+      if (code !== 0) {
+        // Combine stderr and stdout for better error context if stderr is empty
+        const errorOutput = stderr || stdout || "No output";
+        return [
+          null,
+          `Command "${cmd} ${args.join(" ")}" failed with code ${code}: ${errorOutput}`,
+        ];
+      }
 
-      // Capture status code
-      const status = await childProcess.status;
-      const code = status.code;
-
-      // Clean up readers
-      stdoutReader.releaseLock();
-      stderrReader.releaseLock();
-      return [{ stdout: stdout.trim(), stderr, code }, null];
+      return [{ stdout, stderr, code }, null];
     } catch (error) {
-      const e: Error = error as unknown as Error;
-      return [null, e.message];
+      let errorMessage = "An unknown error occurred";
+
+      if (error instanceof Deno.errors.NotFound) {
+        errorMessage = `Command "${cmd}" not found`;
+      } else if (error instanceof Deno.errors.PermissionDenied) {
+        errorMessage = `Permission denied for command '${cmd}'`;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === "string") {
+        errorMessage = error;
+      }
+      // Add context if helpful, e.g., command attempted
+      errorMessage = `Failed to execute command "${cmd}": ${errorMessage}`;
+      return [null, errorMessage];
     }
   },
 };
