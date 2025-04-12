@@ -2,7 +2,7 @@
   "tasks": {
     "dev": "deno run -A --watch main.ts",
     "run": "deno run -A main.ts",
-    "compile": "deno compile --allow-all -o /home/othman/.local/bin/commit-sage.out main.ts"
+    "compile": "deno compile --allow-all -o /home/othman/scripts/bin/commit-sage main.ts"
   },
   "imports": {
     "@std/fmt": "jsr:@std/fmt",
@@ -10,7 +10,10 @@
   },
   "lint": {
     "rules": {
-      "exclude": ["no-unused-vars", "no-explicit-any"]
+      "exclude": [
+        "no-unused-vars",
+        "no-explicit-any"
+      ]
     }
   }
 }
