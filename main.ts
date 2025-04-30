@@ -9,7 +9,7 @@ async function main(): Promise<void> {
   try {
     GitService.initialize();
   } catch (error) {
-    void logError("Failed during initialization:", error as Error);
+    void logError("Failed during initialization:", (error as Error).message);
     return;
   }
 
@@ -17,7 +17,7 @@ async function main(): Promise<void> {
     const response = await AiService.generateAndApplyMessage();
     console.log(response.message);
   } catch (error) {
-    void logError(error);
+    void logError((error as Error).message);
   }
 }
 
