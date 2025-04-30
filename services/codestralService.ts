@@ -18,7 +18,7 @@ class CodestralService extends ModelService {
     attempt = 1
   ): Promise<CommitMessage> {
     try {
-      const apiKey: string = await ConfigService.getApiKey("Codestral");
+      const apiKey: string = ConfigService.getApiKey("Codestral");
       const model = ConfigService.get("codestral", "model");
       const apiUrl = "https://codestral.mistral.ai/v1/chat/completions";
 
@@ -53,7 +53,7 @@ class CodestralService extends ModelService {
         switch (status) {
           case 401:
             if (attempt === 1) {
-              await ConfigService.promptForApiKey("Codestral");
+              ConfigService.promptForApiKey("Codestral");
               return CodestralService.generateCommitMessage(
                 prompt,
                 attempt + 1
@@ -73,6 +73,7 @@ class CodestralService extends ModelService {
 
       if (
         axiosError.message.includes("ECONNREFUSED") ||
+        axiosError.message.includes("ENOTFOUND") ||
         axiosError.message.includes("ETIMEDOUT")
       ) {
         throw new Error(
@@ -82,7 +83,7 @@ class CodestralService extends ModelService {
 
       // If the key is not set and this is the first attempt
       if (error instanceof ConfigurationError && attempt === 1) {
-        await ConfigService.promptForApiKey("Codestral");
+        ConfigService.promptForApiKey("Codestral");
         return CodestralService.generateCommitMessage(prompt, attempt + 1);
       }
 

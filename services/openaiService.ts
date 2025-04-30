@@ -30,7 +30,7 @@ class OpenAIService extends ModelService {
     attempt = 1
   ): Promise<CommitMessage> {
     try {
-      const apiKey: string = await ConfigService.getApiKey("OpenAI");
+      const apiKey: string = ConfigService.getApiKey("OpenAI");
       const model = ConfigService.get("openai", "model");
       const baseUrl = ConfigService.get("openai", "baseUrl");
 
@@ -66,7 +66,7 @@ class OpenAIService extends ModelService {
         switch (status) {
           case 401:
             if (attempt === 1) {
-              await ConfigService.promptForApiKey("OpenAI");
+              ConfigService.promptForApiKey("OpenAI");
               return OpenAIService.generateCommitMessage(prompt, attempt + 1);
             }
             throw new OpenAIError(errorMessages.authenticationError);
@@ -89,7 +89,8 @@ class OpenAIService extends ModelService {
 
       if (
         axiosError.code === "ECONNREFUSED" ||
-        axiosError.code === "ETIMEDOUT"
+        axiosError.code === "ETIMEDOUT" ||
+        axiosError.code === "ENOTFOUND"
       ) {
         throw new OpenAIError(
           errorMessages.networkError.replace(
@@ -101,7 +102,7 @@ class OpenAIService extends ModelService {
 
       // If the key is not set and this is the first attempt
       if (error instanceof ConfigurationError && attempt === 1) {
-        await ConfigService.promptForApiKey("OpenAI");
+        ConfigService.promptForApiKey("OpenAI");
         return OpenAIService.generateCommitMessage(prompt, attempt + 1);
       }
 

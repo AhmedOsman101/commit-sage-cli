@@ -21,7 +21,7 @@ class GeminiService extends ModelService {
     attempt = 1
   ): Promise<CommitMessage> {
     try {
-      const apiKey: string = await ConfigService.getApiKey("Gemini");
+      const apiKey: string = ConfigService.getApiKey("Gemini");
       const model = ConfigService.get("gemini", "model");
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
@@ -49,11 +49,9 @@ class GeminiService extends ModelService {
       );
 
       const message = GeminiService.extractCommitMessage(response.data);
-      // void logInfo(`Commit message generated using ${model} model`);
       return { message, model };
     } catch (error) {
       const axiosError = error as AxiosError;
-      // console.log(error);
       if (axiosError.response) {
         const status = axiosError.response.status;
         const data = axiosError.response.data as {
@@ -64,7 +62,7 @@ class GeminiService extends ModelService {
           case 401:
             if (attempt === 1) {
               // If this is the first attempt and the key is invalid, request a new key and try again
-              await ConfigService.promptForApiKey("Gemini");
+              ConfigService.promptForApiKey("Gemini");
               return GeminiService.generateCommitMessage(prompt, attempt + 1);
             }
             throw new Error(errorMessages.authenticationError);
@@ -87,7 +85,8 @@ class GeminiService extends ModelService {
 
       if (
         axiosError.code === "ECONNREFUSED" ||
-        axiosError.code === "ETIMEDOUT"
+        axiosError.code === "ETIMEDOUT" ||
+        axiosError.code === "ENOTFOUND"
       ) {
         throw new Error(
           errorMessages.networkError.replace(
@@ -99,7 +98,7 @@ class GeminiService extends ModelService {
 
       // If the key is not set and this is the first attempt
       if (error instanceof ConfigurationError && attempt === 1) {
-        await ConfigService.promptForApiKey("Gemini");
+        ConfigService.promptForApiKey("Gemini");
         return GeminiService.generateCommitMessage(prompt, attempt + 1);
       }
 

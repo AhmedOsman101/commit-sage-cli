@@ -23,14 +23,14 @@ const AiService = {
     diff: string,
     blameAnalysis: string
   ): Promise<CommitMessage> {
-    if (!diff) {
-      throw new Error(errorMessages.noChanges);
-    }
-
-    const truncatedDiff = this.truncateDiff(diff);
-    const prompt = PromptService.generatePrompt(truncatedDiff, blameAnalysis);
-
     try {
+      if (!diff) {
+        throw new Error(errorMessages.noChanges);
+      }
+
+      const truncatedDiff = this.truncateDiff(diff);
+      const prompt = PromptService.generatePrompt(truncatedDiff, blameAnalysis);
+
       const provider = ConfigService.get("provider", "type");
       let result: CommitMessage;
 
@@ -50,8 +50,8 @@ const AiService = {
       }
 
       return result;
-    } catch (error) {
-      void logError("Failed to generate commit message:", error as Error);
+    } catch (error: unknown) {
+      void logError((error as Error).message);
 
       throw error;
     }
