@@ -1,3 +1,4 @@
+import type { Result } from "../index.d.ts";
 import { AiServiceError, ConfigurationError } from "../models/errors.ts";
 import KeyValidationService from "../utils/apiKeyValidator.ts";
 import { configPath, defaultConfig } from "../utils/constants.ts";
@@ -10,6 +11,7 @@ import type {
   ConfigSection,
   ConfigValue,
 } from "./configServiceTypes.d.ts";
+import FileSystemService from "./fileSystemService.ts";
 
 const infoMessage = (service: ApiService, shell: string) => `
 To set the API key for future use, add the following line to your ~/.${shell}rc file:
@@ -19,27 +21,65 @@ After adding these lines, restart your terminal or run 'source ~/.${shell}rc' to
 
 const ConfigService = {
   shell: "",
-  load(): Config {
-    const configFile = Deno.readTextFileSync(configPath);
-    return JSON.parse(configFile) as Config;
+  async createConfigFile(): Promise<Result<null>> {
+    const [, createFileError] = await FileSystemService.createFile(configPath);
+
+    if (createFileError !== null) return [null, createFileError];
+
+    const [, writeFileError] = await FileSystemService.writeFile(
+      configPath,
+      JSON.stringify(defaultConfig)
+    );
+
+    if (writeFileError !== null) return [null, writeFileError];
+
+    return [null, null];
   },
-  get<T extends ConfigSection, G extends ConfigKey<T>>(
+  async load(checked = false): Promise<Result<Config>> {
+    const [configFile, error] = await FileSystemService.readFile(configPath);
+
+    if (error !== null) {
+      if (checked) return [null, "Cannot create config file"];
+      const [, createConfigError] = await this.createConfigFile();
+      if (createConfigError !== null) return [null, createConfigError];
+      await this.load(true);
+    }
+
+    if (configFile === null) {
+      return [null, "Config file is null after successful read"];
+    }
+
+    return [JSON.parse(configFile) as Config, null];
+  },
+  async get<T extends ConfigSection, G extends ConfigKey<T>>(
     section: T,
     key: G
-  ): ConfigValue<T, G> {
-    const config = this.load();
-    return config[section][key] ?? defaultConfig[section][key];
+  ): Promise<Awaited<Result<ConfigValue<T, G>>>> {
+    const [config, error] = await this.load();
+    if (error !== null) return [null, error];
+
+    const value = config[section][key] ?? defaultConfig[section][key];
+
+    return [value, null];
   },
-  set<T extends ConfigSection, G extends ConfigKey<T>>(
+  async set<T extends ConfigSection, G extends ConfigKey<T>>(
     section: T,
     key: G,
     value: ConfigValue<T, G>
-  ): void {
-    const config = this.load();
+  ): Promise<Result<boolean>> {
+    const [config, configError] = await this.load();
+    if (configError !== null) return [null, configError];
 
     config[section][key] = value;
 
-    Deno.writeTextFileSync(configPath, JSON.stringify(config));
+    const [didWrite, writeError] = await FileSystemService.writeFile(
+      configPath,
+      JSON.stringify(config)
+    );
+
+    if (writeError !== null) return [null, writeError];
+
+    return [didWrite, null];
   },
   getApiKey(service: ApiService): string {
     try {

@@ -3,7 +3,7 @@ import GitService from "../services/gitService.ts";
 
 const homedir = Deno.env.get("HOME");
 
-export const configPath = `${homedir}/commitSage/config.json`;
+export const configPath = `${homedir}/.config/commitSage/config.json`;
 
 export const repoPath = GitService.initialize();
 
