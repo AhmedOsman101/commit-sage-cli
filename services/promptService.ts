@@ -3,9 +3,21 @@ import ConfigService from "./configService.ts";
 import type { CommitLanguage } from "./configServiceTypes.d.ts";
 
 const PromptService = {
-  generatePrompt(diff: string, blameAnalysis: string): string {
-    const format = ConfigService.get("commit", "commitFormat");
-    const commitLanguage = ConfigService.get("commit", "commitLanguage");
+  async generatePrompt(diff: string, blameAnalysis: string): Promise<string> {
+    const [format, formatError] = await ConfigService.get(
+      "commit",
+      "commitFormat"
+    );
+
+    if (formatError !== null) throw new Error(formatError);
+
+    const [commitLanguage, commitLanguageError] = await ConfigService.get(
+      "commit",
+      "commitLanguage"
+    );
+
+    if (commitLanguageError !== null) throw new Error(commitLanguageError);
+
     const languagePrompt = PromptService.getLanguagePrompt(commitLanguage);
     const template = getTemplate(format, commitLanguage);
 

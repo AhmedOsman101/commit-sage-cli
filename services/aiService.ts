@@ -24,14 +24,21 @@ const AiService = {
     blameAnalysis: string
   ): Promise<CommitMessage> {
     try {
-      if (!diff) {
-        throw new Error(errorMessages.noChanges);
-      }
+      if (!diff) throw new Error(errorMessages.noChanges);
 
       const truncatedDiff = this.truncateDiff(diff);
-      const prompt = PromptService.generatePrompt(truncatedDiff, blameAnalysis);
+      const prompt = await PromptService.generatePrompt(
+        truncatedDiff,
+        blameAnalysis
+      );
 
-      const provider = ConfigService.get("provider", "type");
+      const [provider, providerError] = await ConfigService.get(
+        "provider",
+        "type"
+      );
+
+      if (providerError !== null) throw new Error(providerError);
+
       let result: CommitMessage;
 
       switch (provider) {
@@ -58,7 +65,14 @@ const AiService = {
   },
   async generateAndApplyMessage() {
     GitService.initialize();
-    const onlyStagedSetting = ConfigService.get("commit", "onlyStagedChanges");
+    const [onlyStagedSetting, onlyStagedSettingError] = await ConfigService.get(
+      "commit",
+      "onlyStagedChanges"
+    );
+
+    if (onlyStagedSettingError !== null)
+      throw new Error(onlyStagedSettingError);
+
     const hasStagedChanges = GitService.hasChanges("staged");
 
     const useStagedChanges = onlyStagedSetting || hasStagedChanges;

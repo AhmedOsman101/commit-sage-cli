@@ -31,8 +31,15 @@ class OpenAIService extends ModelService {
   ): Promise<CommitMessage> {
     try {
       const apiKey: string = ConfigService.getApiKey("OpenAI");
-      const model = ConfigService.get("openai", "model");
-      const baseUrl = ConfigService.get("openai", "baseUrl");
+
+      const [model, modelError] = await ConfigService.get("openai", "model");
+      if (modelError !== null) throw new Error(modelError);
+
+      const [baseUrl, baseUrlError] = await ConfigService.get(
+        "openai",
+        "baseUrl"
+      );
+      if (baseUrlError !== null) throw new Error(baseUrlError);
 
       const headers = {
         Authorization: `Bearer ${apiKey}`,

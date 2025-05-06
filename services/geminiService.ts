@@ -22,7 +22,10 @@ class GeminiService extends ModelService {
   ): Promise<CommitMessage> {
     try {
       const apiKey: string = ConfigService.getApiKey("Gemini");
-      const model = ConfigService.get("gemini", "model");
+
+      const [model, modelError] = await ConfigService.get("gemini", "model");
+      if (modelError !== null) throw new Error(modelError);
+
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
       const requestConfig = {
