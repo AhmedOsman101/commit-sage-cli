@@ -22,34 +22,42 @@ After adding these lines, restart your terminal or run 'source ~/.${shell}rc' to
 const ConfigService = {
   shell: "",
   async createConfigFile(): Promise<Result<null>> {
-    const [, createFileError] = await FileSystemService.createFile(configPath);
+    const [file, createFileError] =
+      await FileSystemService.createFile(configPath);
 
     if (createFileError !== null) return [null, createFileError];
 
     const [, writeFileError] = await FileSystemService.writeFile(
       configPath,
-      JSON.stringify(defaultConfig)
+      JSON.stringify(defaultConfig, null, 2),
+      file
     );
+    file.close();
 
     if (writeFileError !== null) return [null, writeFileError];
 
     return [null, null];
   },
-  async load(checked = false): Promise<Result<Config>> {
-    const [configFile, error] = await FileSystemService.readFile(configPath);
+  async load(): Promise<Result<Config>> {
+    let checked = false;
+    while (true) {
+      // biome-ignore lint/nursery/noAwaitInLoop: <explanation>
+      const [configFile, error] = await FileSystemService.readFile(configPath);
 
-    if (error !== null) {
-      if (checked) return [null, "Cannot create config file"];
-      const [, createConfigError] = await this.createConfigFile();
-      if (createConfigError !== null) return [null, createConfigError];
-      await this.load(true);
+      if (error !== null) {
+        if (checked) break;
+        const [, createConfigError] = await this.createConfigFile();
+        if (createConfigError !== null) return [null, createConfigError];
+        checked = true;
+        continue;
+      }
+
+      if (configFile === null) {
+        return [null, "Config file is null after successful read"];
+      }
+      return [JSON.parse(configFile) as Config, null];
     }
-
-    if (configFile === null) {
-      return [null, "Config file is null after successful read"];
-    }
-
-    return [JSON.parse(configFile) as Config, null];
+    return [null, "Cannot create config file"];
   },
   async get<T extends ConfigSection, G extends ConfigKey<T>>(
     section: T,
