@@ -37,18 +37,29 @@ const FileSystemService = {
       return [null, `Cannot read file: '${path}'.`];
     }
   },
-  async writeFile(path: string, content: string): Promise<Result<boolean>> {
+  async writeFile(
+    path: string,
+    content: string,
+    file: Deno.FsFile | null = null
+  ): Promise<Result<boolean>> {
     try {
-      const [, isFileError] = await this.fileExists(path);
-      if (isFileError) return [null, isFileError];
+      if (file !== null) {
+        const encoder = new TextEncoder();
+        const text = encoder.encode(content);
+        file.writeSync(text);
+        return [true, null];
+      }
 
-      await Deno.writeTextFile(path, content);
+      const [, isFileError] = await this.fileExists(path);
+      if (isFileError !== null) return [null, isFileError];
+
+      Deno.writeTextFileSync(path, content);
       return [true, null];
     } catch (_error) {
       return [null, `Cannot write to file: '${path}'.`];
     }
   },
-  async createFile(path: string): Promise<Result<null>> {
+  async createFile(path: string): Promise<Result<Deno.FsFile>> {
     try {
       const dir = configPath.substring(0, configPath.lastIndexOf("/"));
 
@@ -60,9 +71,12 @@ const FileSystemService = {
       }
 
       const [isFile, isFileError] = await this.fileExists(path);
-      if (isFileError !== null || !isFile) await Deno.create(path);
+      if (isFileError !== null || !isFile) {
+        const file = await Deno.create(path);
+        return [file, null];
+      }
 
-      return [null, null];
+      return [null, `Cannot create file: '${path}'.`];
     } catch (_error) {
       return [null, `Cannot create file: '${path}'.`];
     }
