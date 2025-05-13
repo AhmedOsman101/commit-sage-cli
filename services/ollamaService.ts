@@ -14,14 +14,17 @@ class OllamaService extends ModelService {
     prompt: string,
     attempt = 1
   ): Promise<CommitMessage> {
-    const [baseUrl, baseUrlError] = await ConfigService.get(
+    const { ok: baseUrl, error: baseUrlError } = await ConfigService.get(
       "ollama",
       "baseUrl"
     );
-    if (baseUrlError !== null) throw new Error(baseUrlError);
+    if (baseUrlError !== undefined) throw baseUrlError;
 
-    const [model, modelError] = await ConfigService.get("ollama", "model");
-    if (modelError !== null) throw new Error(modelError);
+    const { ok: model, error: modelError } = await ConfigService.get(
+      "ollama",
+      "model"
+    );
+    if (modelError !== undefined) throw modelError;
 
     const apiUrl = `${baseUrl}/api/chat`;
 

@@ -1,4 +1,5 @@
-import type { CommandOutput, Result } from "../index.d.ts";
+import type { CommandOutput } from "../index.d.ts";
+import { Err, Ok, type Result } from "../result.ts";
 
 const CommandService = {
   execute(
@@ -23,13 +24,14 @@ const CommandService = {
       if (code !== 0) {
         // Combine stderr and stdout for better error context if stderr is empty
         const errorOutput = stderr || stdout || "No output";
-        return [
-          null,
-          `Command "${cmd} ${args.join(" ")}" failed with code ${code}: ${errorOutput}`,
-        ];
+        return Err(
+          new Error(
+            `Command "${cmd} ${args.join(" ")}" failed with code ${code}: ${errorOutput}`
+          )
+        );
       }
 
-      return [{ stdout, stderr, code }, null];
+      return Ok({ stdout, stderr, code });
     } catch (error) {
       let errorMessage = "An unknown error occurred";
 
@@ -42,9 +44,10 @@ const CommandService = {
       } else if (typeof error === "string") {
         errorMessage = error;
       }
-      // Add context if helpful, e.g., command attempted
-      errorMessage = `Failed to execute command "${cmd}": ${errorMessage}`;
-      return [null, errorMessage];
+
+      return Err(
+        new Error(`Failed to execute command "${cmd}": ${errorMessage}`)
+      );
     }
   },
 };

@@ -1,7 +1,7 @@
 import axios, { type AxiosError } from "axios";
 import type { CommitMessage } from "../index.d.ts";
+import { errorMessages } from "../lib/constants.ts";
 import { ConfigurationError, OpenAIError } from "../models/errors.ts";
-import { errorMessages } from "../utils/constants.ts";
 import ConfigService from "./configService.ts";
 import { ModelService } from "./modelService.ts";
 
@@ -32,14 +32,17 @@ class OpenAIService extends ModelService {
     try {
       const apiKey: string = ConfigService.getApiKey("OpenAI");
 
-      const [model, modelError] = await ConfigService.get("openai", "model");
-      if (modelError !== null) throw new Error(modelError);
+      const { ok: model, error: modelError } = await ConfigService.get(
+        "openai",
+        "model"
+      );
+      if (modelError !== undefined) throw modelError;
 
-      const [baseUrl, baseUrlError] = await ConfigService.get(
+      const { ok: baseUrl, error: baseUrlError } = await ConfigService.get(
         "openai",
         "baseUrl"
       );
-      if (baseUrlError !== null) throw new Error(baseUrlError);
+      if (baseUrlError !== undefined) throw baseUrlError;
 
       const headers = {
         Authorization: `Bearer ${apiKey}`,
@@ -65,7 +68,7 @@ class OpenAIService extends ModelService {
     } catch (error) {
       const axiosError = error as AxiosError;
       if (axiosError.response) {
-        const status = axiosError.response.status;
+        const { status } = axiosError.response;
         const data = axiosError.response.data as {
           error?: { message?: string };
         };

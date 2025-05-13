@@ -1,8 +1,7 @@
-/** biome-ignore-all lint/suspicious/noExplicitAny: <explanation> */
-/** biome-ignore-all lint/correctness/noUnusedVariables: <explanation> */
 /** biome-ignore-all lint/correctness/noUnusedFunctionParameters: <explanation> */
+/** biome-ignore-all lint/suspicious/noExplicitAny: <explanation> */
 import type { ApiError, CommitMessage, ErrorWithResponse } from "../index.d.ts";
-import { logWarning } from "../utils/Logger.ts";
+import { logWarning } from "../lib/Logger.ts";
 import ConfigService from "./configService.ts";
 
 export abstract class ModelService {
@@ -61,11 +60,11 @@ export abstract class ModelService {
     void logWarning(`Generation attempt ${attempt} failed:`, error);
     const { errorMessage, shouldRetry } = ModelService.handleApiError(error);
 
-    const [maxRetries, maxRetriesError] = await ConfigService.get(
+    const { ok: maxRetries, error: maxRetriesError } = await ConfigService.get(
       "general",
       "maxRetries"
     );
-    if (maxRetriesError !== null) throw new Error(maxRetriesError);
+    if (maxRetriesError !== undefined) throw maxRetriesError;
 
     if (shouldRetry && attempt < maxRetries) {
       const delayMs = ModelService.calculateRetryDelay(attempt);

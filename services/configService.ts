@@ -1,8 +1,9 @@
-import type { Result } from "../index.d.ts";
+/** biome-ignore-all lint/nursery/noAwaitInLoop: <explanation> */
+import KeyValidationService from "../lib/apiKeyValidator.ts";
+import { configPath, defaultConfig } from "../lib/constants.ts";
+import { logError, logInfo } from "../lib/Logger.ts";
 import { AiServiceError, ConfigurationError } from "../models/errors.ts";
-import KeyValidationService from "../utils/apiKeyValidator.ts";
-import { configPath, defaultConfig } from "../utils/constants.ts";
-import { logError, logInfo } from "../utils/Logger.ts";
+import { Err, Ok, type Result } from "../result.ts";
 import CommandService from "./commandService.ts";
 import type {
   ApiService,
@@ -22,72 +23,71 @@ After adding these lines, restart your terminal or run 'source ~/.${shell}rc' to
 const ConfigService = {
   shell: "",
   async createConfigFile(): Promise<Result<null>> {
-    const [file, createFileError] =
+    const { ok: file, error: createFileError } =
       await FileSystemService.createFile(configPath);
 
-    if (createFileError !== null) return [null, createFileError];
+    if (createFileError !== undefined) return Err(createFileError);
 
-    const [, writeFileError] = await FileSystemService.writeFile(
+    const { error: writeFileError } = await FileSystemService.writeFile(
       configPath,
       JSON.stringify(defaultConfig, null, 2),
       file
     );
     file.close();
 
-    if (writeFileError !== null) return [null, writeFileError];
+    if (writeFileError !== undefined) return Err(writeFileError);
 
-    return [null, null];
+    return Ok(null);
   },
   async load(): Promise<Result<Config>> {
     let checked = false;
     while (true) {
-      // biome-ignore lint/nursery/noAwaitInLoop: <explanation>
-      const [configFile, error] = await FileSystemService.readFile(configPath);
+      const { ok: configFile, error } =
+        await FileSystemService.readFile(configPath);
 
-      if (error !== null) {
+      if (error !== undefined) {
         if (checked) break;
-        const [, createConfigError] = await this.createConfigFile();
-        if (createConfigError !== null) return [null, createConfigError];
+        const { error: createConfigError } = await this.createConfigFile();
+        if (createConfigError !== undefined) return Err(createConfigError);
         checked = true;
         continue;
       }
 
       if (configFile === null) {
-        return [null, "Config file is null after successful read"];
+        return Err(new Error("Config file is null after successful read"));
       }
-      return [JSON.parse(configFile) as Config, null];
+      return Ok(JSON.parse(configFile) as Config);
     }
-    return [null, "Cannot create config file"];
+
+    return Err(new Error("Cannot create config file"));
   },
   async get<T extends ConfigSection, G extends ConfigKey<T>>(
     section: T,
     key: G
   ): Promise<Awaited<Result<ConfigValue<T, G>>>> {
-    const [config, error] = await this.load();
-    if (error !== null) return [null, error];
+    const { ok: config, error } = await this.load();
+    if (error !== undefined) return Err(error);
 
     const value = config[section][key] ?? defaultConfig[section][key];
 
-    return [value, null];
+    return Ok(value);
   },
   async set<T extends ConfigSection, G extends ConfigKey<T>>(
     section: T,
     key: G,
     value: ConfigValue<T, G>
   ): Promise<Result<boolean>> {
-    const [config, configError] = await this.load();
-    if (configError !== null) return [null, configError];
+    const { ok: config, error: configError } = await this.load();
+    if (configError !== undefined) return Err(configError);
 
     config[section][key] = value;
 
-    const [didWrite, writeError] = await FileSystemService.writeFile(
-      configPath,
-      JSON.stringify(config)
-    );
+    const { ok: didWrite, error: writeError } =
+      await FileSystemService.writeFile(configPath, JSON.stringify(config));
 
-    if (writeError !== null) return [null, writeError];
+    if (writeError !== undefined) return Err(writeError);
 
-    return [didWrite, null];
+    return Ok(didWrite);
   },
   getApiKey(service: ApiService): string {
     try {
@@ -114,7 +114,7 @@ const ConfigService = {
     }
   },
   promptForApiKey(service: ApiService) {
-    const [cmdOutput, cmdErr] = CommandService.execute("gum", [
+    const { ok: cmdOutput, error: cmdErr } = CommandService.execute("gum", [
       "input",
       "--header",
       `"Enter your ${service} API Key: "`,
@@ -122,7 +122,7 @@ const ConfigService = {
       "--password",
     ]);
 
-    if (cmdErr !== null) {
+    if (cmdErr !== undefined) {
       throw new ConfigurationError(
         `Failed to capture the API key for ${service}`
       );
@@ -141,9 +141,10 @@ const ConfigService = {
 
     const key = cmdOut ?? "";
 
-    const [, validationErr] = KeyValidationService.baseValidation(key);
+    const { error: validationErr } = KeyValidationService.baseValidation(key);
 
-    if (validationErr !== null) throw new ConfigurationError(validationErr);
+    if (validationErr !== undefined)
+      throw new ConfigurationError(validationErr.message);
 
     logInfo(
       `${service} API key has been successfully validated and saved for this session`
@@ -156,19 +157,19 @@ const ConfigService = {
     try {
       switch (service) {
         case "Codestral": {
-          const [, err] = KeyValidationService.validateCodestralApiKey(key);
-          if (err !== null) throw new AiServiceError(err);
+          const { error } = KeyValidationService.validateCodestralApiKey(key);
+          if (error !== undefined) throw new AiServiceError(error.message);
           break;
         }
         case "Gemini": {
-          const [, err] = KeyValidationService.validateGeminiApiKey(key);
+          const { error } = KeyValidationService.validateGeminiApiKey(key);
 
-          if (err !== null) throw new AiServiceError(err);
+          if (error !== undefined) throw new AiServiceError(error.message);
           break;
         }
         case "OpenAI": {
-          const [, err] = KeyValidationService.validateOpenAIApiKey(key);
-          if (err !== null) throw new AiServiceError(err);
+          const { error } = KeyValidationService.validateOpenAIApiKey(key);
+          if (error !== undefined) throw new AiServiceError(error.message);
           break;
         }
       }

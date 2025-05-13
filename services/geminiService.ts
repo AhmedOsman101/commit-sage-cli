@@ -1,7 +1,8 @@
 import axios, { type AxiosError } from "axios";
 import type { CommitMessage } from "../index.d.ts";
+import { errorMessages } from "../lib/constants.ts";
+import { logError } from "../lib/Logger.ts";
 import { ConfigurationError } from "../models/errors.ts";
-import { errorMessages } from "../utils/constants.ts";
 import ConfigService from "./configService.ts";
 import { ModelService } from "./modelService.ts";
 
@@ -23,8 +24,11 @@ class GeminiService extends ModelService {
     try {
       const apiKey: string = ConfigService.getApiKey("Gemini");
 
-      const [model, modelError] = await ConfigService.get("gemini", "model");
-      if (modelError !== null) throw new Error(modelError);
+      const { ok: model, error: modelError } = await ConfigService.get(
+        "gemini",
+        "model"
+      );
+      if (modelError !== undefined) throw modelError;
 
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
@@ -54,9 +58,10 @@ class GeminiService extends ModelService {
       const message = GeminiService.extractCommitMessage(response.data);
       return { message, model };
     } catch (error) {
+      logError(error);
       const axiosError = error as AxiosError;
       if (axiosError.response) {
-        const status = axiosError.response.status;
+        const { status } = axiosError.response;
         const data = axiosError.response.data as {
           error?: { message?: string };
         };

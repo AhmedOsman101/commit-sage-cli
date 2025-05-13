@@ -1,40 +1,39 @@
-import type { Result } from "../index.d.ts";
-import { configPath } from "../utils/constants.ts";
+import { configPath } from "../lib/constants.ts";
+import { Err, Ok, type Result } from "../result.ts";
 
 const FileSystemService = {
   async fileExists(path: string): Promise<Result<boolean>> {
     try {
       const info = await Deno.stat(path);
-      return [info.isFile || info.isSymlink, null];
+      return Ok(info.isFile || info.isSymlink);
     } catch (error) {
       if (error instanceof Deno.errors.NotFound) {
-        return [null, `File: '${path}' doesn't exist`];
+        return Err(new Error(`File: '${path}' doesn't exist`));
       }
 
-      return [null, `Cannot open file: '${path}'.`];
+      return Err(new Error(`Cannot open file: '${path}'.`));
     }
   },
   async dirExists(path: string): Promise<Result<boolean>> {
     try {
       const info = await Deno.stat(path);
-      return [info.isDirectory, null];
+      return Ok(info.isDirectory);
     } catch (error) {
       if (error instanceof Deno.errors.NotFound) {
-        return [null, `Directory: '${path}' doesn't exist`];
+        return Err(new Error(`Directory: '${path}' doesn't exist`));
       }
 
-      return [null, `Cannot open file: '${path}'.`];
+      return Err(new Error(`Cannot open file: '${path}'.`));
     }
   },
   async readFile(path: string): Promise<Result<string>> {
     try {
-      const [, isFileError] = await this.fileExists(path);
-      if (isFileError) return [null, isFileError];
+      const { error: isFileError } = await this.fileExists(path);
+      if (isFileError) return Err(isFileError);
 
-      const content = await Deno.readTextFile(path);
-      return [content, null];
+      return Ok(await Deno.readTextFile(path));
     } catch (_error) {
-      return [null, `Cannot read file: '${path}'.`];
+      return Err(new Error(`Cannot read file: '${path}'.`));
     }
   },
   async writeFile(
@@ -47,54 +46,54 @@ const FileSystemService = {
         const encoder = new TextEncoder();
         const text = encoder.encode(content);
         file.writeSync(text);
-        return [true, null];
+        return Ok(true);
       }
 
-      const [, isFileError] = await this.fileExists(path);
-      if (isFileError !== null) return [null, isFileError];
+      const { error: isFileError } = await this.fileExists(path);
+      if (isFileError !== undefined) return Err(isFileError);
 
       Deno.writeTextFileSync(path, content);
-      return [true, null];
+      return Ok(true);
     } catch (_error) {
-      return [null, `Cannot write to file: '${path}'.`];
+      return Err(new Error(`Cannot write to file: '${path}'.`));
     }
   },
   async createFile(path: string): Promise<Result<Deno.FsFile>> {
     try {
       const dir = configPath.substring(0, configPath.lastIndexOf("/"));
 
-      const [dirExists, dirExistsError] = await this.dirExists(dir);
+      const { ok: dirExists, error: dirExistsError } =
+        await this.dirExists(dir);
 
-      if (dirExistsError !== null || !dirExists) {
-        const [, createDirError] = await this.createDir(dir);
-        if (createDirError !== null) return [null, createDirError];
+      if (dirExistsError !== undefined || !dirExists) {
+        const { error: createDirError } = await this.createDir(dir);
+        if (createDirError !== undefined) return Err(createDirError);
       }
 
-      const [isFile, isFileError] = await this.fileExists(path);
-      if (isFileError !== null || !isFile) {
-        const file = await Deno.create(path);
-        return [file, null];
+      const { ok: isFile, error: isFileError } = await this.fileExists(path);
+      if (isFileError !== undefined || !isFile) {
+        return Ok(await Deno.create(path));
       }
-
-      return [null, `Cannot create file: '${path}'.`];
+      return Err(new Error(`Cannot create file: '${path}'.`));
     } catch (_error) {
-      return [null, `Cannot create file: '${path}'.`];
+      return Err(new Error(`Cannot create file: '${path}'.`));
     }
   },
   async createDir(path: string): Promise<Result<null>> {
     try {
-      const [dirExists, dirExistsError] = await this.dirExists(path);
+      const { ok: dirExists, error: dirExistsError } =
+        await this.dirExists(path);
 
-      if (dirExistsError !== null || !dirExists) {
+      if (dirExistsError !== undefined || !dirExists) {
         await Deno.mkdir(path, { recursive: true });
       }
 
-      return [null, null];
+      return Ok(null);
     } catch (error) {
       if (error instanceof Deno.errors.AlreadyExists) {
-        return [null, `Directory: '${path}' already exists.`];
+        return Err(new Error(`Directory: '${path}' already exists.`));
       }
-      return [null, `Error creating directory: '${path}'.`];
+      return Err(new Error(`Error creating directory: '${path}'.`));
     }
   },
 };

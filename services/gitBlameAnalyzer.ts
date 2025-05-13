@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { errorMessages, repoPath } from "../utils/constants.ts";
-import { logError } from "../utils/Logger.ts";
+import { errorMessages, repoPath } from "../lib/constants.ts";
+import { logError } from "../lib/Logger.ts";
 import CommandService from "./commandService.ts";
 import GitService from "./gitService.ts";
 
@@ -72,24 +72,24 @@ const GitBlameAnalyzer = {
     return blameInfos;
   },
   executeGitBlame(filePath: string): string {
-    const [output, err] = CommandService.execute(
+    const { ok: output, error } = CommandService.execute(
       "git",
       ["blame", "--line-porcelain", filePath],
       repoPath
     );
 
-    if (err !== null) throw new Error(err);
+    if (error !== undefined) throw error;
     return output.stdout;
   },
 
   getDiff(filePath: string): string {
-    const [output, err] = GitService.execGit([
+    const { ok: output, error } = GitService.execGit([
       "diff",
       "--unified=0",
       "--",
       filePath,
     ]);
-    if (err !== null) throw new Error(err);
+    if (error !== undefined) throw error;
     return output.stdout;
   },
   analyzeChanges(filePath: string): string {

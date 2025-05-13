@@ -1,6 +1,6 @@
 import type { CommitMessage } from "../index.d.ts";
-import { errorMessages } from "../utils/constants.ts";
-import { logError } from "../utils/Logger.ts";
+import { errorMessages } from "../lib/constants.ts";
+import { logError } from "../lib/Logger.ts";
 import CodestralService from "./codestralService.ts";
 import ConfigService from "./configService.ts";
 import GeminiService from "./geminiService.ts";
@@ -32,32 +32,24 @@ const AiService = {
         blameAnalysis
       );
 
-      const [provider, providerError] = await ConfigService.get(
+      const { ok: provider, error: providerError } = await ConfigService.get(
         "provider",
         "type"
       );
 
-      if (providerError !== null) throw new Error(providerError);
-
-      let result: CommitMessage;
+      if (providerError !== undefined) throw providerError;
 
       switch (provider) {
         case "openai":
-          result = await OpenAIService.generateCommitMessage(prompt);
-          break;
+          return await OpenAIService.generateCommitMessage(prompt);
         case "codestral":
-          result = await CodestralService.generateCommitMessage(prompt);
-          break;
+          return await CodestralService.generateCommitMessage(prompt);
         case "ollama":
-          result = await OllamaService.generateCommitMessage(prompt);
-          break;
-        case "gemini":
-          result = await GeminiService.generateCommitMessage(prompt);
-          break;
+          return await OllamaService.generateCommitMessage(prompt);
+        default: // gemini
+          return await GeminiService.generateCommitMessage(prompt);
       }
-
-      return result;
-    } catch (error: unknown) {
+    } catch (error) {
       void logError((error as Error).message);
 
       throw error;
@@ -65,13 +57,10 @@ const AiService = {
   },
   async generateAndApplyMessage() {
     GitService.initialize();
-    const [onlyStagedSetting, onlyStagedSettingError] = await ConfigService.get(
-      "commit",
-      "onlyStagedChanges"
-    );
+    const { ok: onlyStagedSetting, error: onlyStagedSettingError } =
+      await ConfigService.get("commit", "onlyStagedChanges");
 
-    if (onlyStagedSettingError !== null)
-      throw new Error(onlyStagedSettingError);
+    if (onlyStagedSettingError !== undefined) throw onlyStagedSettingError;
 
     const hasStagedChanges = GitService.hasChanges("staged");
 
@@ -94,14 +83,7 @@ const AiService = {
       .filter(analysis => analysis)
       .join("\n\n");
 
-    const commitMessage = await this.generateCommitMessage(diff, blameAnalysis);
-
-    // TODO: implement auto commit
-    // if (ConfigService.getAutoCommitEnabled()) {
-    //   await CommitMessageUI.handleAutoCommit();
-    // }
-
-    return commitMessage;
+    return await this.generateCommitMessage(diff, blameAnalysis);
   },
 };
 

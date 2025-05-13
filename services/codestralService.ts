@@ -20,8 +20,11 @@ class CodestralService extends ModelService {
     try {
       const apiKey: string = ConfigService.getApiKey("Codestral");
 
-      const [model, modelError] = await ConfigService.get("codestral", "model");
-      if (modelError !== null) throw new Error(modelError);
+      const { ok: model, error: modelError } = await ConfigService.get(
+        "codestral",
+        "model"
+      );
+      if (modelError !== undefined) throw modelError;
 
       const apiUrl = "https://codestral.mistral.ai/v1/chat/completions";
 
