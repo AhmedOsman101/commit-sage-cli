@@ -1,5 +1,5 @@
 import type { CommandOutput } from "../index.d.ts";
-import { Err, Ok, type Result } from "../result.ts";
+import { Err, Ok, type Result } from "../lib/result.ts";
 
 const CommandService = {
   execute(

@@ -4,7 +4,7 @@ import * as path from "node:path";
 import type { CommandOutput } from "../index.d.ts";
 import { logError } from "../lib/Logger.ts";
 import { NoChangesDetectedError } from "../models/errors.ts";
-import { Err, Ok, type Result } from "../result.ts";
+import { Err, Ok, type Result } from "../lib/result.ts";
 import CommandService from "./commandService.ts";
 
 const GIT_STATUS_CODES = {

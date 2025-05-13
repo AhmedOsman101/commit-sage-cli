@@ -3,7 +3,7 @@ import KeyValidationService from "../lib/apiKeyValidator.ts";
 import { configPath, defaultConfig } from "../lib/constants.ts";
 import { logError, logInfo } from "../lib/Logger.ts";
 import { AiServiceError, ConfigurationError } from "../models/errors.ts";
-import { Err, Ok, type Result } from "../result.ts";
+import { Err, Ok, type Result } from "../lib/result.ts";
 import CommandService from "./commandService.ts";
 import type {
   ApiService,

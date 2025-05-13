@@ -1,4 +1,4 @@
-import { Err, Ok, type Result } from "../result.ts";
+import { Err, Ok, type Result } from "./result.ts";
 
 const apiValidation = {
   keyFormat: /^[A-Za-z0-9_-]+$/,
