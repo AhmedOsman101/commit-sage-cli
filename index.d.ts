@@ -1,7 +1,5 @@
 import type { AxiosError } from "axios";
 
-export type Result<T, E = string> = [T, null] | [null, E];
-
 export type CommandOutput = {
   stdout: string;
   stderr: string;
