@@ -1,4 +1,4 @@
-import { Err, Ok, type Result } from "./result.ts";
+import { Ok, type Result, Text2Err } from "./result.ts";
 
 const apiValidation = {
   keyFormat: /^[A-Za-z0-9_-]+$/,
@@ -21,40 +21,40 @@ const apiValidation = {
 const KeyValidationService = {
   baseValidation(value: string): Result<string> {
     if (!value) {
-      return Err(new Error("API key cannot be empty"));
+      return Text2Err("API key cannot be empty");
     }
     if (value.length < 32) {
-      return Err(new Error("API key is too short"));
+      return Text2Err("API key is too short");
     }
     if (!/^[A-Za-z0-9_-]+$/.test(value)) {
-      return Err(new Error("API key contains invalid characters"));
+      return Text2Err("API key contains invalid characters");
     }
     return Ok(value);
   },
   validateOpenAIApiKey(key: string): Result<string> {
     if (!key) {
-      return Err(new Error(apiValidation.errorMessages.emptyKey));
+      return Text2Err(apiValidation.errorMessages.emptyKey);
     }
     if (!key.startsWith("sk-")) {
-      return Err(new Error(apiValidation.errorMessages.invalidOpenaiKey));
+      return Text2Err(apiValidation.errorMessages.invalidOpenaiKey);
     }
     return Ok(key);
   },
   validateGeminiApiKey(key: string): Result<string> {
     if (!key) {
-      return Err(new Error(apiValidation.errorMessages.emptyKey));
+      return Text2Err(apiValidation.errorMessages.emptyKey);
     }
     if (!apiValidation.keyFormat.test(key)) {
-      return Err(new Error(apiValidation.errorMessages.invalidChars));
+      return Text2Err(apiValidation.errorMessages.invalidChars);
     }
     return Ok(key);
   },
   validateCodestralApiKey(key: string): Result<string> {
     if (!key) {
-      return Err(new Error(apiValidation.errorMessages.emptyKey));
+      return Text2Err(apiValidation.errorMessages.emptyKey);
     }
     if (!apiValidation.keyFormat.test(key)) {
-      return Err(new Error(apiValidation.errorMessages.invalidChars));
+      return Text2Err(apiValidation.errorMessages.invalidChars);
     }
     return Ok(key);
   },

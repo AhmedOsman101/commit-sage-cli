@@ -2,8 +2,8 @@
 import KeyValidationService from "../lib/apiKeyValidator.ts";
 import { configPath, defaultConfig } from "../lib/constants.ts";
 import { logError, logInfo } from "../lib/Logger.ts";
+import { Err, Ok, type Result, Text2Err } from "../lib/result.ts";
 import { AiServiceError, ConfigurationError } from "../models/errors.ts";
-import { Err, Ok, type Result } from "../lib/result.ts";
 import CommandService from "./commandService.ts";
 import type {
   ApiService,
@@ -54,12 +54,12 @@ const ConfigService = {
       }
 
       if (configFile === null) {
-        return Err(new Error("Config file is null after successful read"));
+        return Text2Err("Config file is null after successful read");
       }
       return Ok(JSON.parse(configFile) as Config);
     }
 
-    return Err(new Error("Cannot create config file"));
+    return Text2Err("Cannot create config file");
   },
   async get<T extends ConfigSection, G extends ConfigKey<T>>(
     section: T,

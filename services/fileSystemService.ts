@@ -1,5 +1,5 @@
 import { configPath } from "../lib/constants.ts";
-import { Err, Ok, type Result } from "../lib/result.ts";
+import { Err, Ok, type Result, Text2Err } from "../lib/result.ts";
 
 const FileSystemService = {
   async fileExists(path: string): Promise<Result<boolean>> {
@@ -8,10 +8,10 @@ const FileSystemService = {
       return Ok(info.isFile || info.isSymlink);
     } catch (error) {
       if (error instanceof Deno.errors.NotFound) {
-        return Err(new Error(`File: '${path}' doesn't exist`));
+        return Text2Err(`File: '${path}' doesn't exist`);
       }
 
-      return Err(new Error(`Cannot open file: '${path}'.`));
+      return Text2Err(`Cannot open file: '${path}'.`);
     }
   },
   async dirExists(path: string): Promise<Result<boolean>> {
@@ -20,10 +20,10 @@ const FileSystemService = {
       return Ok(info.isDirectory);
     } catch (error) {
       if (error instanceof Deno.errors.NotFound) {
-        return Err(new Error(`Directory: '${path}' doesn't exist`));
+        return Text2Err(`Directory: '${path}' doesn't exist`);
       }
 
-      return Err(new Error(`Cannot open file: '${path}'.`));
+      return Text2Err(`Cannot open file: '${path}'.`);
     }
   },
   async readFile(path: string): Promise<Result<string>> {
@@ -33,7 +33,7 @@ const FileSystemService = {
 
       return Ok(await Deno.readTextFile(path));
     } catch (_error) {
-      return Err(new Error(`Cannot read file: '${path}'.`));
+      return Text2Err(`Cannot read file: '${path}'.`);
     }
   },
   async writeFile(
@@ -55,7 +55,7 @@ const FileSystemService = {
       Deno.writeTextFileSync(path, content);
       return Ok(true);
     } catch (_error) {
-      return Err(new Error(`Cannot write to file: '${path}'.`));
+      return Text2Err(`Cannot write to file: '${path}'.`);
     }
   },
   async createFile(path: string): Promise<Result<Deno.FsFile>> {
@@ -74,9 +74,9 @@ const FileSystemService = {
       if (isFileError !== undefined || !isFile) {
         return Ok(await Deno.create(path));
       }
-      return Err(new Error(`Cannot create file: '${path}'.`));
+      return Text2Err(`Cannot create file: '${path}'.`);
     } catch (_error) {
-      return Err(new Error(`Cannot create file: '${path}'.`));
+      return Text2Err(`Cannot create file: '${path}'.`);
     }
   },
   async createDir(path: string): Promise<Result<null>> {
@@ -91,9 +91,9 @@ const FileSystemService = {
       return Ok(null);
     } catch (error) {
       if (error instanceof Deno.errors.AlreadyExists) {
-        return Err(new Error(`Directory: '${path}' already exists.`));
+        return Text2Err(`Directory: '${path}' already exists.`);
       }
-      return Err(new Error(`Error creating directory: '${path}'.`));
+      return Text2Err(`Error creating directory: '${path}'.`);
     }
   },
 };
