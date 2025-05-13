@@ -1,4 +1,4 @@
-import type { Result } from "../index.d.ts";
+import { Err, Ok, type Result } from "../result.ts";
 
 const apiValidation = {
   keyFormat: /^[A-Za-z0-9_-]+$/,
@@ -21,42 +21,42 @@ const apiValidation = {
 const KeyValidationService = {
   baseValidation(value: string): Result<string> {
     if (!value) {
-      return [null, "API key cannot be empty"];
+      return Err(new Error("API key cannot be empty"));
     }
     if (value.length < 32) {
-      return [null, "API key is too short"];
+      return Err(new Error("API key is too short"));
     }
     if (!/^[A-Za-z0-9_-]+$/.test(value)) {
-      return [null, "API key contains invalid characters"];
+      return Err(new Error("API key contains invalid characters"));
     }
-    return [value, null];
+    return Ok(value);
   },
   validateOpenAIApiKey(key: string): Result<string> {
     if (!key) {
-      return [null, apiValidation.errorMessages.emptyKey];
+      return Err(new Error(apiValidation.errorMessages.emptyKey));
     }
     if (!key.startsWith("sk-")) {
-      return [null, apiValidation.errorMessages.invalidOpenaiKey];
+      return Err(new Error(apiValidation.errorMessages.invalidOpenaiKey));
     }
-    return [key, null];
+    return Ok(key);
   },
   validateGeminiApiKey(key: string): Result<string> {
     if (!key) {
-      return [null, apiValidation.errorMessages.emptyKey];
+      return Err(new Error(apiValidation.errorMessages.emptyKey));
     }
     if (!apiValidation.keyFormat.test(key)) {
-      return [null, apiValidation.errorMessages.invalidChars];
+      return Err(new Error(apiValidation.errorMessages.invalidChars));
     }
-    return [key, null];
+    return Ok(key);
   },
   validateCodestralApiKey(key: string): Result<string> {
     if (!key) {
-      return [null, apiValidation.errorMessages.emptyKey];
+      return Err(new Error(apiValidation.errorMessages.emptyKey));
     }
     if (!apiValidation.keyFormat.test(key)) {
-      return [null, apiValidation.errorMessages.invalidChars];
+      return Err(new Error(apiValidation.errorMessages.invalidChars));
     }
-    return [key, null];
+    return Ok(key);
   },
 };
 

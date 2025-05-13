@@ -11,6 +11,8 @@ import {
   yellow,
 } from "@std/fmt/colors";
 
+const encoder = new TextEncoder();
+
 function toCustomString(value: any): string {
   // Handle null or undefined
   if (value === null) {
@@ -57,7 +59,11 @@ function makeOutput(...data: any[]): string {
 }
 
 export function logError(...data: any[]): void {
-  console.error(red(`[ERROR]: ${makeOutput(...data)}`));
+  // console.error(red(`[ERROR]: ${makeOutput(...data)}`));
+
+  const text = encoder.encode(red(`[ERROR]: ${makeOutput(...data)}\n`));
+  Deno.stderr.writeSync(text);
+
   Deno.exit(1);
 }
 
