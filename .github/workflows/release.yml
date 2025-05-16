@@ -44,7 +44,7 @@ jobs:
           files: |
             ./bin/commit-sage-linux-x64
             ./bin/commit-sage-linux-arm64
-            ./bin/commit-sage-windows-x64
+            ./bin/commit-sage-windows-x64.exe
             ./bin/commit-sage-macos-x64
             ./bin/commit-sage-macos-arm64
         env:
