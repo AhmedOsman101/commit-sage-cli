@@ -33,3 +33,12 @@ changelog:
     - title: Other Changes
       labels:
         - "*"
+# 2. Exclude internal or bot contributions
+exclude:
+  labels:
+    - "internal"
+  authors:
+    - "dependabot[bot]"
+
+# 3. Control how each change is rendered
+change-template: "- {{author-login}}: {{change-title}} (#{ {change-number}})"

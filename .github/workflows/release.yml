@@ -1,4 +1,4 @@
-name: Release on Github
+name: Release
 
 on:
   push:
@@ -20,13 +20,18 @@ jobs:
       - name: Setup Deno
         uses: denoland/setup-deno@v2
         with:
-          deno-version: latest
+          deno-version: "latest"
+          cache: true
+          # ensures 'deno compile' is available on the runner
 
       - name: Make release script executable
         run: chmod +x ./release.sh
 
       - name: Build binaries
         run: ./release.sh
+
+      - name: List binary files
+        run: find bin -type f -name "commit-sage*" | sort
 
       - name: Create Release
         id: create_release
@@ -37,10 +42,10 @@ jobs:
           prerelease: false
           generate_release_notes: true
           files: |
-            bin/linux-x64/commit-sage
-            bin/linux-arm64/commit-sage
-            bin/windows-x64/commit-sage.exe
-            bin/macos-x64/commit-sage
-            bin/macos-arm64/commit-sage
+            ./bin/commit-sage-linux-x64
+            ./bin/commit-sage-linux-arm64
+            ./bin/commit-sage-windows-x64
+            ./bin/commit-sage-macos-x64
+            ./bin/commit-sage-macos-arm64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
