@@ -6,7 +6,7 @@ set -euo pipefail
 baseDir="$(dirname "$0")"
 
 if [[ ! -d "${baseDir}/bin" ]]; then
-  mkdir -p "${baseDir}/bin/{windows-x64,macos-x64,macos-arm64,linux-x64,linux-arm64}" || {
+  mkdir -p "${baseDir}/bin" || {
     echo "Cannot create bin directory" 1>&2
     exit 1
   }
