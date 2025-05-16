@@ -1,0 +1,28 @@
+# .github/release.yml
+---
+# 1. Define custom sections and which labels go in each
+categories:
+  - title: "🚀 Features"
+    labels:
+      - "feature"
+      - "enhancement"
+  - title: "🐛 Bug Fixes"
+    labels:
+      - "bug"
+      - "fix"
+  - title: "🧹 Chores"
+    labels:
+      - "chore"
+
+# 2. Exclude internal or bot contributions
+exclude:
+  labels:
+    - "internal"
+  authors:
+    - "dependabot[bot]"
+
+# 3. Control how each change is rendered
+change-template: "- {{author-login}}: {{change-title}} (#{ {change-number}})"
+# 4. Optionally prepend or append to the generated body
+# header: "## What's New"
+# footer: "Thank you for your contributions!"

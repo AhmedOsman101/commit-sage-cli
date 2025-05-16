@@ -1,0 +1,98 @@
+name: 🚀 Publish Deno Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write # required to create releases and upload assets
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: "latest"
+          cache: true
+          # ensures 'deno compile' is available on the runner
+
+      - name: Make release script executable
+        run: chmod +x ./release.sh
+
+      - name: Build all binaries
+        run: ./release.sh
+
+      - name: Determine tag name
+        id: tag
+        run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Generate release notes
+        id: notes
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const res = await github.rest.repos.generateReleaseNotes({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: process.env.TAG,
+              configuration_file_path: '.github/release.yml'
+            });
+            return res.data.body;
+
+      - name: Create GitHub Release
+        uses: pipe-cd/actions-gh-release@v2.6.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          generate_release_notes: true
+          configuration_file_path: .github/release.yml
+
+      - name: Upload Linux x64 binary
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bin/linux-x64/commit-sage
+          asset_name: commit-sage-linux-x64
+          asset_content_type: application/octet-stream
+
+      - name: Upload Linux ARM64 binary
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bin/linux-arm64/commit-sage
+          asset_name: commit-sage-linux-arm64
+          asset_content_type: application/octet-stream
+
+      - name: Upload Windows binary
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bin/windows-x64/commit-sage.exe
+          asset_name: commit-sage-windows-x64.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload macOS x64 binary
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bin/macos-x64/commit-sage
+          asset_name: commit-sage-macos-x64
+          asset_content_type: application/octet-stream
+
+      - name: Upload macOS ARM64 binary
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bin/macos-arm64/commit-sage
+          asset_name: commit-sage-macos-arm64
+          asset_content_type: application/octet-stream
