@@ -60,13 +60,13 @@ SERVICE_API_KEY='your_api_key' commit-sage
 
 ## Configuration File
 
-Alternatively, you can set the API key in the application's configuration settings.
+You can customize any options in the configuration file located at `~/.config/commit-sage/config.json`.
 
 ## Requirements
 
 - Deno 2.x or higher
 - Git installed and accessible in your PATH
-- Internet connection (for AI service communication)
+- Internet connection for AI service communication (unless using [Ollama](https://github.com/ollama/ollama))
 
 ## How It Works
 

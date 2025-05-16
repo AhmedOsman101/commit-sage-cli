@@ -2,12 +2,13 @@
   "tasks": {
     "dev": "deno run --watch main.ts",
     "run": "deno run main.ts",
+    "compile": "deno compile -A -o $HOME/.local/bin/commit-sage main.ts",
     "compile-dev": "deno compile -A -o $HOME/scripts/bin/commit-sage main.ts",
-    "release-windows": "deno compile -A -o bin/windows-x64/commit-sage --target x86_64-pc-windows-msvc main.ts",
-    "release-macos-x64": "deno compile -A -o bin/macos-x64/commit-sage --target x86_64-apple-darwin main.ts",
-    "release-macos-arm64": "deno compile -A -o bin/macos-arm64/commit-sage --target aarch64-apple-darwin main.ts",
-    "release-linux-x64": "deno compile -A -o bin/linux-x64/commit-sage --target x86_64-unknown-linux-gnu main.ts",
-    "release-linux-arm64": "deno compile -A -o bin/linux-arm64/commit-sage --target aarch64-unknown-linux-gnu main.ts"
+    "compile-windows": "deno compile -A -o bin/windows-x64/commit-sage --target x86_64-pc-windows-msvc main.ts",
+    "compile-macos-x64": "deno compile -A -o bin/macos-x64/commit-sage --target x86_64-apple-darwin main.ts",
+    "compile-macos-arm64": "deno compile -A -o bin/macos-arm64/commit-sage --target aarch64-apple-darwin main.ts",
+    "compile-linux-x64": "deno compile -A -o bin/linux-x64/commit-sage --target x86_64-unknown-linux-gnu main.ts",
+    "compile-linux-arm64": "deno compile -A -o bin/linux-arm64/commit-sage --target aarch64-unknown-linux-gnu main.ts"
   },
   "imports": {
     "@std/fmt": "jsr:@std/fmt",
