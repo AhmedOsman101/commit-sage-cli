@@ -13,7 +13,9 @@ import {
 
 const encoder = new TextEncoder();
 
-function toCustomString(value: any): string {
+function toCustomString(value: any, indentLevel = 0): string {
+  const indent = "  ".repeat(indentLevel); // 2 spaces for indentation
+
   // Handle null or undefined
   if (value === null) {
     return dim(white(bold(String(value))));
@@ -22,7 +24,16 @@ function toCustomString(value: any): string {
   // Handle arrays
   if (Array.isArray(value)) {
     if (value.length === 0) return "[]";
-    const items = value.map(item => toCustomString(item));
+
+    const items = value.map(item => toCustomString(item, indentLevel + 1));
+    const needIndent = value.some(
+      item => typeof item === "object" || Array.isArray(item)
+    );
+
+    if (needIndent) {
+      return `[\n${items.join(white(",\n"))}\n]`;
+    }
+
     return `[${items.join(white(", "))}]`;
   }
 
@@ -30,11 +41,13 @@ function toCustomString(value: any): string {
   if (typeof value === "object") {
     const entries = Object.entries(value);
     if (entries.length === 0) return "{}";
+
     const items = entries.map(([key, val]) => {
       // Key without quotes, value processed recursively
-      return `  ${white(key)}${dim(white(":"))} ${toCustomString(val)} `;
+      return `${indent}  ${white(key)}${gray(":")} ${toCustomString(val, indentLevel + 1)}`;
     });
-    return `\n{\n${items.join(white(",\n"))}\n}\n`;
+
+    return `${indent}{\n${items.join(white(",\n"))}\n${indent}}`;
   }
 
   switch (typeof value) {
@@ -42,11 +55,11 @@ function toCustomString(value: any): string {
     case "bigint":
       return yellow(String(value));
     case "boolean":
-      return green(String(value));
+      return blue(String(value));
     case "undefined":
       return gray(String(value));
     default:
-      return String(value);
+      return green(String(value));
   }
 }
 
@@ -59,8 +72,6 @@ function makeOutput(...data: any[]): string {
 }
 
 export function logError(...data: any[]): void {
-  // console.error(red(`[ERROR]: ${makeOutput(...data)}`));
-
   const text = encoder.encode(red(`[ERROR]: ${makeOutput(...data)}\n`));
   Deno.stderr.writeSync(text);
 
