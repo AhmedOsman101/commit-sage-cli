@@ -2,7 +2,8 @@
 import {
   blue,
   bold,
-  dim,
+  brightWhite,
+  cyan,
   gray,
   green,
   magenta,
@@ -17,9 +18,7 @@ function toCustomString(value: any, indentLevel = 0): string {
   const indent = "  ".repeat(indentLevel); // 2 spaces for indentation
 
   // Handle null or undefined
-  if (value === null) {
-    return dim(white(bold(String(value))));
-  }
+  if (value === null) return bold(yellow("null"));
 
   // Handle arrays
   if (Array.isArray(value)) {
@@ -31,7 +30,15 @@ function toCustomString(value: any, indentLevel = 0): string {
     );
 
     if (needIndent) {
-      return `[\n${items.join(white(",\n"))}\n]`;
+      return `[\n${indent}  ${items.join(`${white(",\n")}${indent}  `)}\n${indent}]`;
+      /*
+        [
+            1,
+            "str",
+            {
+                key: 5
+            }
+      */
     }
 
     return `[${items.join(white(", "))}]`;
@@ -44,10 +51,10 @@ function toCustomString(value: any, indentLevel = 0): string {
 
     const items = entries.map(([key, val]) => {
       // Key without quotes, value processed recursively
-      return `${indent}  ${white(key)}${gray(":")} ${toCustomString(val, indentLevel + 1)}`;
+      return `${indent}  ${brightWhite(`${key}:`)} ${toCustomString(val, indentLevel + 1)}`;
     });
 
-    return `${indent}{\n${items.join(white(",\n"))}\n${indent}}`;
+    return `{\n${items.join(white(",\n"))}\n${indent}}`;
   }
 
   switch (typeof value) {
@@ -58,8 +65,14 @@ function toCustomString(value: any, indentLevel = 0): string {
       return blue(String(value));
     case "undefined":
       return gray(String(value));
+    case "string":
+      return green(String(`"${value}"`));
+    case "symbol":
+      return green(`Symbol(${value.description ?? ""})`);
+    case "function":
+      return cyan(`[Function: ${value.name}]`);
     default:
-      return green(String(value));
+      return String(value);
   }
 }
 

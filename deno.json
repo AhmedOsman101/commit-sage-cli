@@ -3,7 +3,8 @@
     "dev": "deno run --watch main.ts",
     "run": "deno run main.ts",
     "compile": "deno compile -A -o $HOME/.local/bin/commit-sage main.ts",
-    "compile-dev": "deno compile -A -o $HOME/scripts/bin/commit-sage main.ts"
+    "compile-dev": "deno compile -A -o $HOME/scripts/bin/commit-sage main.ts",
+    "release": "deno compile -A -o bin/commit-sage main.ts"
   },
   "imports": {
     "@std/fmt": "jsr:@std/fmt",
