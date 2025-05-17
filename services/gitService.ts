@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type { CommandOutput } from "../index.d.ts";
+import type { CommandOutput } from "../lib/index.js";
 import { logError } from "../lib/Logger.ts";
 import { Err, Ok, type Result, Text2Err } from "../lib/result.ts";
 import { NoChangesDetectedError } from "../models/errors.ts";

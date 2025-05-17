@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/correctness/noUnusedFunctionParameters: <explanation> */
 /** biome-ignore-all lint/suspicious/noExplicitAny: <explanation> */
-import type { ApiError, CommitMessage, ErrorWithResponse } from "../index.d.ts";
+import type { ApiError, CommitMessage, ErrorWithResponse } from "../lib/index.js";
 import { logWarning } from "../lib/Logger.ts";
 import ConfigService from "./configService.ts";
 

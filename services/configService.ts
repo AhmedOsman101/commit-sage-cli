@@ -11,7 +11,7 @@ import type {
   ConfigKey,
   ConfigSection,
   ConfigValue,
-} from "./configServiceTypes.d.ts";
+} from "../lib/configServiceTypes.js";
 import FileSystemService from "./fileSystemService.ts";
 
 const infoMessage = (service: ApiService, shell: string) => `

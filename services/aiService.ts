@@ -1,4 +1,4 @@
-import type { CommitMessage } from "../index.d.ts";
+import type { CommitMessage } from "../lib/index.js";
 import { errorMessages } from "../lib/constants.ts";
 import { logError } from "../lib/Logger.ts";
 import CodestralService from "./codestralService.ts";

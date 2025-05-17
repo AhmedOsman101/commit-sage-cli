@@ -1,5 +1,5 @@
 import axios, { type AxiosError } from "axios";
-import type { CommitMessage } from "../index.d.ts";
+import type { CommitMessage } from "../lib/index.js";
 import { errorMessages } from "../lib/constants.ts";
 import { ConfigurationError, OpenAIError } from "../models/errors.ts";
 import ConfigService from "./configService.ts";

@@ -1,4 +1,4 @@
-import type { Config } from "../services/configServiceTypes.d.ts";
+import type { Config } from "./configServiceTypes.js";
 import GitService from "../services/gitService.ts";
 
 const homedir = Deno.env.get("HOME");
