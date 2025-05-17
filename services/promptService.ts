@@ -1,6 +1,6 @@
+import type { CommitLanguage } from "../lib/configServiceTypes.d.ts";
 import { getTemplate } from "../templates/index.ts";
 import ConfigService from "./configService.ts";
-import type { CommitLanguage } from "../lib/configServiceTypes.js";
 
 const PromptService = {
   async generatePrompt(diff: string, blameAnalysis: string): Promise<string> {

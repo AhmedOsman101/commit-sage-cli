@@ -1,5 +1,5 @@
+import type { CommitLanguage } from "../lib/configServiceTypes.d.ts";
 import { logWarning } from "../lib/Logger.ts";
-import type { CommitLanguage } from "../lib/configServiceTypes.js";
 import { angularTemplate } from "./formats/angular.ts";
 import { conventionalTemplate } from "./formats/conventional.ts";
 import { emojiTemplate } from "./formats/emoji.ts";

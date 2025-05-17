@@ -1,4 +1,4 @@
-import type { CommandOutput } from "../lib/index.js";
+import type { CommandOutput } from "../lib/index.d.ts";
 import { Ok, type Result, Text2Err } from "../lib/result.ts";
 
 const CommandService = {

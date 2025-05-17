@@ -1,5 +1,9 @@
 import axios from "axios";
-import type { ApiError, CommitMessage, ErrorWithResponse } from "../lib/index.js";
+import type {
+  ApiError,
+  CommitMessage,
+  ErrorWithResponse,
+} from "../lib/index.d.ts";
 import ConfigService from "./configService.ts";
 import { ModelService } from "./modelService.ts";
 

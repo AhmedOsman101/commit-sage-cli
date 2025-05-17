@@ -1,17 +1,17 @@
 /** biome-ignore-all lint/nursery/noAwaitInLoop: <explanation> */
 import KeyValidationService from "../lib/apiKeyValidator.ts";
-import { configPath, defaultConfig } from "../lib/constants.ts";
-import { logError, logInfo } from "../lib/Logger.ts";
-import { Err, Ok, type Result, Text2Err } from "../lib/result.ts";
-import { AiServiceError, ConfigurationError } from "../models/errors.ts";
-import CommandService from "./commandService.ts";
 import type {
   ApiService,
   Config,
   ConfigKey,
   ConfigSection,
   ConfigValue,
-} from "../lib/configServiceTypes.js";
+} from "../lib/configServiceTypes.d.ts";
+import { configPath, defaultConfig } from "../lib/constants.ts";
+import { logError, logInfo } from "../lib/Logger.ts";
+import { Err, Ok, type Result, Text2Err } from "../lib/result.ts";
+import { AiServiceError, ConfigurationError } from "../models/errors.ts";
+import CommandService from "./commandService.ts";
 import FileSystemService from "./fileSystemService.ts";
 
 const infoMessage = (service: ApiService, shell: string) => `
