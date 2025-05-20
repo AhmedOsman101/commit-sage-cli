@@ -127,7 +127,7 @@ By contributing to `commit-sage-cli`, you agree to license your contributions un
 
 The following are known limitations in the current version of commit-sage, with plans to address them in future updates:
 
-- [ ] Handle files with spaces in their names. Currently, the program may fail or behave unexpectedly when processing files containing spaces.
+- [x] Handle files with spaces in their names. Currently, the program may fail or behave unexpectedly when processing files containing spaces.
 
 ## Acknowledgment
 
