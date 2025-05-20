@@ -14,18 +14,30 @@ Commit Sage analyzes the changes in your Git repository and uses AI to generate 
 - Skips submodule changes automatically
 - Works with any Git repository
 
-## Installation
+Make sure you have [Deno](https://deno.land/) installed on your system if you plan to compile the project yourself.
 
-Make sure you have [Deno](https://deno.land/) installed on your system.
+### Option 1: Compile from Source
+
+Clone the repository and compile the executable:
 
 ```shell
 git clone https://github.com/AhmedOsman101/commit-sage-cli.git commit-sage
 
 cd commit-sage
 
-# compiles the executable to your `~/.local/bin` directory, you need to add it to your $PATH
+# Compiles the executable to your `~/.local/bin` directory. Ensure `~/.local/bin` is added to your $PATH.
 deno task run compile
 ```
+
+### Option 2: Download Prebuilt Binary
+
+Alternatively, you can download the prebuilt binary for your platform from the [Releases page](https://github.com/AhmedOsman101/commit-sage-cli/releases) on GitHub. Follow these steps:
+
+1. Visit the [Releases page](https://github.com/AhmedOsman101/commit-sage-cli/releases).
+2. Download the appropriate binary for your operating system (e.g., `commit-sage-linux`, `commit-sage-macos`, or `commit-sage-windows.exe`).
+3. Rename the binary to `commit-sage` and place it in a directory included in your `$PATH` (e.g., `~/.local/bin` for Linux/macOS or any directory for Windows).
+4. Ensure the binary is executable (on Linux/macOS, run `chmod u+x commit-sage`).
+5. Run `commit-sage` from your terminal to use the tool.
 
 ## Usage
 
