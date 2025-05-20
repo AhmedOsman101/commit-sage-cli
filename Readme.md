@@ -28,11 +28,32 @@ deno task run compile
 
 ## Usage
 
-Navigate to your Git repository and run:
+### Basic Usage
 
-```shell
-commit-sage
-```
+Navigate to your Git repository and run `commit-sage` to generate a commit message based on your changes:
+
+![](docs/commitSage.gif)
+
+### Advanced Usage with git-commit Wrapper
+
+For enhanced functionality, consider using the `git-commit` wrapper script from [AhmedOsman101/shellScripts](https://github.com/AhmedOsman101/shellScripts).
+
+This wrapper script extends `commit-sage` with:
+
+- Conventional commit message support
+- AI-powered commit messages using `commit-sage`
+- Additional Git integration features
+
+![](docs/gitCommit.gif)
+
+![](docs/gitCommitStaged.gif)
+
+To use the wrapper script:
+
+1. Install it from [AhmedOsman101/shellScripts](https://github.com/ahmedOsman101/shellscripts#installation)
+2. Run `git-commit --ai` in your repository instead of `commit-sage`
+
+The wrapper script provides a seamless integration between conventional commit formats and AI-generated messages.
 
 ## Configuration
 
