@@ -19,10 +19,11 @@ Commit Sage analyzes the changes in your Git repository and uses AI to generate 
 Make sure you have [Deno](https://deno.land/) installed on your system.
 
 ```shell
-git clone https://github.com/AhmedOsman101/commit-sage.git
+git clone https://github.com/AhmedOsman101/commit-sage-cli.git commit-sage
 
 cd commit-sage
-# compiles the executable to your ~/.local/bin, you need to add it to your $PATH
+
+# compiles the executable to your `~/.local/bin` directory, you need to add it to your $PATH
 deno task run compile
 ```
 
@@ -57,7 +58,7 @@ The wrapper script provides a seamless integration between conventional commit f
 
 ## Configuration
 
-Commit Sage requires an API key for the AI service it uses. You can set it up in two ways:
+The app requires an API key for the AI service it uses. You can set it up in two ways:
 
 ### Environment Variable
 
@@ -108,7 +109,7 @@ Commit Sage provides clear error messages for common issues:
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-By contributing to commit-sage, you agree to license your contributions under the GNU General Public License v3.0.
+By contributing to `commit-sage-cli`, you agree to license your contributions under the GNU General Public License v3.0.
 
 ## Limitations
 
@@ -118,10 +119,14 @@ The following are known limitations in the current version of commit-sage, with 
 
 ## Acknowledgment
 
-This project, `commit-sage`, drew significant inspiration from the [CommitSage VS Code extension](https://marketplace.visualstudio.com/items/?itemName=VizzleTF.geminicommit) by Ivan K ([GitHub](https://github.com/VizzleTF/CommitSage)).
-Their innovative approach to enhancing commit workflows motivated me to create a Deno-based tool with similar goals, tailored for command-line use.
-Thank you Ivan for your open-source contribution, which sparked this project!
+`commit-sage-cli` is a derivative work based on the [CommitSage VS Code extension](https://marketplace.visualstudio.com/items?itemName=VizzleTF.geminicommit) by Ivan K. ([GitHub](https://github.com/VizzleTF/CommitSage)), licensed under the MIT License. I cloned and significantly modified the CommitSage codebase to create a Deno CLI tool, adapting its innovative approach to commit generation for CLI use. Thank you, Ivan, for your open-source contribution, which inspired and enabled this project!
 
 ## License
 
-This project is licensed under the [GNU General Public License v3.0](LICENSE).
+`commit-sage-cli` is licensed under the [GNU General Public License v3.0](LICENSE). The full text of the GPLv3 is available in the [LICENSE](LICENSE) file.
+
+For reference, the original CommitSage project is licensed under the MIT License by Ivan K. The MIT License text is available at [https://github.com/VizzleTF/CommitSage/](https://github.com/VizzleTF/CommitSage/) for further details.
+
+## Contact
+
+For questions or feedback about `commit-sage-cli`, please contact me via [GitHub](https://github.com/AhmedOsman101) or email at [ahmad.ali.othman@outlook.com](mailto:ahmad.ali.othman@outlook.com).
