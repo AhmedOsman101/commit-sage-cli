@@ -31,7 +31,7 @@ class GitService {
   static initialize(): string | undefined {
     const { ok: output, error } = this.getRepoPath();
 
-    if (error !== undefined) logError(error);
+    if (error !== undefined) logError(error.message);
     else {
       this.setRepoPath(output);
       return output;

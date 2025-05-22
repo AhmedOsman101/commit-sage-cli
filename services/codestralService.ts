@@ -18,7 +18,7 @@ class CodestralService extends ModelService {
     attempt = 1
   ): Promise<CommitMessage> {
     try {
-      const apiKey: string = ConfigService.getApiKey("Codestral");
+      const apiKey: string = await ConfigService.getApiKey("Codestral");
 
       const { ok: model, error: modelError } = await ConfigService.get(
         "codestral",

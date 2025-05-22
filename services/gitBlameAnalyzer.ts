@@ -32,7 +32,7 @@ const GitBlameAnalyzer = {
       const blameOutput = this.executeGitBlame(filePath);
       return this.parseBlameOutput(blameOutput);
     } catch (error) {
-      void logError("Error getting blame info:", error as Error);
+      void logError("Error getting blame info:", (error as Error).message);
       throw error;
     }
   },
@@ -118,7 +118,7 @@ const GitBlameAnalyzer = {
       );
       return GitBlameAnalyzer.formatAnalysis(authorChanges);
     } catch (error) {
-      void logError("Error analyzing changes:", error as Error);
+      void logError("Error analyzing changes:", (error as Error).message);
       throw error;
     }
   },
@@ -198,7 +198,7 @@ const GitBlameAnalyzer = {
       const blameOutput = GitBlameAnalyzer.executeGitBlame(filePath);
       return GitBlameAnalyzer.parseBlameOutput(blameOutput);
     } catch (error) {
-      void logError("Error getting blame info:", error as Error);
+      void logError("Error getting blame info:", (error as Error).message);
       throw error;
     }
   },

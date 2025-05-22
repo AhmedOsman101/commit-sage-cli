@@ -129,7 +129,7 @@ const ConfigService = {
       message: `Enter your ${service} API Key:`,
       label: "API Key",
       prefix: "",
-      minLength: 32
+      minLength: 32,
     });
 
     const { error: validationErr } = KeyValidationService.baseValidation(key);

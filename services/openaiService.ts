@@ -30,7 +30,7 @@ class OpenAIService extends ModelService {
     attempt = 1
   ): Promise<CommitMessage> {
     try {
-      const apiKey: string = ConfigService.getApiKey("OpenAI");
+      const apiKey: string = await ConfigService.getApiKey("OpenAI");
 
       const { ok: model, error: modelError } = await ConfigService.get(
         "openai",
