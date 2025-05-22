@@ -34,20 +34,18 @@ export type CommitLanguage = "english" | "russian" | "chinese" | "japanese";
 
 // Configuration for commit-related settings
 type CommitConfig = {
-  autoCommit: boolean; // Literal type inferred, no alternatives specified
-  autoPush: boolean; // Literal type inferred, no alternatives specified
+  autoCommit: boolean;
+  autoPush: boolean;
   commitFormat: "conventional" | "angular" | "karma" | "emoji" | "semantic";
-  onlyStagedChanges: boolean; // Literal type inferred, no alternatives specified
+  onlyStagedChanges: boolean;
   commitLanguage: CommitLanguage;
-  promptForRefs: boolean; // Literal type inferred, no alternatives specified
+  promptForRefs: boolean;
 };
 
 // Configuration for the provider selection
 type ProviderConfig = {
   type: "gemini" | "codestral" | "openai" | "ollama";
 };
-
-export type CacheValue = string | boolean | number;
 
 // Main configuration type combining all sub-types
 export type Config = {

@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "general",
+    "gemini",
+    "ollama",
+    "codestral",
+    "openai",
+    "commit",
+    "provider"
+  ],
+  "properties": {
+    "general": {
+      "type": "object",
+      "required": ["maxRetries", "initialRetryDelayMs"],
+      "properties": {
+        "maxRetries": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "initialRetryDelayMs": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "gemini": {
+      "type": "object",
+      "required": ["model"],
+      "properties": {
+        "model": {
+          "type": "string",
+          "enum": [
+            "gemini-2.0-flash-exp",
+            "gemini-1.0-pro",
+            "gemini-1.5-pro",
+            "gemini-1.5-flash"
+          ]
+        }
+      }
+    },
+    "ollama": {
+      "type": "object",
+      "required": ["model", "baseUrl"],
+      "properties": {
+        "model": {
+          "type": "string"
+        },
+        "baseUrl": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "codestral": {
+      "type": "object",
+      "required": ["model"],
+      "properties": {
+        "model": {
+          "type": "string",
+          "enum": ["codestral-2405", "codestral-latest"]
+        }
+      }
+    },
+    "openai": {
+      "type": "object",
+      "required": ["model", "baseUrl"],
+      "properties": {
+        "model": {
+          "type": "string",
+          "enum": ["gpt-3.5-turbo"]
+        },
+        "baseUrl": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "commit": {
+      "type": "object",
+      "required": [
+        "autoCommit",
+        "autoPush",
+        "commitFormat",
+        "onlyStagedChanges",
+        "commitLanguage",
+        "promptForRefs"
+      ],
+      "properties": {
+        "autoCommit": {
+          "type": "boolean"
+        },
+        "autoPush": {
+          "type": "boolean"
+        },
+        "commitFormat": {
+          "type": "string",
+          "enum": ["conventional", "angular", "karma", "emoji", "semantic"]
+        },
+        "onlyStagedChanges": {
+          "type": "boolean"
+        },
+        "commitLanguage": {
+          "type": "string",
+          "enum": ["english", "russian", "chinese", "japanese"]
+        },
+        "promptForRefs": {
+          "type": "boolean"
+        }
+      }
+    },
+    "provider": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["gemini", "codestral", "openai", "ollama"]
+        }
+      }
+    }
+  }
+}
