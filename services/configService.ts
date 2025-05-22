@@ -1,4 +1,6 @@
 /** biome-ignore-all lint/nursery/noAwaitInLoop: <explanation> */
+
+import { Secret } from "@cliffy/prompt/secret";
 import KeyValidationService from "../lib/apiKeyValidator.ts";
 import type {
   ApiService,
@@ -11,14 +13,23 @@ import { configPath, defaultConfig } from "../lib/constants.ts";
 import { logError, logInfo } from "../lib/Logger.ts";
 import { Err, Ok, type Result, Text2Err } from "../lib/result.ts";
 import { AiServiceError, ConfigurationError } from "../models/errors.ts";
-import CommandService from "./commandService.ts";
 import FileSystemService from "./fileSystemService.ts";
 
-const infoMessage = (service: ApiService, shell: string) => `
-To set the API key for future use, add the following line to your ~/.${shell}rc file:
-$ export ${service.toUpperCase()}_API_KEY='your_api_key'
-Replace 'your_api_key' with your actual API key.
-After adding these lines, restart your terminal or run 'source ~/.${shell}rc' to apply the changes.`;
+const infoMessage = (service: ApiService, shell: string) => {
+  // Map shell to common config files, with a fallback
+  const shellConfigMap: Record<string, string> = {
+    bash: "~/.bashrc or ~/.bash_profile",
+    zsh: "~/.zshrc",
+    fish: "~/.config/fish/config.fish",
+  };
+  const configFile = shellConfigMap[shell.toLowerCase()] || `${shell} config`;
+
+  return `
+To set the ${service} API key for future use, add the following line to your ${configFile} file:
+  export ${service.toUpperCase()}_API_KEY="your_api_key"
+Replace "your_api_key" with your actual API key.
+After adding the line, restart your terminal or run 'source ${configFile}' to apply the changes.`;
+};
 
 const ConfigService = {
   shell: "",
@@ -89,7 +100,7 @@ const ConfigService = {
 
     return Ok(didWrite);
   },
-  getApiKey(service: ApiService): string {
+  async getApiKey(service: ApiService): Promise<string> {
     try {
       if (!this.shell) {
         const parts = Deno.env.get("SHELL")?.split("/") || ["bash"];
@@ -97,7 +108,7 @@ const ConfigService = {
       }
       const key =
         Deno.env.get(`${service.toUpperCase()}_API_KEY`) ||
-        this.promptForApiKey(service);
+        (await this.promptForApiKey(service));
 
       if (key) {
         this.setApiKey(service, key);
@@ -107,39 +118,19 @@ const ConfigService = {
 
       return key;
     } catch (error) {
-      void logError("Error getting API key:", error);
+      void logError("Error getting API key:", (error as Error).message);
       throw new AiServiceError(
         `Failed to get API key: ${(error as Error).message}`
       );
     }
   },
-  promptForApiKey(service: ApiService) {
-    const { ok: cmdOutput, error: cmdErr } = CommandService.execute("gum", [
-      "input",
-      "--header",
-      `"Enter your ${service} API Key: "`,
-      "--placeholder=''",
-      "--password",
-    ]);
-
-    if (cmdErr !== undefined) {
-      throw new ConfigurationError(
-        `Failed to capture the API key for ${service}`
-      );
-    }
-
-    const { code: cmdCode, stdout: cmdOut, stderr: cmdError } = cmdOutput;
-
-    switch (cmdCode) {
-      case 1:
-        throw new ConfigurationError(
-          `${service} API key input was ${cmdError}`
-        );
-      case 130:
-        throw new ConfigurationError(`${service} API key input was cancelled`);
-    }
-
-    const key = cmdOut ?? "";
+  async promptForApiKey(service: ApiService): Promise<string> {
+    const key: string = await Secret.prompt({
+      message: `Enter your ${service} API Key:`,
+      label: "API Key",
+      prefix: "",
+      minLength: 32
+    });
 
     const { error: validationErr } = KeyValidationService.baseValidation(key);
 
@@ -174,7 +165,10 @@ const ConfigService = {
         }
       }
     } catch (error) {
-      void logError("Failed to validate and set API key:", error);
+      void logError(
+        "Failed to validate and set API key:",
+        (error as Error).message
+      );
       throw error;
     }
   },
