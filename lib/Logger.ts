@@ -65,8 +65,6 @@ function toCustomString(value: any, indentLevel = 0): string {
       return blue(String(value));
     case "undefined":
       return gray(String(value));
-    case "string":
-      return green(String(`"${value}"`));
     case "symbol":
       return green(`Symbol(${value.description ?? ""})`);
     case "function":
@@ -84,25 +82,25 @@ function makeOutput(...data: any[]): string {
   return str.trim();
 }
 
-export function logError(...data: any[]): void {
-  const text = encoder.encode(red(`[ERROR]: ${makeOutput(...data)}\n`));
+export function logError(...data: string[]): void {
+  const text = encoder.encode(red(`[ERROR] ${makeOutput(data.join(" "))}\n`));
   Deno.stderr.writeSync(text);
 
   Deno.exit(1);
 }
 
 export function logInfo(...data: any[]): void {
-  console.info(blue(`[INFO]: ${makeOutput(...data)}`));
+  console.info(blue(`[INFO] ${makeOutput(...data)}`));
 }
 
 export function logWarning(...data: any[]): void {
-  console.warn(yellow(`[WARNING]: ${makeOutput(...data)}`));
+  console.warn(yellow(`[WARNING] ${makeOutput(...data)}`));
 }
 
 export function logSuccess(...data: any[]): void {
-  console.info(green(`[SUCCESS]: ${makeOutput(...data)}`));
+  console.info(green(`[SUCCESS] ${makeOutput(...data)}`));
 }
 
 export function logDebug(...data: any[]): void {
-  console.info(magenta(`[DEBUG]: ${makeOutput(...data)}`));
+  console.info(magenta(`[DEBUG] ${makeOutput(...data)}`));
 }
