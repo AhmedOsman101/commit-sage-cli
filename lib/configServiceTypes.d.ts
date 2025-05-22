@@ -49,6 +49,7 @@ type ProviderConfig = {
 
 // Main configuration type combining all sub-types
 export type Config = {
+  readonly $schema: string;
   general: GeneralConfig;
   gemini: GeminiConfig;
   ollama: OllamaConfig;

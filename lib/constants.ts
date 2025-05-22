@@ -3,11 +3,13 @@ import type { Config } from "./configServiceTypes.d.ts";
 
 const homedir = Deno.env.get("HOME");
 
-export const configPath = `${homedir}/.config/commitSage/config.d.tson`;
+export const configPath = `${homedir}/.config/commitSage/config.json`;
 
 export const repoPath = GitService.initialize();
 
 export const defaultConfig: Config = {
+  $schema:
+    "https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/refs/heads/main/config.schema.json",
   general: {
     maxRetries: 3,
     initialRetryDelayMs: 1000,

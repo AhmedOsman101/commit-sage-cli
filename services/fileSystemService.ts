@@ -44,7 +44,7 @@ const FileSystemService = {
     try {
       if (file !== null) {
         const encoder = new TextEncoder();
-        const text = encoder.encode(content);
+        const text = encoder.encode(`${content}\n`);
         file.writeSync(text);
         return Ok(true);
       }
