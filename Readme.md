@@ -14,6 +14,8 @@ Commit Sage analyzes the changes in your Git repository and uses AI to generate 
 - Skips submodule changes automatically
 - Works with any Git repository
 
+## Installation
+
 Make sure you have [Deno](https://deno.land/) installed on your system if you plan to compile the project yourself.
 
 ### Option 1: Compile from Source
