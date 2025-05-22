@@ -16,9 +16,20 @@ Commit Sage analyzes the changes in your Git repository and uses AI to generate 
 
 ## Installation
 
-Make sure you have [Deno](https://deno.land/) installed on your system if you plan to compile the project yourself.
+### Option 1: Download Prebuilt Binary
 
-### Option 1: Compile from Source
+You can download the prebuilt binary for your platform from the [Releases page](https://github.com/AhmedOsman101/commit-sage-cli/releases) on GitHub. Follow these steps:
+
+1. Visit the [Releases page](https://github.com/AhmedOsman101/commit-sage-cli/releases).
+2. Download the appropriate binary for your operating system (e.g., `commit-sage-linux`, `commit-sage-macos`, or `commit-sage-windows.exe`).
+3. Rename the binary to `commit-sage` and place it in a directory included in your `$PATH` (e.g., `~/.local/bin` for Linux/macOS or any directory for Windows).
+4. Ensure the binary is executable (on Linux/macOS, run `chmod u+x commit-sage`).
+5. Run `commit-sage` from your terminal to use the tool.
+
+
+### Option 2: Compile from Source
+
+Alternatively, you can build from source.
 
 Clone the repository and compile the executable:
 
@@ -31,15 +42,9 @@ cd commit-sage
 deno task run compile
 ```
 
-### Option 2: Download Prebuilt Binary
-
-Alternatively, you can download the prebuilt binary for your platform from the [Releases page](https://github.com/AhmedOsman101/commit-sage-cli/releases) on GitHub. Follow these steps:
-
-1. Visit the [Releases page](https://github.com/AhmedOsman101/commit-sage-cli/releases).
-2. Download the appropriate binary for your operating system (e.g., `commit-sage-linux`, `commit-sage-macos`, or `commit-sage-windows.exe`).
-3. Rename the binary to `commit-sage` and place it in a directory included in your `$PATH` (e.g., `~/.local/bin` for Linux/macOS or any directory for Windows).
-4. Ensure the binary is executable (on Linux/macOS, run `chmod u+x commit-sage`).
-5. Run `commit-sage` from your terminal to use the tool.
+> [!Note]
+>
+> If you plan to compile the project yourself, make sure you have [Deno](https://deno.land/) installed on your system.
 
 ## Usage
 
@@ -100,7 +105,7 @@ You can customize any options in the configuration file located at `~/.config/co
 
 ## Requirements
 
-- Deno 2.x or higher
+- Deno 2.x or higher (if compiling from source)
 - Git installed and accessible in your PATH
 - Internet connection for AI service communication (unless using [Ollama](https://github.com/ollama/ollama))
 
