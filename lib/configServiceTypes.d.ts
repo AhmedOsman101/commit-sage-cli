@@ -49,7 +49,7 @@ type ProviderConfig = {
 
 // Main configuration type combining all sub-types
 export type Config = {
-  readonly $schema: string;
+  readonly $schema: "https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/refs/heads/main/config.schema.json";
   general: GeneralConfig;
   gemini: GeminiConfig;
   ollama: OllamaConfig;
