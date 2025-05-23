@@ -75,7 +75,8 @@ const AiService = {
     const blameAnalyses: string[] = [];
 
     for (const file of changedFiles) {
-      const analysisResult = GitBlameAnalyzer.analyzeChanges(file);
+      // biome-ignore lint/nursery/noAwaitInLoop: <explanation>
+      const analysisResult = await GitBlameAnalyzer.analyzeChanges(file);
       blameAnalyses.push(analysisResult);
     }
 

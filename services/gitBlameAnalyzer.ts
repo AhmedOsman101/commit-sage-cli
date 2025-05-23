@@ -1,8 +1,8 @@
-import * as fs from "node:fs";
 import * as path from "node:path";
 import { errorMessages, repoPath } from "../lib/constants.ts";
 import { logError } from "../lib/Logger.ts";
 import CommandService from "./commandService.ts";
+import FileSystemService from "./fileSystemService.ts";
 import GitService from "./gitService.ts";
 
 type BlameInfo = {
@@ -15,10 +15,10 @@ type BlameInfo = {
 };
 
 const GitBlameAnalyzer = {
-  getGitBlame(filePath: string): BlameInfo[] {
+  async getGitBlame(filePath: string): Promise<BlameInfo[]> {
     try {
       const absoluteFilePath = path.resolve(repoPath as string, filePath);
-      if (!fs.existsSync(absoluteFilePath)) {
+      if (!(await FileSystemService.fileExists(absoluteFilePath))) {
         throw new Error(`${errorMessages.fileNotFound}: ${absoluteFilePath}`);
       }
 
@@ -74,7 +74,7 @@ const GitBlameAnalyzer = {
   executeGitBlame(filePath: string): string {
     const { ok: output, error } = CommandService.execute(
       "git",
-      ["blame", "--line-porcelain", filePath],
+      ["blame", "--line-porcelain", filePath.replaceAll('"', "")],
       repoPath
     );
 
@@ -92,7 +92,7 @@ const GitBlameAnalyzer = {
     if (error !== undefined) throw error;
     return output.stdout;
   },
-  analyzeChanges(filePath: string): string {
+  async analyzeChanges(filePath: string): Promise<string> {
     try {
       // First check if file is deleted or new, as these don't need blame analysis
       // Use git status to check file state
@@ -107,7 +107,7 @@ const GitBlameAnalyzer = {
       }
 
       // For existing files, we need to get blame info
-      const blame = GitBlameAnalyzer.getGitBlame(normalizedPath);
+      const blame = await GitBlameAnalyzer.getGitBlame(normalizedPath);
 
       const diff = GitBlameAnalyzer.getDiff(normalizedPath);
 
