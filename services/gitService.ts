@@ -1,9 +1,9 @@
 import { Buffer } from "node:buffer";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { Err, ErrFromText, Ok, type Result } from "lib-result";
 import type { CommandOutput } from "../lib/index.d.ts";
 import { logError } from "../lib/Logger.ts";
-import { Err, Ok, type Result, Text2Err } from "../lib/result.ts";
 import { NoChangesDetectedError } from "../models/errors.ts";
 import CommandService from "./commandService.ts";
 
@@ -48,7 +48,7 @@ class GitService {
     const { stderr, code } = output;
 
     if (code !== 0)
-      return Text2Err(
+      return ErrFromText(
         `Git Command failed with code ${code}${stderr ? `: ${stderr}` : ""}`
       );
 
@@ -394,7 +394,7 @@ class GitService {
     return stdout.startsWith("true");
   }
   static getRepoPath(): Result<string> {
-    if (!this.isGitRepo()) return Text2Err("Directory is not a git repo");
+    if (!this.isGitRepo()) return ErrFromText("Directory is not a git repo");
 
     const { ok: output, error } = this.execGit([
       "rev-parse",
@@ -402,7 +402,9 @@ class GitService {
     ]);
 
     if (error !== undefined || output.stderr || output.code !== 0) {
-      return Text2Err("Unable to determine the Git repository root directory.");
+      return ErrFromText(
+        "Unable to determine the Git repository root directory."
+      );
     }
 
     return Ok(output.stdout);

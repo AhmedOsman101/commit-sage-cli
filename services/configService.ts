@@ -1,6 +1,7 @@
 /** biome-ignore-all lint/nursery/noAwaitInLoop: <explanation> */
 
 import { Secret } from "@cliffy/prompt/secret";
+import { Err, ErrFromText, Ok, type Result } from "lib-result";
 import KeyValidationService from "../lib/apiKeyValidator.ts";
 import type {
   ApiService,
@@ -11,7 +12,6 @@ import type {
 } from "../lib/configServiceTypes.d.ts";
 import { configPath, defaultConfig } from "../lib/constants.ts";
 import { logError, logInfo } from "../lib/Logger.ts";
-import { Err, Ok, type Result, Text2Err } from "../lib/result.ts";
 import { AiServiceError, ConfigurationError } from "../models/errors.ts";
 import FileSystemService from "./fileSystemService.ts";
 
@@ -65,12 +65,12 @@ const ConfigService = {
       }
 
       if (configFile === null) {
-        return Text2Err("Config file is null after successful read");
+        return ErrFromText("Config file is null after successful read");
       }
       return Ok(JSON.parse(configFile) as Config);
     }
 
-    return Text2Err("Cannot create config file");
+    return ErrFromText("Cannot create config file");
   },
   async get<T extends ConfigSection, G extends ConfigKey<T>>(
     section: T,
