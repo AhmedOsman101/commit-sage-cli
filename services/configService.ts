@@ -2,7 +2,6 @@
 
 import { Secret } from "@cliffy/prompt/secret";
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
-import KeyValidationService from "./keyValidationService.ts";
 import type {
   ApiService,
   Config,
@@ -14,6 +13,7 @@ import { configPath, defaultConfig } from "../lib/constants.ts";
 import { logError, logInfo } from "../lib/Logger.ts";
 import { AiServiceError, ConfigurationError } from "../models/errors.ts";
 import FileSystemService from "./fileSystemService.ts";
+import KeyValidationService from "./keyValidationService.ts";
 
 const infoMessage = (service: ApiService, shell: string) => {
   // Map shell to common config files, with a fallback
