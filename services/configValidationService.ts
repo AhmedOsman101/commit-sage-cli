@@ -93,5 +93,22 @@ const ConfigValidationService = {
     }
     return Ok(true);
   },
+  transformErrorMessage(message: string) {
+    const keyErrRegex = /Key '([a-zA-Z0-9_]+)' is not included in the schema\./;
+    const keyErrMatch = keyErrRegex.exec(message);
+    if (keyErrMatch !== null) return `Invalid key => ${keyErrMatch[0]}`;
+
+    // Match paths like /state/code. or /status.
+    const pathRegex = /\/[a-zA-Z0-9\/$]+\./g;
+    const pathMatch = pathRegex.exec(message);
+    if (pathMatch !== null) {
+      const replace = `key ${pathMatch[0].replace(".", " =>").replace("/", "").replaceAll("/", ".")}`;
+      const result = message
+        .slice(0, pathMatch.index)
+        .concat(replace, message.slice(pathMatch.index + pathMatch[0].length));
+      return result;
+    }
+    return message;
+  },
 
 export default ConfigValidationService;
