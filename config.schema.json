@@ -1,15 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "required": [
-    "general",
-    "gemini",
-    "ollama",
-    "codestral",
-    "openai",
-    "commit",
-    "provider"
-  ],
+  "required": ["gemini", "ollama", "codestral", "openai", "commit", "provider"],
   "properties": {
     "general": {
       "type": "object",
@@ -79,14 +71,7 @@
     },
     "commit": {
       "type": "object",
-      "required": [
-        "autoCommit",
-        "autoPush",
-        "commitFormat",
-        "onlyStagedChanges",
-        "commitLanguage",
-        "promptForRefs"
-      ],
+      "required": ["commitFormat", "onlyStagedChanges", "commitLanguage"],
       "properties": {
         "autoCommit": {
           "type": "boolean"
