@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/nursery/noAwaitInLoop: <explanation> */
 
 import { Secret } from "@cliffy/prompt/secret";
-import { Err, ErrFromText, Ok, type Result } from "lib-result";
+import { Err, ErrFromText, isErr, Ok, type Result } from "lib-result";
 import type {
   ApiService,
   Config,
@@ -10,8 +10,9 @@ import type {
   ConfigValue,
 } from "../lib/configServiceTypes.d.ts";
 import { configPath, defaultConfig } from "../lib/constants.ts";
-import { logError, logInfo } from "../lib/Logger.ts";
+import { logError, logInfo, logSuccess } from "../lib/Logger.ts";
 import { AiServiceError, ConfigurationError } from "../models/errors.ts";
+import ConfigValidationService from "./configValidationService.ts";
 import FileSystemService from "./fileSystemService.ts";
 import KeyValidationService from "./keyValidationService.ts";
 
@@ -67,7 +68,12 @@ const ConfigService = {
       if (configFile === null) {
         return ErrFromText("Config file is null after successful read");
       }
-      return Ok(JSON.parse(configFile) as Config);
+
+      const configContent = JSON.parse(configFile);
+      const validation = ConfigValidationService.validate(configContent);
+      if (isErr(validation)) logError(validation.error.message);
+
+      return Ok(configContent as Config);
     }
 
     return ErrFromText("Cannot create config file");
@@ -93,12 +99,17 @@ const ConfigService = {
 
     config[section][key] = value;
 
-    const { ok: didWrite, error: writeError } =
-      await FileSystemService.writeFile(configPath, JSON.stringify(config));
+    const validation = ConfigValidationService.validate(config);
+    if (isErr(validation)) logError(validation.error.message);
 
-    if (writeError !== undefined) return Err(writeError);
+    const writeResult = await FileSystemService.writeFile(
+      configPath,
+      JSON.stringify(config)
+    );
 
-    return Ok(didWrite);
+    if (isErr(writeResult)) return Err(writeResult.error);
+
+    return Ok(true);
   },
   async getApiKey(service: ApiService): Promise<string> {
     try {
@@ -110,9 +121,8 @@ const ConfigService = {
         Deno.env.get(`${service.toUpperCase()}_API_KEY`) ||
         (await this.promptForApiKey(service));
 
-      if (key) {
-        this.setApiKey(service, key);
-      } else {
+      if (key) this.validateApiKey(service, key);
+      else {
         throw new ConfigurationError(`${service} API key input was cancelled`);
       }
 
@@ -134,17 +144,18 @@ const ConfigService = {
 
     const { error: validationErr } = KeyValidationService.baseValidation(key);
 
-    if (validationErr !== undefined)
+    if (validationErr !== undefined) {
       throw new ConfigurationError(validationErr.message);
+    }
 
-    logInfo(
+    logSuccess(
       `${service} API key has been successfully validated and saved for this session`
     );
     logInfo(infoMessage(service, this.shell));
 
     return key;
   },
-  setApiKey(service: ApiService, key: string): void {
+  validateApiKey(service: ApiService, key: string): void {
     try {
       switch (service) {
         case "Codestral": {
@@ -154,7 +165,6 @@ const ConfigService = {
         }
         case "Gemini": {
           const { error } = KeyValidationService.validateGeminiApiKey(key);
-
           if (error !== undefined) throw new AiServiceError(error.message);
           break;
         }
@@ -165,10 +175,7 @@ const ConfigService = {
         }
       }
     } catch (error) {
-      void logError(
-        "Failed to validate and set API key:",
-        (error as Error).message
-      );
+      logError("Failed to validate and set API key:", (error as Error).message);
       throw error;
     }
   },
