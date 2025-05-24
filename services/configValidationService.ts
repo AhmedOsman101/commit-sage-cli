@@ -110,5 +110,34 @@ const ConfigValidationService = {
     }
     return message;
   },
+  validateGeneral(general: object): Result<boolean> {
+    if ("maxRetries" in general) {
+      const maxRetries = this.validateInt(general.maxRetries);
+      if (isErr(maxRetries)) {
+        logError(
+          `Error at key general.maxRetries => ${maxRetries.error.message}`
+        );
+      }
+    }
+    if ("initialRetryDelayMs" in general) {
+      const validation = this.validateInt(general.initialRetryDelayMs);
+      if (isErr(validation)) {
+        logError(
+          `Error at key general.initialRetryDelayMs => ${validation.error.message}`
+        );
+      }
+    }
+    return Ok(true);
+  },
+  validateModelUrl(model: object, name: "ollama" | "openai"): Result<boolean> {
+    if ("baseUrl" in model) {
+      const baseUrl = this.validateUrl(model.baseUrl);
+      if (isErr(baseUrl)) {
+        logError(`Error at key ${name}.baseUrl => ${baseUrl.error.message}`);
+      }
+    }
+
+    return Ok(true);
+  },
 
 export default ConfigValidationService;
