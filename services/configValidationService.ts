@@ -66,6 +66,32 @@ const ConfigSchema = a.object(
 
 export type ConfigSchema = a.infer<typeof ConfigSchema>;
 
-const ConfigValidationService = {};
+const ConfigValidationService = {
+  $ConfigSchema: a.compile(ConfigSchema),
+  validateUrl(url: unknown): Result<boolean> {
+    try {
+      if (typeof url === "string") {
+        new URL(url);
+        return Ok(true);
+      }
+
+      return ErrFromText("URL must be string");
+    } catch (_error) {
+      return ErrFromText("Invalid URL");
+    }
+  },
+  validateInt(n: unknown, min = NINF, max = INF): Result<boolean> {
+    if (typeof n !== "number" && !Number.isInteger(n)) {
+      return ErrFromText("must be an integer.");
+    }
+
+    if (typeof n === "number") {
+      if (min !== NINF && n < min) {
+        return ErrFromText(`must be at least ${min}.`);
+      }
+      if (max !== INF && max < n) return ErrFromText(`must not exceed ${max}.`);
+    }
+    return Ok(true);
+  },
 
 export default ConfigValidationService;
