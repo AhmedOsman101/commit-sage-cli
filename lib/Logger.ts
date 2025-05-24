@@ -74,11 +74,11 @@ function makeOutput(...data: unknown[]): string {
 }
 
 export function logError(...data: string[]): void {
-  const text = encoder.encode(red(`[ERROR] ${makeOutput(data.join(" "))}\n`));
+  const text = encoder.encode(red(`[ERROR] ${data.join(" ")}\n`));
   Deno.stderr.writeSync(text);
 
   Deno.exit(1);
-}
+} 
 
 export function logInfo(...data: unknown[]): void {
   console.info(blue(`[INFO] ${makeOutput(...data)}`));
@@ -95,3 +95,4 @@ export function logSuccess(...data: unknown[]): void {
 export function logDebug(...data: unknown[]): void {
   console.info(magenta(`[DEBUG] ${makeOutput(...data)}`));
 }
+
