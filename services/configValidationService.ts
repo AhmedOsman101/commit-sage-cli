@@ -9,7 +9,7 @@ const NINF = Number.NEGATIVE_INFINITY;
 const ConfigSchema = a.object(
   {
     $schema: a.stringEnum([
-      "https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/main/config.schema.json",
+      "https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/refs/heads/main/config.schema.json",
     ]),
     general: a.optional(
       a.object({
