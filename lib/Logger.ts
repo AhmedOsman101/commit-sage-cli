@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/suspicious/noExplicitAny: <explanation> */
 import {
   blue,
   bold,
@@ -14,7 +13,7 @@ import {
 
 const encoder = new TextEncoder();
 
-function toCustomString(value: any, indentLevel = 0): string {
+function toCustomString(value: unknown, indentLevel = 0): string {
   const indent = "  ".repeat(indentLevel); // 2 spaces for indentation
 
   // Handle null or undefined
@@ -31,14 +30,6 @@ function toCustomString(value: any, indentLevel = 0): string {
 
     if (needIndent) {
       return `[\n${indent}  ${items.join(`${white(",\n")}${indent}  `)}\n${indent}]`;
-      /*
-        [
-            1,
-            "str",
-            {
-                key: 5
-            }
-      */
     }
 
     return `[${items.join(white(", "))}]`;
@@ -74,7 +65,7 @@ function toCustomString(value: any, indentLevel = 0): string {
   }
 }
 
-function makeOutput(...data: any[]): string {
+function makeOutput(...data: unknown[]): string {
   let str = "";
   for (const item of data) {
     str += ` ${toCustomString(item)}`;
@@ -89,18 +80,18 @@ export function logError(...data: string[]): void {
   Deno.exit(1);
 }
 
-export function logInfo(...data: any[]): void {
+export function logInfo(...data: unknown[]): void {
   console.info(blue(`[INFO] ${makeOutput(...data)}`));
 }
 
-export function logWarning(...data: any[]): void {
+export function logWarning(...data: unknown[]): void {
   console.warn(yellow(`[WARNING] ${makeOutput(...data)}`));
 }
 
-export function logSuccess(...data: any[]): void {
+export function logSuccess(...data: unknown[]): void {
   console.info(green(`[SUCCESS] ${makeOutput(...data)}`));
 }
 
-export function logDebug(...data: any[]): void {
+export function logDebug(...data: unknown[]): void {
   console.info(magenta(`[DEBUG] ${makeOutput(...data)}`));
 }
