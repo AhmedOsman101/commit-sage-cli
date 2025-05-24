@@ -139,5 +139,63 @@ const ConfigValidationService = {
 
     return Ok(true);
   },
+  validate(config: unknown): Result<boolean> {
+    if (typeof config === "object" && config !== null) {
+      // check for an empty array
+      if (Array.isArray(config)) {
+        logWarning("Configuration file's structure is invalid");
+        logWarning(
+          `Delete the config file located at ${configPath} to generate a new one`
+        );
+        Deno.exit(1);
+      }
+
+      // check for an empty object
+      if (Object.keys(config).length === 0) {
+        logWarning("Configuration file is Empty");
+        logWarning(
+          `Delete the config file located at ${configPath} to generate a new one`
+        );
+        Deno.exit(1);
+      }
+
+      if ("$schema" in config) {
+        if (typeof config.$schema === "object" && config.$schema !== null) {
+          const validation = this.validateUrl(config.$schema);
+          if (isErr(validation)) {
+            logError(`Error at key $schema => ${validation.error.message}`);
+          }
+        }
+      } else {
+        logError("Error at key $schema => Missing a required value.");
+      }
+
+      if ("general" in config) {
+        if (typeof config.general === "object" && config.general !== null) {
+          this.validateGeneral(config.general);
+        }
+      }
+
+      if ("ollama" in config) {
+        if (typeof config.ollama === "object" && config.ollama !== null) {
+          this.validateModelUrl(config.ollama, "ollama");
+        }
+      }
+
+      if ("openai" in config) {
+        if (typeof config.openai === "object" && config.openai !== null) {
+          this.validateModelUrl(config.openai, "openai");
+        }
+      }
+    }
+
+    const errors = a.errors(ConfigSchema, config, true);
+    if (errors.length !== 0) {
+      logError(this.transformErrorMessage(errors[0].message));
+    }
+
+    return Ok(true);
+  },
+};
 
 export default ConfigValidationService;
