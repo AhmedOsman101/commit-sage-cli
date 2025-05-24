@@ -2,7 +2,7 @@
 
 import { Secret } from "@cliffy/prompt/secret";
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
-import KeyValidationService from "../lib/apiKeyValidator.ts";
+import KeyValidationService from "../lib/keyValidationService.ts";
 import type {
   ApiService,
   Config,
