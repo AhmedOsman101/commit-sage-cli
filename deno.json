@@ -15,7 +15,7 @@
     "@cliffy/prompt": "jsr:@cliffy/prompt@^1.0.0-rc.7",
     "@std/fmt": "jsr:@std/fmt",
     "axios": "npm:axios@^1.8.4",
-    "lib-result": "npm:lib-result@^1.0.7"
+    "lib-result": "npm:lib-result@^1.0.9"
   },
   "lint": {
     "rules": {
