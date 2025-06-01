@@ -1,5 +1,6 @@
 import { a } from "@arrirpc/schema";
 import { ErrFromText, isErr, Ok, type Result } from "lib-result";
+import type { Config } from "../lib/configServiceTypes.d.ts";
 import { configPath } from "../lib/constants.ts";
 import { logError, logWarning } from "../lib/Logger.ts";
 
@@ -99,7 +100,7 @@ const ConfigValidationService = {
     if (keyErrMatch !== null) return `Invalid key => ${keyErrMatch[0]}`;
 
     // Match paths like /state/code. or /status.
-    const pathRegex = /\/[a-zA-Z0-9\/$]+\./g;
+    const pathRegex = /\/[a-zA-Z0-9/$]+\./g;
     const pathMatch = pathRegex.exec(message);
     if (pathMatch !== null) {
       const replace = `key ${pathMatch[0].replace(".", " =>").replace("/", "").replaceAll("/", ".")}`;
@@ -139,10 +140,24 @@ const ConfigValidationService = {
 
     return Ok(true);
   },
-  validate(config: unknown): Result<boolean> {
-    if (typeof config === "object" && config !== null) {
+  validate(config: unknown): Result<Config> {
+    let configContent: unknown;
+    try {
+      configContent =
+        typeof config === "string"
+          ? this.$ConfigSchema.parseUnsafe(config)
+          : config;
+    } catch (e) {
+      logError(
+        this.transformErrorMessage(
+          (e as { errors: { message: string }[] }).errors[0].message
+        )
+      );
+    }
+
+    if (typeof configContent === "object" && configContent !== null) {
       // check for an empty array
-      if (Array.isArray(config)) {
+      if (Array.isArray(configContent)) {
         logWarning("Configuration file's structure is invalid");
         logWarning(
           `Delete the config file located at ${configPath} to generate a new one`
@@ -151,7 +166,7 @@ const ConfigValidationService = {
       }
 
       // check for an empty object
-      if (Object.keys(config).length === 0) {
+      if (Object.keys(configContent).length === 0) {
         logWarning("Configuration file is Empty");
         logWarning(
           `Delete the config file located at ${configPath} to generate a new one`
@@ -159,9 +174,12 @@ const ConfigValidationService = {
         Deno.exit(1);
       }
 
-      if ("$schema" in config) {
-        if (typeof config.$schema === "object" && config.$schema !== null) {
-          const validation = this.validateUrl(config.$schema);
+      if ("$schema" in configContent) {
+        if (
+          typeof configContent.$schema === "object" &&
+          configContent.$schema !== null
+        ) {
+          const validation = this.validateUrl(configContent.$schema);
           if (isErr(validation)) {
             logError(`Error at key $schema => ${validation.error.message}`);
           }
@@ -170,31 +188,35 @@ const ConfigValidationService = {
         logError("Error at key $schema => Missing a required value.");
       }
 
-      if ("general" in config) {
-        if (typeof config.general === "object" && config.general !== null) {
-          this.validateGeneral(config.general);
+      if ("general" in configContent) {
+        if (
+          typeof configContent.general === "object" &&
+          configContent.general !== null
+        ) {
+          this.validateGeneral(configContent.general);
         }
       }
 
-      if ("ollama" in config) {
-        if (typeof config.ollama === "object" && config.ollama !== null) {
-          this.validateModelUrl(config.ollama, "ollama");
+      if ("ollama" in configContent) {
+        if (
+          typeof configContent.ollama === "object" &&
+          configContent.ollama !== null
+        ) {
+          this.validateModelUrl(configContent.ollama, "ollama");
         }
       }
 
-      if ("openai" in config) {
-        if (typeof config.openai === "object" && config.openai !== null) {
-          this.validateModelUrl(config.openai, "openai");
+      if ("openai" in configContent) {
+        if (
+          typeof configContent.openai === "object" &&
+          configContent.openai !== null
+        ) {
+          this.validateModelUrl(configContent.openai, "openai");
         }
       }
     }
 
-    const errors = a.errors(ConfigSchema, config, true);
-    if (errors.length !== 0) {
-      logError(this.transformErrorMessage(errors[0].message));
-    }
-
-    return Ok(true);
+    return Ok(configContent as Config);
   },
 };
 

@@ -69,11 +69,10 @@ const ConfigService = {
         return ErrFromText("Config file is null after successful read");
       }
 
-      const configContent = JSON.parse(configFile);
-      const validation = ConfigValidationService.validate(configContent);
+      const validation = ConfigValidationService.validate(configFile);
       if (isErr(validation)) logError(validation.error.message);
 
-      return Ok(configContent as Config);
+      return Ok(validation.ok);
     }
 
     return ErrFromText("Cannot create config file");
