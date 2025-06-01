@@ -73,7 +73,8 @@ function makeOutput(...data: unknown[]): string {
   return str.trim();
 }
 
-export function logError(...data: string[]): void {
+// Type never indicates that this function never returns, as it terminates program execution
+export function logError(...data: string[]): never {
   const text = encoder.encode(red(`[ERROR] ${data.join(" ")}\n`));
   Deno.stderr.writeSync(text);
 

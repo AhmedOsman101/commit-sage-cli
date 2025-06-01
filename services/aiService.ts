@@ -50,9 +50,7 @@ const AiService = {
           return await GeminiService.generateCommitMessage(prompt);
       }
     } catch (error) {
-      void logError((error as Error).message);
-
-      throw error;
+      logError((error as Error).message);
     }
   },
   async generateAndApplyMessage() {
@@ -75,7 +73,7 @@ const AiService = {
     const blameAnalyses: string[] = [];
 
     for (const file of changedFiles) {
-      // biome-ignore lint/nursery/noAwaitInLoop: <explanation>
+      // biome-ignore lint/nursery/noAwaitInLoop: intended
       const analysisResult = await GitBlameAnalyzer.analyzeChanges(file);
       blameAnalyses.push(analysisResult);
     }

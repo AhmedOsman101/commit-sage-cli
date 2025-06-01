@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/nursery/noAwaitInLoop: <explanation> */
+/** biome-ignore-all lint/nursery/noAwaitInLoop: intended */
 
 import { Secret } from "@cliffy/prompt/secret";
 import { Err, ErrFromText, isErr, Ok, type Result } from "lib-result";
@@ -128,9 +128,9 @@ const ConfigService = {
 
       return key;
     } catch (error) {
-      void logError("Error getting API key:", (error as Error).message);
-      throw new AiServiceError(
-        `Failed to get API key: ${(error as Error).message}`
+      logError(
+        new AiServiceError(`Failed to get API key: ${(error as Error).message}`)
+          .message
       );
     }
   },
@@ -176,7 +176,6 @@ const ConfigService = {
       }
     } catch (error) {
       logError("Failed to validate and set API key:", (error as Error).message);
-      throw error;
     }
   },
 };

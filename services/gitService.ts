@@ -32,10 +32,8 @@ class GitService {
     const { ok: output, error } = this.getRepoPath();
 
     if (error !== undefined) logError(error.message);
-    else {
-      this.setRepoPath(output);
-      return output;
-    }
+    this.setRepoPath(output);
+    return output;
   }
   static execGit(args: string[]): Result<CommandOutput> {
     const { ok: output, error } = CommandService.execute(
@@ -303,8 +301,7 @@ class GitService {
 
       return combinedDiff;
     } catch (error) {
-      void logError(`Failed to get diff: ${(error as Error).message}`);
-      throw new Error(`Failed to get diff: ${(error as Error).message}`);
+      logError(`Failed to get diff: ${(error as Error).message}`);
     }
   }
   static getChangedFiles(onlyStaged = false): string[] {
