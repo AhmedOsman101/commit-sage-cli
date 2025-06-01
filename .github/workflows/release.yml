@@ -2,6 +2,8 @@ name: Release
 
 on:
   push:
+    branches:
+      - release
     tags:
       - "v*"
 
@@ -40,7 +42,7 @@ jobs:
           name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
-          generate_release_notes: true
+          generate_release_notes: false
           files: |
             ./bin/commit-sage-linux-x64
             ./bin/commit-sage-linux-arm64
