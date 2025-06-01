@@ -1,11 +1,7 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - release
-    tags:
-      - "v*"
+  workflow_dispatch:  # Enables manual triggering
 
 permissions:
   contents: write
@@ -32,15 +28,19 @@ jobs:
       - name: Build binaries
         run: ./release.sh
 
-      - name: List binary files
-        run: find bin -type f -name "commit-sage*" | sort
+      - name: Create Tag
+        id: create_tag
+        run: |
+          VERSION=$(cat commit-sage-cli/version.txt)
+          git tag v$VERSION
+          git push origin v$VERSION
 
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v2
         with:
-          name: Release ${{ github.ref_name }}
-          draft: false
+          name: Release v${{ steps.create_tag.outputs.version }}
+          draft: true
           prerelease: false
           generate_release_notes: false
           files: |

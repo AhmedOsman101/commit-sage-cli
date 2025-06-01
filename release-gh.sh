@@ -8,6 +8,5 @@ release-please release-pr \
   --token="$GITHUB_TOKEN" \
   --release-type="simple" \
   --include-v-in-tags \
-  --changelog-type="github" \
   --draft-pull-request \
   --version-file="version.txt"
