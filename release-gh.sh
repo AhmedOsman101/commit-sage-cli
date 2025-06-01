@@ -3,10 +3,18 @@
 set -euo pipefail
 
 # ---  Main script logic --- #
-release-please release-pr \
-  --repo-url="https://github.com/AhmedOsman101/commit-sage-cli.git" \
-  --token="$GITHUB_TOKEN" \
-  --release-type="simple" \
-  --include-v-in-tags \
-  --draft-pull-request \
-  --version-file="version.txt"
+choice=$1
+
+if [[ "${choice}" == "pr" ]]; then
+  release-please release-pr \
+    --repo-url="https://github.com/AhmedOsman101/commit-sage-cli.git" \
+    --token="$GITHUB_TOKEN" \
+    --config-file="release-please-config.json"
+elif [[ "${choice}" == "gh" ]]; then
+  release-please github-release \
+    --repo-url="https://github.com/AhmedOsman101/commit-sage-cli.git" \
+    --token="$GITHUB_TOKEN" \
+    --config-file="release-please-config.json"
+else
+  release-please --help
+fi
