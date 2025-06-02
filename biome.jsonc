@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.0.0-beta.5/schema.json",
+  "$schema": "https://raw.githubusercontent.com/biomejs/biome/refs/heads/main/packages/%40biomejs/biome/configuration_schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -14,7 +14,6 @@
       "!**/dist/**",
       "!**/.git/**",
       "!**/.vscode/**",
-      "!**/*.vue",
       "!**/*.vue",
       "!**/deno.json",
       "!**/fresh.gen.ts"
@@ -42,7 +41,10 @@
     "lineWidth": 80,
     "bracketSameLine": true,
     "attributePosition": "multiline",
-    "includes": ["**", "!**/*.vue"],
+    "includes": [
+      "**",
+      "!**/*.vue"
+    ],
     "bracketSpacing": true
   },
   "linter": {
@@ -53,7 +55,6 @@
         "noNonNullAssertion": "info",
         "useEnumInitializers": "off",
         "useLiteralEnumMembers": "error",
-        "noCommaOperator": "error",
         "useNodejsImportProtocol": "error",
         "useAsConstAssertion": "error",
         "useSelfClosingElements": "error",
@@ -65,7 +66,6 @@
         "useExponentiationOperator": "error",
         "useTemplate": "error",
         "useDefaultParameterLast": "error",
-        "noArguments": "error",
         "useImportType": "error",
         "useExportType": "error",
         "noUselessElse": "error",
@@ -89,7 +89,9 @@
           "fix": "safe",
           "level": "off"
         },
-        "useNumericLiterals": "error"
+        "useNumericLiterals": "error",
+        "noCommaOperator": "error",
+        "noArguments": "error"
       },
       "suspicious": {
         "noImplicitAnyLet": "warn",
@@ -108,7 +110,11 @@
           "fix": "safe",
           "level": "info",
           "options": {
-            "attributes": ["classList", "class", "className"]
+            "attributes": [
+              "classList",
+              "class",
+              "className"
+            ]
           }
         },
         "noAwaitInLoop": "info",
