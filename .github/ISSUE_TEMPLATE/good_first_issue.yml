@@ -1,0 +1,34 @@
+name: "🧑‍💻 Good First Issue"
+description: A small, beginner-friendly issue for first-time contributors.
+labels: ["good first issue", "help wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This issue is great for first-time contributors! Please read the [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md) guide first.
+  - type: input
+    id: title
+    attributes:
+      label: Task summary
+      placeholder: e.g. "Improve error message for unsupported providers"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      placeholder: |
+        The error message shown when the user enters an unknown provider is vague.
+        Improve it by suggesting supported providers instead.
+    validations:
+      required: true
+  - type: textarea
+    id: hint
+    attributes:
+      label: Hints / Getting Started
+      placeholder: |
+        - Look at `src/models/errors.ts`
+        - See how existing error messages are written
+        - Run `deno task dev` to test
+    validations:
+      required: false

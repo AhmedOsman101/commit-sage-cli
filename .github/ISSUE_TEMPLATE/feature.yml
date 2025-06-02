@@ -1,0 +1,40 @@
+name: "✨ Feature Request"
+description: Suggest a new idea or enhancement for Commit Sage.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Got an idea to improve Commit Sage? We'd love to hear it!
+  - type: input
+    id: title
+    attributes:
+      label: Feature title
+      placeholder: e.g. "Add Gitmoji support"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature description
+      description: Describe what you want to happen.
+      placeholder: |
+        I'd like to have Gitmoji support so the generated commit message includes emojis...
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Why is this useful?
+      placeholder: Helps make the tool more fun and visually appealing.
+    validations:
+      required: false
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      placeholder: |
+        1. Manually copy-paste emojis
+        2. Use a separate tool like gitmoji-cli
+    validations:
+      required: false
