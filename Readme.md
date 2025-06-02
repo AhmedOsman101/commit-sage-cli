@@ -1,5 +1,37 @@
 # Commit Sage
 
+<!--toc:start-->
+
+- [Commit Sage](#commit-sage)
+  - [Overview](#overview)
+  - [Features](#features)
+  - [Requirements](#requirements)
+  - [How It Works](#how-it-works)
+    - [Error Handling](#error-handling)
+  - [Installation](#installation)
+    - [Option 1: Download Prebuilt Binary](#option-1-download-prebuilt-binary)
+    - [Option 2: Compile from Source](#option-2-compile-from-source)
+  - [Usage](#usage)
+    - [Basic Usage](#basic-usage)
+    - [Advanced Usage with git-commit Wrapper](#advanced-usage-with-git-commit-wrapper)
+  - [Configuration](#configuration)
+    - [Environment Variables](#environment-variables)
+    - [Configuration File](#configuration-file)
+      - [Available Configuration Options](#available-configuration-options)
+        - [`general`](#general)
+        - [`gemini`](#gemini)
+        - [`ollama`](#ollama)
+        - [`codestral`](#codestral)
+        - [`openai`](#openai)
+        - [`commit`](#commit)
+        - [`provider`](#provider)
+  - [Limitations / Not Yet Implemented](#limitations-not-yet-implemented)
+  - [Contributing](#contributing)
+  - [Acknowledgment](#acknowledgment)
+  - [License](#license)
+  - [Contact](#contact)
+  <!--toc:end-->
+
 A powerful Deno CLI application that helps you generate meaningful commit messages by analyzing your Git changes.
 
 ## Overview
@@ -14,6 +46,28 @@ Commit Sage analyzes the changes in your Git repository and uses AI to generate 
 - Skips submodule changes automatically
 - Works with any Git repository
 
+## Requirements
+
+- Deno 2.x or higher (if compiling from source)
+- Git installed and accessible in your PATH
+- Internet connection for AI service communication (unless using [Ollama](https://github.com/ollama/ollama))
+
+## How It Works
+
+1. Commit Sage detects if you're in a Git repository
+2. It analyzes the changes in your repository (staged, unstaged, etc.)
+3. The changes are processed and sent to an AI service
+4. The AI generates a contextually relevant commit message
+5. The suggested commit message is displayed for you to use
+
+### Error Handling
+
+Commit Sage provides clear error messages for common issues:
+
+- When no changes are detected
+- When the API key is not set
+- When Git is not installed or the directory is not a Git repository
+
 ## Installation
 
 ### Option 1: Download Prebuilt Binary
@@ -26,6 +80,7 @@ You can download the prebuilt binary for your platform from the [Releases page](
 4. Ensure the binary is executable (on Linux/macOS, run `chmod u+x commit-sage`).
 5. Run `commit-sage` from your terminal to use the tool.
 
+---
 
 ### Option 2: Compile from Source
 
@@ -54,6 +109,8 @@ Navigate to your Git repository and run `commit-sage` to generate a commit messa
 
 ![](docs/commitSage.gif)
 
+---
+
 ### Advanced Usage with git-commit Wrapper
 
 For enhanced functionality, consider using the `git-commit` wrapper script from [AhmedOsman101/shellScripts](https://github.com/AhmedOsman101/shellScripts).
@@ -79,7 +136,7 @@ The wrapper script provides a seamless integration between conventional commit f
 
 The app requires an API key for the AI service it uses. You can set it up in two ways:
 
-### Environment Variable
+### Environment Variables
 
 Add the following to your shell configuration file (e.g., `~/.bashrc`, `~/.zshrc`):
 
@@ -91,7 +148,7 @@ Replace `SERVICE` with the appropriate service name and `your_api_key` with your
 
 After adding these lines, restart your terminal or run `source ~/.bashrc` to apply the changes.
 
-### Export before running
+**Export before running**
 
 This method sets the API key for a single run.
 
@@ -99,42 +156,106 @@ This method sets the API key for a single run.
 SERVICE_API_KEY='your_api_key' commit-sage
 ```
 
-## Configuration File
+> [!NOTE]
+>
+> If you're using `ollama` as your provider, you can skip all API key and environment variable setup.
+> Ollama runs locally and requires no authentication or network access.
 
-You can customize any options in the configuration file located at `~/.config/commit-sage/config.json`.
+---
 
-## Requirements
+### Configuration File
 
-- Deno 2.x or higher (if compiling from source)
-- Git installed and accessible in your PATH
-- Internet connection for AI service communication (unless using [Ollama](https://github.com/ollama/ollama))
+You can customize any options in the configuration file located at `~/.config/commitSage/config.json`.
 
-## How It Works
+The configuration file allows customization of retry behavior, model providers, commit formatting, and default provider usage.
 
-1. Commit Sage detects if you're in a Git repository
-2. It analyzes the changes in your repository (staged, unstaged, etc.)
-3. The changes are processed and sent to an AI service
-4. The AI generates a contextually relevant commit message
-5. The suggested commit message is displayed for you to use
+#### Available Configuration Options
 
-## Error Handling
+##### `general`
 
-Commit Sage provides clear error messages for common issues:
+| Key                   | Type   | Default | Description                          |
+| --------------------- | ------ | ------- | ------------------------------------ |
+| `maxRetries`          | number | `3`     | Number of retry attempts on failure. |
+| `initialRetryDelayMs` | number | `1000`  | Delay (ms) before the first retry.   |
 
-- When no changes are detected
-- When the API key is not set
-- When Git is not installed or the directory is not a Git repository
+---
+
+##### `gemini`
+
+| Key     | Type   | Default                  | Options                                                                                |
+| ------- | ------ | ------------------------ | -------------------------------------------------------------------------------------- |
+| `model` | string | `"gemini-2.0-flash-exp"` | `"gemini-2.0-flash-exp"`, `"gemini-1.0-pro"`, `"gemini-1.5-pro"`, `"gemini-1.5-flash"` |
+
+---
+
+##### `ollama`
+
+| Key       | Type   | Default                    | Description                  |
+| --------- | ------ | -------------------------- | ---------------------------- |
+| `model`   | string | `"llama3.2"`               | Name of the Ollama model.    |
+| `baseUrl` | string | `"http://localhost:11434"` | Base URL for the Ollama API. |
+
+---
+
+##### `codestral`
+
+| Key     | Type   | Default            | Options                                  |
+| ------- | ------ | ------------------ | ---------------------------------------- |
+| `model` | string | `"codestral-2405"` | `"codestral-2405"`, `"codestral-latest"` |
+
+---
+
+##### `openai`
+
+| Key       | Type   | Default                       | Description          |
+| --------- | ------ | ----------------------------- | -------------------- |
+| `model`   | string | `"gpt-3.5-turbo"`             | OpenAI model to use. |
+| `baseUrl` | string | `"https://api.openai.com/v1"` | OpenAI API base URL. |
+
+---
+
+##### `commit`
+
+| Key                 | Type    | Default          | Options / Description                                             |
+| ------------------- | ------- | ---------------- | ----------------------------------------------------------------- |
+| `onlyStagedChanges` | boolean | `true`           | Limit commit messages to staged changes.                          |
+| `commitLanguage`    | string  | `"english"`      | `"english"`, `"russian"`, `"chinese"`, `"japanese"`               |
+| `autoCommit`        | boolean | `false`          | Automatically commit after generating message.                    |
+| `autoPush`          | boolean | `false`          | Push to remote after committing.                                  |
+| `commitFormat`      | string  | `"conventional"` | `"conventional"`, `"angular"`, `"karma"`, `"emoji"`, `"semantic"` |
+| `promptForRefs`     | boolean | `false`          | Ask for refs (e.g., issue numbers) during commit.                 |
+
+---
+
+##### `provider`
+
+| Key    | Type   | Default    | Options                                           |
+| ------ | ------ | ---------- | ------------------------------------------------- |
+| `type` | string | `"gemini"` | `"gemini"`, `"codestral"`, `"openai"`, `"ollama"` |
+
+## Limitations / Not Yet Implemented
+
+The following are known limitations in the current version of **commit-sage**, with plans to address them in future updates:
+
+- [x] **Handle files with spaces in their names**  
+       Previously, the program may have failed or behaved unexpectedly when processing files with spaces in their names. This has been resolved.
+
+- [ ] **Configuration options not yet implemented**  
+       The following options are defined in the schema for forward compatibility, but are currently **non-functional** and will be ignored at runtime:
+  - [ ] `commit.autoCommit`
+  - [ ] `commit.autoPush`
+  - [ ] `commit.onlyStagedChanges`
+  - [ ] `commit.promptForRefs`
+
+> [!NOTE]
+>
+> These options can safely remain in your config. They won't cause any errors, but currently have no effect.  
+> They are included as placeholders for upcoming features that are under active consideration or development.
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 By contributing to `commit-sage-cli`, you agree to license your contributions under the GNU General Public License v3.0.
-
-## Limitations
-
-The following are known limitations in the current version of commit-sage, with plans to address them in future updates:
-
-- [x] Handle files with spaces in their names. Currently, the program may fail or behave unexpectedly when processing files containing spaces.
 
 ## Acknowledgment
 
