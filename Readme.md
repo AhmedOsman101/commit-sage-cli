@@ -1,37 +1,5 @@
 # Commit Sage
 
-<!--toc:start-->
-
-- [Commit Sage](#commit-sage)
-  - [Overview](#overview)
-  - [Features](#features)
-  - [Requirements](#requirements)
-  - [How It Works](#how-it-works)
-    - [Error Handling](#error-handling)
-  - [Installation](#installation)
-    - [Option 1: Download Prebuilt Binary](#option-1-download-prebuilt-binary)
-    - [Option 2: Compile from Source](#option-2-compile-from-source)
-  - [Usage](#usage)
-    - [Basic Usage](#basic-usage)
-    - [Advanced Usage with git-commit Wrapper](#advanced-usage-with-git-commit-wrapper)
-  - [Configuration](#configuration)
-    - [Environment Variables](#environment-variables)
-    - [Configuration File](#configuration-file)
-      - [Available Configuration Options](#available-configuration-options)
-        - [`general`](#general)
-        - [`gemini`](#gemini)
-        - [`ollama`](#ollama)
-        - [`codestral`](#codestral)
-        - [`openai`](#openai)
-        - [`commit`](#commit)
-        - [`provider`](#provider)
-  - [Limitations / Not Yet Implemented](#limitations-not-yet-implemented)
-  - [Contributing](#contributing)
-  - [Acknowledgment](#acknowledgment)
-  - [License](#license)
-  - [Contact](#contact)
-  <!--toc:end-->
-
 A powerful Deno CLI application that helps you generate meaningful commit messages by analyzing your Git changes.
 
 ## Overview
