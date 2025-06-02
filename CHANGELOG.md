@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.2.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.1.0...v1.2.0) - 2025-06-01
+
+### Features
+
+- **Configuration Validation**:
+
+  - Added configuration validation service using `arrirpc/schema`.
+  - Validates required keys such as `$schema`, `ollama`, `openai`, and general settings.
+  - Includes URL and integer type checks.
+  - Added specific model URL validation logic.
+  - Validates API keys and logs meaningful error messages.
+
+- **Error Handling**:
+  - Improved config error messages using `transformErrorMessage()` to provide clearer path and reason context.
+
+### Refactor
+
+- Simplified the config schema structure:
+  - Removed deprecated `general` and `auto` options.
+  - Streamlined required top-level properties.
+
+### Dependencies
+
+- Added `arrirpc/schema` for schema-driven config validation.
+
+### Bug Fixes
+
+- Removed extra blank line in `Logger.ts`.
+- Fixed incorrect `$schema` URL in config schema file.
+
 ## [1.1.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.0.0...v1.1.0) - 2025-05-23
 
 ### Features
