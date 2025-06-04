@@ -359,7 +359,7 @@ class GitService {
     const { stdout } = output;
 
     const status = stdout.slice(0, 2);
-    return status === "??" || status === "A ";
+    return status.startsWith("??") || status.startsWith("A ");
   }
   static isFileDeleted(filePath: string): boolean {
     const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
