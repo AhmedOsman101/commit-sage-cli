@@ -14,16 +14,17 @@ Rules:
    - Summarize changes concisely
 
 Type selection rules:
-- docs: ANY changes to documentation files (*.md, docs/*)
+- docs: ANY changes to documentation files (*.md, docs/*, etc.)
 - feat: New features or significant functional changes
 - fix: Bug fixes and error corrections
-- style: Formatting, semicolons, etc (no code change)
-- refactor: Code changes that don't fix bugs or add features
+- style: Changes not affecting the code, e.g. formatting, semicolons, etc.
+- refactor: Code changes, neither fix a bug nor add a feature.
 - perf: Performance improvements
 - test: Adding or updating tests
-- build: Build system or dependencies
+- build: Changes affecting the build system or external dependencies.
 - ci: CI/CD changes
-- chore: Other maintenance tasks
+- chore: Updates to build configuration, libraries, and other maintenance tasks.
+- revert: Reverting a previous commit.
 
 Examples:
 Documentation change:
