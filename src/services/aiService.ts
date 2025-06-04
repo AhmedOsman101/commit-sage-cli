@@ -70,13 +70,15 @@ const AiService = {
 
     const changedFiles = GitService.getChangedFiles(useStagedChanges);
 
-    const blameAnalyses: string[] = [];
+    const analysesPromises = changedFiles.map(file =>
+      GitBlameAnalyzer.analyzeChanges(file)
+    );
 
-    for (const file of changedFiles) {
-      // biome-ignore lint/nursery/noAwaitInLoop: intended
-      const analysisResult = await GitBlameAnalyzer.analyzeChanges(file);
-      blameAnalyses.push(analysisResult);
-    }
+    const blameAnalyses = await Promise.all(analysesPromises).then(results =>
+      results.filter(
+        result => result && !result.startsWith("No changes detected")
+      )
+    );
 
     const blameAnalysis = blameAnalyses
       .filter(analysis => analysis)
