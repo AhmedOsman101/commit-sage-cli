@@ -41,7 +41,10 @@
     "lineWidth": 80,
     "bracketSameLine": true,
     "attributePosition": "multiline",
-    "includes": ["**", "!**/*.vue"],
+    "includes": [
+      "**",
+      "!**/*.vue"
+    ],
     "bracketSpacing": true
   },
   "linter": {
@@ -107,10 +110,14 @@
           "fix": "safe",
           "level": "info",
           "options": {
-            "attributes": ["classList", "class", "className"]
+            "attributes": [
+              "classList",
+              "class",
+              "className"
+            ]
           }
         },
-        "noAwaitInLoop": "info",
+        "noAwaitInLoop": "warn",
         "noConstantBinaryExpression": "info",
         "noFloatingPromises": "info",
         "noImportCycles": "error",
