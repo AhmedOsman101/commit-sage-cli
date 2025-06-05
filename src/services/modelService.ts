@@ -1,5 +1,6 @@
-/** biome-ignore-all lint/correctness/noUnusedFunctionParameters: <explanation> */
-/** biome-ignore-all lint/suspicious/noExplicitAny: <explanation> */
+/** biome-ignore-all lint/suspicious/noExplicitAny: Each child has different incompatible types for the same parameter */
+/** biome-ignore-all lint/correctness/noUnusedFunctionParameters: This is a base class */
+import { setTimeout } from "node:timers/promises";
 import type {
   ApiError,
   CommitMessage,
@@ -17,10 +18,6 @@ export abstract class ModelService {
 
   protected static calculateRetryDelay(attempt: number): number {
     return Math.min(1000 * 2 ** (attempt - 1), ModelService.maxRetryBackoff);
-  }
-
-  protected static delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**
@@ -72,8 +69,8 @@ export abstract class ModelService {
 
     if (shouldRetry && attempt < maxRetries) {
       const delayMs = ModelService.calculateRetryDelay(attempt);
-      // void logInfo(`Retrying in ${delayMs / 1000} seconds...`);
-      await ModelService.delay(delayMs);
+
+      await setTimeout(delayMs);
 
       return ModelService.generateCommitMessage(prompt, attempt + 1);
     }
