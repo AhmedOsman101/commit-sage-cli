@@ -335,9 +335,6 @@ class GitService {
             filePath = filePath.split(" -> ")[1];
           }
 
-          // Log file status for debugging
-          // void console.log(`File ${filePath} has status: ${status}`);
-
           // Return relative path as git status returns it
           return filePath;
         });

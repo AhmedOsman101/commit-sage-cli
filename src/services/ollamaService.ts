@@ -46,18 +46,14 @@ class OllamaService extends ModelService {
     };
 
     try {
-      // void logInfo(`Attempt ${attempt}: Sending request to Ollama API`);
-
       const response = await axios.post<OllamaResponse>(
         apiUrl,
         payload,
         requestConfig
       );
 
-      // void logInfo("Ollama API response received successfully");
-
       const commitMessage = OllamaService.extractCommitMessage(response.data);
-      // void logInfo(`Commit message generated using ${model} model`);
+
       return { message: commitMessage, model };
     } catch (error) {
       return await OllamaService.handleGenerationError(
