@@ -68,7 +68,6 @@ class GeminiService extends ModelService {
           case 401:
             if (attempt === 1) {
               // If this is the first attempt and the key is invalid, request a new key and try again
-              ConfigService.promptForApiKey("Gemini");
               return GeminiService.generateCommitMessage(prompt, attempt + 1);
             }
             throw new Error(errorMessages.authenticationError);
@@ -104,7 +103,6 @@ class GeminiService extends ModelService {
 
       // If the key is not set and this is the first attempt
       if (error instanceof ConfigurationError && attempt === 1) {
-        ConfigService.promptForApiKey("Gemini");
         return GeminiService.generateCommitMessage(prompt, attempt + 1);
       }
 

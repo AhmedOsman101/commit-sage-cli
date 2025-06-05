@@ -48,7 +48,7 @@ class CodestralService extends ModelService {
       );
 
       const message = CodestralService.extractCommitMessage(response.data);
-      // void logInfo(`Commit message generated using ${model} model`);
+
       return { message, model };
     } catch (error) {
       const axiosError = error as ErrorWithResponse;
@@ -59,7 +59,6 @@ class CodestralService extends ModelService {
         switch (status) {
           case 401:
             if (attempt === 1) {
-              ConfigService.promptForApiKey("Codestral");
               return CodestralService.generateCommitMessage(
                 prompt,
                 attempt + 1
@@ -89,7 +88,6 @@ class CodestralService extends ModelService {
 
       // If the key is not set and this is the first attempt
       if (error instanceof ConfigurationError && attempt === 1) {
-        ConfigService.promptForApiKey("Codestral");
         return CodestralService.generateCommitMessage(prompt, attempt + 1);
       }
 

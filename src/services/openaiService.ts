@@ -63,7 +63,7 @@ class OpenAIService extends ModelService {
       );
 
       const message = OpenAIService.extractCommitMessage(response.data);
-      // void logInfo(`Commit message generated using ${model} model`);
+
       return { message, model };
     } catch (error) {
       const axiosError = error as AxiosError;
@@ -76,7 +76,6 @@ class OpenAIService extends ModelService {
         switch (status) {
           case 401:
             if (attempt === 1) {
-              ConfigService.promptForApiKey("OpenAI");
               return OpenAIService.generateCommitMessage(prompt, attempt + 1);
             }
             throw new OpenAIError(errorMessages.authenticationError);
@@ -112,7 +111,6 @@ class OpenAIService extends ModelService {
 
       // If the key is not set and this is the first attempt
       if (error instanceof ConfigurationError && attempt === 1) {
-        ConfigService.promptForApiKey("OpenAI");
         return OpenAIService.generateCommitMessage(prompt, attempt + 1);
       }
 
@@ -142,9 +140,6 @@ class OpenAIService extends ModelService {
       }
 
       const models = response.data.data.map(model => model.id);
-      if (models.length > 0) {
-        // void logInfo(`Successfully fetched ${models.length} models`);
-      }
       return models;
     } catch {
       return [];
