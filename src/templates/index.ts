@@ -26,6 +26,7 @@ const SUPPORTED_LANGUAGES = [
   "chinese",
   "japanese",
 ] as const;
+
 type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
 const templates: Record<CommitFormat, CommitTemplate> = {
@@ -46,15 +47,15 @@ export function getTemplate(
   format: CommitFormat,
   language: CommitLanguage
 ): string {
+  let template: CommitTemplate;
+
   if (!isValidFormat(format)) {
     logWarning(`Invalid format "${format}", falling back to conventional`);
-    format = "conventional";
-  }
-
-  const template = templates[format];
+    template = templates.conventional;
+  } else template = templates[format];
 
   if (!isValidLanguage(language)) {
-    console.warn(`Invalid language "${language}", falling back to english`);
+    logWarning(`Invalid language "${language}", falling back to english`);
     return template.english;
   }
 
