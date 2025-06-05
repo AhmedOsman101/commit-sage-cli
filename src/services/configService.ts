@@ -16,25 +16,10 @@ import ConfigValidationService from "./configValidationService.ts";
 import FileSystemService from "./fileSystemService.ts";
 import KeyValidationService from "./keyValidationService.ts";
 
-const infoMessage = (service: ApiService, shell: string) => {
-  // Map shell to common config files, with a fallback
-  const shellConfigMap: Record<string, string> = {
-    bash: "~/.bashrc or ~/.bash_profile",
-    zsh: "~/.zshrc",
-    fish: "~/.config/fish/config.fish",
-  };
-  const configFile = shellConfigMap[shell.toLowerCase()] || `${shell} config`;
+class ConfigService {
+  protected static shell = "";
 
-  return `
-To set the ${service} API key for future use, add the following line to your ${configFile} file:
-  export ${service.toUpperCase()}_API_KEY="your_api_key"
-Replace "your_api_key" with your actual API key.
-After adding the line, restart your terminal or run 'source ${configFile}' to apply the changes.`;
-};
-
-const ConfigService = {
-  shell: "",
-  async createConfigFile(): Promise<Result<null>> {
+  static async createConfigFile(): Promise<Result<null>> {
     const { ok: file, error: createFileError } =
       await FileSystemService.createFile(configPath);
 
@@ -50,8 +35,9 @@ const ConfigService = {
     if (writeFileError !== undefined) return Err(writeFileError);
 
     return Ok(null);
-  },
-  async load(): Promise<Result<Config>> {
+  }
+
+  static async load(): Promise<Result<Config>> {
     let checked = false;
     while (true) {
       const { ok: configFile, error } =
@@ -59,7 +45,8 @@ const ConfigService = {
 
       if (error !== undefined) {
         if (checked) break;
-        const { error: createConfigError } = await this.createConfigFile();
+        const { error: createConfigError } =
+          await ConfigService.createConfigFile();
         if (createConfigError !== undefined) return Err(createConfigError);
         checked = true;
         continue;
@@ -76,24 +63,26 @@ const ConfigService = {
     }
 
     return ErrFromText("Cannot create config file");
-  },
-  async get<T extends ConfigSection, G extends ConfigKey<T>>(
+  }
+
+  static async get<T extends ConfigSection, G extends ConfigKey<T>>(
     section: T,
     key: G
   ): Promise<Awaited<Result<ConfigValue<T, G>>>> {
-    const { ok: config, error } = await this.load();
+    const { ok: config, error } = await ConfigService.load();
     if (error !== undefined) return Err(error);
 
     const value = config[section][key] ?? defaultConfig[section][key];
 
     return Ok(value);
-  },
-  async set<T extends ConfigSection, G extends ConfigKey<T>>(
+  }
+
+  static async set<T extends ConfigSection, G extends ConfigKey<T>>(
     section: T,
     key: G,
     value: ConfigValue<T, G>
   ): Promise<Result<boolean>> {
-    const { ok: config, error: configError } = await this.load();
+    const { ok: config, error: configError } = await ConfigService.load();
     if (configError !== undefined) return Err(configError);
 
     config[section][key] = value;
@@ -109,18 +98,19 @@ const ConfigService = {
     if (isErr(writeResult)) return Err(writeResult.error);
 
     return Ok(true);
-  },
-  async getApiKey(service: ApiService): Promise<string> {
+  }
+
+  static async getApiKey(service: ApiService): Promise<string> {
     try {
-      if (!this.shell) {
+      if (!ConfigService.shell) {
         const parts = Deno.env.get("SHELL")?.split("/") || ["bash"];
-        this.shell = parts[parts.length - 1];
+        ConfigService.shell = parts[parts.length - 1];
       }
       const key =
         Deno.env.get(`${service.toUpperCase()}_API_KEY`) ||
-        (await this.promptForApiKey(service));
+        (await ConfigService.promptForApiKey(service));
 
-      if (key) this.validateApiKey(service, key);
+      if (key) ConfigService.validateApiKey(service, key);
       else {
         throw new ConfigurationError(`${service} API key input was cancelled`);
       }
@@ -132,8 +122,27 @@ const ConfigService = {
           .message
       );
     }
-  },
-  async promptForApiKey(service: ApiService): Promise<string> {
+  }
+
+  protected static infoMessage(service: ApiService) {
+    // Map shell to common config files, with a fallback
+    const shellConfigMap: Record<string, string> = {
+      bash: "~/.bashrc or ~/.bash_profile",
+      zsh: "~/.zshrc",
+      fish: "~/.config/fish/config.fish",
+    };
+    const configFile =
+      shellConfigMap[ConfigService.shell.toLowerCase()] ||
+      `${ConfigService.shell} config`;
+
+    return `
+To set the ${service} API key for future use, add the following line to your ${configFile} file:
+  export ${service.toUpperCase()}_API_KEY="your_api_key"
+Replace "your_api_key" with your actual API key.
+After adding the line, restart your terminal or run 'source ${configFile}' to apply the changes.`;
+  }
+
+  protected static async promptForApiKey(service: ApiService): Promise<string> {
     const key: string = await Secret.prompt({
       message: `Enter your ${service} API Key:`,
       label: "API Key",
@@ -150,11 +159,12 @@ const ConfigService = {
     logSuccess(
       `${service} API key has been successfully validated and saved for this session`
     );
-    logInfo(infoMessage(service, this.shell));
+    logInfo(ConfigService.infoMessage(service));
 
     return key;
-  },
-  validateApiKey(service: ApiService, key: string): void {
+  }
+
+  static validateApiKey(service: ApiService, key: string): void {
     try {
       switch (service) {
         case "Codestral": {
@@ -176,7 +186,7 @@ const ConfigService = {
     } catch (error) {
       logError("Failed to validate and set API key:", (error as Error).message);
     }
-  },
-};
+  }
+}
 
 export default ConfigService;
