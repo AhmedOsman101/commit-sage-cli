@@ -41,10 +41,7 @@
     "lineWidth": 80,
     "bracketSameLine": true,
     "attributePosition": "multiline",
-    "includes": [
-      "**",
-      "!**/*.vue"
-    ],
+    "includes": ["**", "!**/*.vue"],
     "bracketSpacing": true
   },
   "linter": {
@@ -88,10 +85,7 @@
         "noThisInStatic": {
           "fix": "safe",
           "level": "off"
-        },
-        "useNumericLiterals": "error",
-        "noCommaOperator": "error",
-        "noArguments": "error"
+        }
       },
       "suspicious": {
         "noImplicitAnyLet": "warn",
@@ -110,11 +104,7 @@
           "fix": "safe",
           "level": "info",
           "options": {
-            "attributes": [
-              "classList",
-              "class",
-              "className"
-            ]
+            "attributes": ["classList", "class", "className"]
           }
         },
         "noAwaitInLoop": "warn",
