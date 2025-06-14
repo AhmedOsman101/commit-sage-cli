@@ -17,8 +17,10 @@ const CommandService = {
 
       const output = command.outputSync();
 
-      const stdout = new TextDecoder().decode(output.stdout).trim();
-      const stderr = new TextDecoder().decode(output.stderr).trim();
+      const decoder = new TextDecoder();
+
+      const stdout = decoder.decode(output.stdout).trim();
+      const stderr = decoder.decode(output.stderr).trim();
       const code = output.code;
 
       if (code !== 0) {
