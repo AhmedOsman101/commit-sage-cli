@@ -94,5 +94,5 @@ export function logSuccess(...data: unknown[]): void {
 }
 
 export function logDebug(...data: unknown[]): void {
-  console.info(magenta(`[DEBUG] ${makeOutput(...data)}`));
+  console.log(magenta(`[DEBUG] ${makeOutput(...data)}`));
 }
