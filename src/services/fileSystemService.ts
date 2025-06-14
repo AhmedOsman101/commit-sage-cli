@@ -1,5 +1,6 @@
+import { dirname } from "node:path";
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
-import { configPath } from "../lib/constants.ts";
+import { CONFIG_PATH } from "../lib/constants.ts";
 
 const FileSystemService = {
   async fileExists(path: string): Promise<Result<boolean>> {
@@ -60,7 +61,7 @@ const FileSystemService = {
   },
   async createFile(path: string): Promise<Result<Deno.FsFile>> {
     try {
-      const dir = configPath.substring(0, configPath.lastIndexOf("/"));
+      const dir = dirname(CONFIG_PATH);
 
       const { ok: dirExists, error: dirExistsError } =
         await this.dirExists(dir);
