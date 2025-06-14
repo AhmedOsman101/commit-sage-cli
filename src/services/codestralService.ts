@@ -33,7 +33,7 @@ class CodestralService extends ModelService {
           "content-type": "application/json",
           Authorization: `Bearer ${apiKey}`,
         },
-        timeout: 30000,
+        timeout: 30_000,
       };
 
       const payload = {

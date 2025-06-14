@@ -1,8 +1,8 @@
 import { a } from "@arrirpc/schema";
 import { ErrFromText, isErr, Ok, type Result } from "lib-result";
 import type { Config } from "../lib/configServiceTypes.d.ts";
-import { configPath } from "../lib/constants.ts";
-import { logError, logWarning } from "../lib/Logger.ts";
+import { CONFIG_PATH } from "../lib/constants.ts";
+import { logError, logWarning } from "../lib/logger.ts";
 
 const INF = Number.POSITIVE_INFINITY;
 const NINF = Number.NEGATIVE_INFINITY;
@@ -160,7 +160,7 @@ const ConfigValidationService = {
       if (Array.isArray(configContent)) {
         logWarning("Configuration file's structure is invalid");
         logWarning(
-          `Delete the config file located at ${configPath} to generate a new one`
+          `Delete the config file located at ${CONFIG_PATH} to generate a new one`
         );
         Deno.exit(1);
       }
@@ -169,7 +169,7 @@ const ConfigValidationService = {
       if (Object.keys(configContent).length === 0) {
         logWarning("Configuration file is Empty");
         logWarning(
-          `Delete the config file located at ${configPath} to generate a new one`
+          `Delete the config file located at ${CONFIG_PATH} to generate a new one`
         );
         Deno.exit(1);
       }

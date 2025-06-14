@@ -6,7 +6,7 @@ import type {
   CommitMessage,
   ErrorWithResponse,
 } from "../lib/index.d.ts";
-import { logWarning } from "../lib/Logger.ts";
+import { logWarning } from "../lib/logger.ts";
 import ConfigService from "./configService.ts";
 
 export abstract class ModelService {

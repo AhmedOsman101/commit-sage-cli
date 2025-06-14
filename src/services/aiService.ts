@@ -1,16 +1,16 @@
-import { errorMessages } from "../lib/constants.ts";
+import { ERROR_MESSAGES } from "../lib/constants.ts";
 import type { CommitMessage } from "../lib/index.d.ts";
-import { logError } from "../lib/Logger.ts";
+import { logError } from "../lib/logger.ts";
 import CodestralService from "./codestralService.ts";
 import ConfigService from "./configService.ts";
 import GeminiService from "./geminiService.ts";
 import GitBlameAnalyzer from "./gitBlameAnalyzer.ts";
 import GitService from "./gitService.ts";
 import OllamaService from "./ollamaService.ts";
-import OpenAIService from "./openaiService.ts";
+import OpenAiService from "./openaiService.ts";
 import PromptService from "./promptService.ts";
 
-const MAX_DIFF_LENGTH = 100000;
+const MAX_DIFF_LENGTH = 100_000;
 
 const AiService = {
   truncateDiff(diff: string): string {
@@ -24,7 +24,7 @@ const AiService = {
     blameAnalysis: string
   ): Promise<CommitMessage> {
     try {
-      if (!diff) throw new Error(errorMessages.noChanges);
+      if (!diff) throw new Error(ERROR_MESSAGES.noChanges);
 
       const truncatedDiff = this.truncateDiff(diff);
       const prompt = await PromptService.generatePrompt(
@@ -41,7 +41,7 @@ const AiService = {
 
       switch (provider) {
         case "openai":
-          return await OpenAIService.generateCommitMessage(prompt);
+          return await OpenAiService.generateCommitMessage(prompt);
         case "codestral":
           return await CodestralService.generateCommitMessage(prompt);
         case "ollama":

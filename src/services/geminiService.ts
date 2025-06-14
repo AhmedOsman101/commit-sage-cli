@@ -1,5 +1,5 @@
 import axios, { type AxiosError } from "axios";
-import { errorMessages } from "../lib/constants.ts";
+import { ERROR_MESSAGES } from "../lib/constants.ts";
 import type { CommitMessage } from "../lib/index.d.ts";
 import { ConfigurationError } from "../models/errors.ts";
 import ConfigService from "./configService.ts";
@@ -35,7 +35,7 @@ class GeminiService extends ModelService {
         headers: {
           "content-type": "application/json",
         },
-        timeout: 30000,
+        timeout: 30_000,
       };
 
       const payload = {
@@ -70,20 +70,20 @@ class GeminiService extends ModelService {
               // If this is the first attempt and the key is invalid, request a new key and try again
               return GeminiService.generateCommitMessage(prompt, attempt + 1);
             }
-            throw new Error(errorMessages.authenticationError);
+            throw new Error(ERROR_MESSAGES.authenticationError);
           case 402:
-            throw new Error(errorMessages.paymentRequired);
+            throw new Error(ERROR_MESSAGES.paymentRequired);
           case 429:
-            throw new Error(errorMessages.rateLimitExceeded);
+            throw new Error(ERROR_MESSAGES.rateLimitExceeded);
           case 422:
             throw new Error(
-              data.error?.message || errorMessages.invalidRequest
+              data.error?.message || ERROR_MESSAGES.invalidRequest
             );
           case 500:
-            throw new Error(errorMessages.serverError);
+            throw new Error(ERROR_MESSAGES.serverError);
           default:
             throw new Error(
-              `${errorMessages.apiError.replace("{0}", String(status))}: ${data.error?.message || "Unknown error"}`
+              `${ERROR_MESSAGES.apiError.replace("{0}", String(status))}: ${data.error?.message || "Unknown error"}`
             );
         }
       }
@@ -94,7 +94,7 @@ class GeminiService extends ModelService {
         axiosError.code === "ENOTFOUND"
       ) {
         throw new Error(
-          errorMessages.networkError.replace(
+          ERROR_MESSAGES.networkError.replace(
             "{0}",
             "Connection failed. Please check your internet connection."
           )
@@ -107,7 +107,7 @@ class GeminiService extends ModelService {
       }
 
       throw new Error(
-        errorMessages.networkError.replace("{0}", axiosError.message)
+        ERROR_MESSAGES.networkError.replace("{0}", axiosError.message)
       );
     }
   }

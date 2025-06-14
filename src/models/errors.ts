@@ -42,7 +42,7 @@ export class ApiKeyNotSetError extends Error {
   }
 }
 
-export class OpenAIError extends Error {
+export class OpenAiError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "OpenAIError";

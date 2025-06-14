@@ -36,7 +36,7 @@ class OllamaService extends ModelService {
       headers: {
         "content-type": "application/json",
       },
-      timeout: 30000,
+      timeout: 30_000,
     };
 
     const payload = {

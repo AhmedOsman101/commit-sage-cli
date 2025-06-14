@@ -1,6 +1,6 @@
 import * as path from "node:path";
-import { errorMessages, repoPath } from "../lib/constants.ts";
-import { logError } from "../lib/Logger.ts";
+import { ERROR_MESSAGES, REPO_PATH } from "../lib/constants.ts";
+import { logError } from "../lib/logger.ts";
 import CommandService from "./commandService.ts";
 import FileSystemService from "./fileSystemService.ts";
 import GitService from "./gitService.ts";
@@ -17,17 +17,17 @@ type BlameInfo = {
 const GitBlameAnalyzer = {
   async getGitBlame(filePath: string): Promise<BlameInfo[]> {
     try {
-      const absoluteFilePath = path.resolve(repoPath as string, filePath);
+      const absoluteFilePath = path.resolve(REPO_PATH, filePath);
       if (!(await FileSystemService.fileExists(absoluteFilePath))) {
-        throw new Error(`${errorMessages.fileNotFound}: ${absoluteFilePath}`);
+        throw new Error(`${ERROR_MESSAGES.fileNotFound}: ${absoluteFilePath}`);
       }
 
       if (!GitService.hasHead()) {
-        throw new Error(errorMessages.noCommitsYet);
+        throw new Error(ERROR_MESSAGES.noCommitsYet);
       }
 
       if (GitService.isNewFile(filePath)) {
-        throw new Error(errorMessages.fileNotCommitted);
+        throw new Error(ERROR_MESSAGES.fileNotCommitted);
       }
       const blameOutput = this.executeGitBlame(filePath);
       return this.parseBlameOutput(blameOutput);
@@ -74,7 +74,7 @@ const GitBlameAnalyzer = {
     const { ok: output, error } = CommandService.execute(
       "git",
       ["blame", "--line-porcelain", filePath.replaceAll('"', "")],
-      repoPath
+      REPO_PATH
     );
 
     if (error !== undefined) throw error;
@@ -182,15 +182,15 @@ const GitBlameAnalyzer = {
   getBlameInfo(filePath: string): BlameInfo[] {
     try {
       if (!GitService.hasHead()) {
-        throw new Error(errorMessages.noCommitsYet);
+        throw new Error(ERROR_MESSAGES.noCommitsYet);
       }
 
       if (GitService.isNewFile(filePath)) {
-        throw new Error(errorMessages.fileNotCommitted);
+        throw new Error(ERROR_MESSAGES.fileNotCommitted);
       }
 
       if (GitService.isFileDeleted(filePath)) {
-        throw new Error(errorMessages.fileDeleted);
+        throw new Error(ERROR_MESSAGES.fileDeleted);
       }
 
       const blameOutput = GitBlameAnalyzer.executeGitBlame(filePath);

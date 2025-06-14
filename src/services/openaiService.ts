@@ -1,11 +1,11 @@
 import axios, { type AxiosError } from "axios";
-import { errorMessages } from "../lib/constants.ts";
+import { ERROR_MESSAGES } from "../lib/constants.ts";
 import type { CommitMessage } from "../lib/index.d.ts";
-import { ConfigurationError, OpenAIError } from "../models/errors.ts";
+import { ConfigurationError, OpenAiError } from "../models/errors.ts";
 import ConfigService from "./configService.ts";
 import { ModelService } from "./modelService.ts";
 
-type OpenAIResponse = {
+type OpenAiResponse = {
   choices: Array<{
     message: {
       content: string;
@@ -22,7 +22,7 @@ type ModelsResponse = {
 
 type ApiHeaders = Record<string, string>;
 
-class OpenAIService extends ModelService {
+class OpenAiService extends ModelService {
   private static readonly modelsPath = "/models";
 
   static override async generateCommitMessage(
@@ -56,13 +56,13 @@ class OpenAIService extends ModelService {
         maxTokens: 1024,
       };
 
-      const response = await axios.post<OpenAIResponse>(
+      const response = await axios.post<OpenAiResponse>(
         `${baseUrl}/chat/completions`,
         payload,
         { headers }
       );
 
-      const message = OpenAIService.extractCommitMessage(response.data);
+      const message = OpenAiService.extractCommitMessage(response.data);
 
       return { message, model };
     } catch (error) {
@@ -76,22 +76,22 @@ class OpenAIService extends ModelService {
         switch (status) {
           case 401:
             if (attempt === 1) {
-              return OpenAIService.generateCommitMessage(prompt, attempt + 1);
+              return OpenAiService.generateCommitMessage(prompt, attempt + 1);
             }
-            throw new OpenAIError(errorMessages.authenticationError);
+            throw new OpenAiError(ERROR_MESSAGES.authenticationError);
           case 402:
-            throw new OpenAIError(errorMessages.paymentRequired);
+            throw new OpenAiError(ERROR_MESSAGES.paymentRequired);
           case 429:
-            throw new OpenAIError(errorMessages.rateLimitExceeded);
+            throw new OpenAiError(ERROR_MESSAGES.rateLimitExceeded);
           case 422:
-            throw new OpenAIError(
-              data.error?.message || errorMessages.invalidRequest
+            throw new OpenAiError(
+              data.error?.message || ERROR_MESSAGES.invalidRequest
             );
           case 500:
-            throw new OpenAIError(errorMessages.serverError);
+            throw new OpenAiError(ERROR_MESSAGES.serverError);
           default:
-            throw new OpenAIError(
-              `${errorMessages.apiError.replace("{0}", String(status))}: ${data.error?.message || "Unknown error"}`
+            throw new OpenAiError(
+              `${ERROR_MESSAGES.apiError.replace("{0}", String(status))}: ${data.error?.message || "Unknown error"}`
             );
         }
       }
@@ -101,8 +101,8 @@ class OpenAIService extends ModelService {
         axiosError.code === "ETIMEDOUT" ||
         axiosError.code === "ENOTFOUND"
       ) {
-        throw new OpenAIError(
-          errorMessages.networkError.replace(
+        throw new OpenAiError(
+          ERROR_MESSAGES.networkError.replace(
             "{0}",
             "Connection failed. Please check your internet connection."
           )
@@ -111,11 +111,11 @@ class OpenAIService extends ModelService {
 
       // If the key is not set and this is the first attempt
       if (error instanceof ConfigurationError && attempt === 1) {
-        return OpenAIService.generateCommitMessage(prompt, attempt + 1);
+        return OpenAiService.generateCommitMessage(prompt, attempt + 1);
       }
 
-      throw new OpenAIError(
-        errorMessages.networkError.replace("{0}", axiosError.message)
+      throw new OpenAiError(
+        ERROR_MESSAGES.networkError.replace("{0}", axiosError.message)
       );
     }
   }
@@ -131,7 +131,7 @@ class OpenAIService extends ModelService {
       };
 
       const response = await axios.get<ModelsResponse>(
-        `${baseUrl}${OpenAIService.modelsPath}`,
+        `${baseUrl}${OpenAiService.modelsPath}`,
         { headers }
       );
 
@@ -147,19 +147,19 @@ class OpenAIService extends ModelService {
   }
 
   protected static override extractCommitMessage(
-    response: OpenAIResponse
+    response: OpenAiResponse
   ): string {
     if (!response.choices?.[0]?.message?.content) {
-      throw new OpenAIError("Unexpected response format from OpenAI API");
+      throw new OpenAiError("Unexpected response format from OpenAI API");
     }
 
     let content = response.choices[0].message.content.trim();
 
-    // Remove <think> tags for DeepSeek R1 model support
+    // Remove <think> tags for thinking models support
     content = content.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
 
     return content;
   }
 }
 
-export default OpenAIService;
+export default OpenAiService;
