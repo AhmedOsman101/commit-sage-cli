@@ -1,9 +1,8 @@
 import { Buffer } from "node:buffer";
-import * as fs from "node:fs";
 import * as path from "node:path";
-import { Err, ErrFromText, Ok, type Result } from "lib-result";
+import { Err, ErrFromText, isErr, Ok, type Result } from "lib-result";
 import type { CommandOutput } from "../lib/index.d.ts";
-import { logError } from "../lib/Logger.ts";
+import { logError } from "../lib/logger.ts";
 import { NoChangesDetectedError } from "../models/errors.ts";
 import CommandService from "./commandService.ts";
 
@@ -28,18 +27,18 @@ const STAGED_STATUS_CODES: GitStatusCode[] = [
 class GitService {
   static repoPath = "";
 
-  static initialize(): string | undefined {
-    const { ok: output, error } = this.getRepoPath();
+  static initialize(): string {
+    const { ok: output, error } = GitService.getRepoPath();
 
     if (error !== undefined) logError(error.message);
-    this.setRepoPath(output);
+    GitService.setRepoPath(output);
     return output;
   }
   static execGit(args: string[]): Result<CommandOutput> {
     const { ok: output, error } = CommandService.execute(
       "git",
       args,
-      this.repoPath
+      GitService.repoPath
     );
     if (error !== undefined) return Err(error);
 
@@ -58,7 +57,7 @@ class GitService {
     return hash.substring(0, 7);
   }
   static hasHead(): boolean {
-    const { ok: output, error } = this.execGit(["rev-parse", "HEAD"]);
+    const { ok: output, error } = GitService.execGit(["rev-parse", "HEAD"]);
     if (error !== undefined) return false;
     return output.code === 0;
   }
@@ -83,16 +82,15 @@ class GitService {
         throw new Error(`Invalid change type: ${type}`);
     }
 
-    const { ok: output, error } = this.execGit(command);
+    const { ok: output, error } = GitService.execGit(command);
     if (error !== undefined) {
-      console.error(`Error checking for ${type} changes`);
-      return false;
+      logError(`Error checking for ${type} changes`);
     }
 
     return output.stdout.trim().length > 0;
   }
   static isSubmodule(file: string): boolean {
-    const { ok: output, error } = this.execGit([
+    const { ok: output, error } = GitService.execGit([
       "ls-files",
       "--stage",
       "--",
@@ -104,15 +102,15 @@ class GitService {
   }
   static async getDiff(onlyStagedChanges: boolean): Promise<string> {
     try {
-      const hasHead = this.hasHead();
+      const hasHead = GitService.hasHead();
 
-      const hasStagedChanges = this.hasChanges("staged");
+      const hasStagedChanges = GitService.hasChanges("staged");
 
-      const hasUnstagedChanges = this.hasChanges("unstaged");
+      const hasUnstagedChanges = GitService.hasChanges("unstaged");
 
-      const hasUntrackedFiles = this.hasChanges("untracked");
+      const hasUntrackedFiles = GitService.hasChanges("untracked");
 
-      const hasDeletedFiles = hasHead && this.hasChanges("deleted");
+      const hasDeletedFiles = hasHead && GitService.hasChanges("deleted");
 
       if (
         !hasStagedChanges &&
@@ -127,34 +125,32 @@ class GitService {
       // Skip submodule changes
       // If we only want staged changes and there are some, return only those
       if (onlyStagedChanges && hasStagedChanges) {
-        const { ok: output, error } = this.execGit([
+        const diffResult = GitService.execGit([
           "diff",
           "--cached",
           "--name-only",
         ]);
-        if (error !== undefined) throw error;
+        if (isErr(diffResult)) throw diffResult.error;
 
-        const { stdout: stagedFiles } = output;
+        const { stdout: stagedFiles } = diffResult.ok;
 
         const stagedFilesArray = stagedFiles
           .split("\n")
           .filter(file => file.trim());
 
         for (const file of stagedFilesArray) {
-          if (!this.isSubmodule(file)) {
-            const { ok: output, error } = this.execGit([
+          if (!GitService.isSubmodule(file)) {
+            const diffCached = GitService.execGit([
               "diff",
               "--cached",
               "--",
               file,
             ]);
-            if (error !== undefined) throw error;
+            if (isErr(diffCached)) throw diffCached.error;
 
-            const { stdout: fileDiff } = output;
+            const { stdout: fileDiff } = diffCached.ok;
 
-            if (fileDiff.trim()) {
-              diffs.push(fileDiff);
-            }
+            if (fileDiff.trim()) diffs.push(fileDiff);
           }
         }
         return diffs.join("\n\n").trim();
@@ -162,32 +158,35 @@ class GitService {
 
       // Otherwise, get all changes
       if (hasStagedChanges) {
-        const { ok: output, error } = this.execGit([
+        const diffResult = GitService.execGit([
           "diff",
           "--cached",
           "--name-only",
         ]);
-        if (error !== undefined) {
-          throw new Error(`${error.message} hasStagedChanges`);
+        if (isErr(diffResult)) {
+          throw new Error(`${diffResult.error.message} hasStagedChanges`);
         }
-        const { stdout: stagedFiles } = output;
+        const { stdout: stagedFiles } = diffResult.ok;
 
         const stagedFilesArray = stagedFiles
           .split("\n")
           .filter(file => file.trim());
 
         for (const file of stagedFilesArray) {
-          if (!this.isSubmodule(file)) {
-            const { ok: output, error } = this.execGit([
+          if (!GitService.isSubmodule(file)) {
+            const diffCached = GitService.execGit([
               "diff",
               "--cached",
               "--",
               file,
             ]);
-            if (error !== undefined)
-              throw new Error(`${error.message} hasStagedChanges ${file} loop`);
 
-            const { stdout: fileDiff } = output;
+            if (isErr(diffCached)) {
+              throw new Error(
+                `${diffCached.error.message} hasStagedChanges ${file} loop`
+              );
+            }
+            const { stdout: fileDiff } = diffCached.ok;
 
             if (fileDiff.trim()) {
               diffs.push(`# Staged changes:\n${fileDiff}`);
@@ -197,22 +196,22 @@ class GitService {
       }
 
       if (hasUnstagedChanges) {
-        const { ok: output, error } = this.execGit(["diff", "--name-only"]);
+        const diffResult = GitService.execGit(["diff", "--name-only"]);
 
-        if (error !== undefined) throw error;
+        if (isErr(diffResult)) throw diffResult.error;
 
-        const { stdout: unstagedFiles } = output;
+        const { stdout: unstagedFiles } = diffResult.ok;
 
         const unstagedFilesArray = unstagedFiles
           .split("\n")
           .filter(file => file.trim());
 
         for (const file of unstagedFilesArray) {
-          if (!this.isSubmodule(file)) {
-            const { ok: output, error } = this.execGit(["diff", "--", file]);
-            if (error !== undefined) throw error;
+          if (!GitService.isSubmodule(file)) {
+            const diffUnstaged = GitService.execGit(["diff", "--", file]);
+            if (isErr(diffUnstaged)) throw diffUnstaged.error;
 
-            const { stdout: fileDiff } = output;
+            const { stdout: fileDiff } = diffUnstaged.ok;
 
             if (fileDiff.trim()) {
               diffs.push(`# Unstaged changes:\n${fileDiff}`);
@@ -222,14 +221,14 @@ class GitService {
       }
 
       if (hasUntrackedFiles) {
-        const { ok: output, error } = this.execGit([
+        const diffResult = GitService.execGit([
           "ls-files",
           "--others",
           "--exclude-standard",
         ]);
 
-        if (error !== undefined) throw error;
-        const { stdout: untrackedFiles } = output;
+        if (isErr(diffResult)) throw diffResult.error;
+        const { stdout: untrackedFiles } = diffResult.ok;
 
         const untrackedDiff = await Promise.all(
           untrackedFiles
@@ -238,21 +237,18 @@ class GitService {
             .map(async file => {
               try {
                 // Read the content of the new file
-                const content = await fs.promises.readFile(
-                  path.join(this.repoPath, file),
-                  "utf-8"
+                const content = await Deno.readTextFile(
+                  path.join(GitService.repoPath, file)
                 );
                 const lines = content.split("\n");
                 const contentDiff = lines
                   .map((line: string) => `+${line}`)
                   .join("\n");
-                return `diff --git a/${file} b/${file}\nnew file mode 100644\nindex 0000000..${this.calculateFileHash(content)}\n--- /dev/null\n+++ b/${file}\n@@ -0,0 +1,${lines.length} @@\n${contentDiff}`;
+                return `diff --git a/${file} b/${file}\nnew file mode 100644\nindex 0000000..${GitService.calculateFileHash(content)}\n--- /dev/null\n+++ b/${file}\n@@ -0,0 +1,${lines.length} @@\n${contentDiff}`;
               } catch (error) {
-                void console.error(
-                  `Error reading new file ${file}:`,
-                  error as Error
+                logError(
+                  `Error reading new file ${file}: ${(error as Error).message}`
                 );
-                return "";
               }
             })
         );
@@ -263,31 +259,30 @@ class GitService {
       }
 
       if (hasDeletedFiles) {
-        const { ok: output, error } = this.execGit(["ls-files", "--deleted"]);
+        const diffResult = GitService.execGit(["ls-files", "--deleted"]);
 
-        if (error !== undefined) throw error;
-        const { stdout: deletedFiles } = output;
+        if (isErr(diffResult)) throw diffResult.error;
+        const { stdout: deletedFiles } = diffResult.ok;
 
-        const deletedDiff = await Promise.all(
-          deletedFiles
-            .split("\n")
-            .filter(file => file.trim())
-            .map(file => {
-              try {
-                const { ok: output, error } = this.execGit([
-                  "show",
-                  `HEAD:${file}`,
-                ]);
+        const deletedDiff = deletedFiles
+          .split("\n")
+          .filter(file => file.trim())
+          .map(file => {
+            try {
+              const { ok: output, error } = GitService.execGit([
+                "show",
+                `HEAD:${file}`,
+              ]);
 
-                if (error !== undefined) throw error;
-                const { stdout: oldContent } = output;
+              if (error !== undefined) throw error;
+              const { stdout: oldContent } = output;
 
-                return `diff --git a/${file} b/${file}\ndeleted file mode 100644\n--- a/${file}\n+++ /dev/null\n@@ -1 +0,0 @@\n-${oldContent.trim()}\n`;
-              } catch {
-                return "";
-              }
-            })
-        );
+              return `diff --git a/${file} b/${file}\ndeleted file mode 100644\n--- a/${file}\n+++ /dev/null\n@@ -1 +0,0 @@\n-${oldContent.trim()}\n`;
+            } catch {
+              return "";
+            }
+          });
+
         const validDeletedDiffs = deletedDiff.filter(diff => diff.trim());
         if (validDeletedDiffs.length > 0) {
           diffs.push(`# Deleted files:\n${validDeletedDiffs.join("\n")}`);
@@ -306,7 +301,10 @@ class GitService {
   }
   static getChangedFiles(onlyStaged = false): string[] {
     try {
-      const { ok: output, error } = this.execGit(["status", "--porcelain"]);
+      const { ok: output, error } = GitService.execGit([
+        "status",
+        "--porcelain",
+      ]);
 
       if (error !== undefined) throw error;
 
@@ -339,13 +337,12 @@ class GitService {
           return filePath;
         });
     } catch (error) {
-      void console.error("Error getting changed files:", error as Error);
-      return [];
+      logError(`Error getting changed files: ${(error as Error).message}`);
     }
   }
   static isNewFile(filePath: string): boolean {
     const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
-    const { ok: output, error } = this.execGit([
+    const { ok: output, error } = GitService.execGit([
       "status",
       "--porcelain",
       normalizedPath,
@@ -360,7 +357,7 @@ class GitService {
   }
   static isFileDeleted(filePath: string): boolean {
     const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
-    const { ok: output, error } = this.execGit([
+    const { ok: output, error } = GitService.execGit([
       "status",
       "--porcelain",
       normalizedPath,
@@ -388,9 +385,10 @@ class GitService {
     return stdout.startsWith("true");
   }
   static getRepoPath(): Result<string> {
-    if (!this.isGitRepo()) return ErrFromText("Directory is not a git repo");
+    if (!GitService.isGitRepo())
+      return ErrFromText("Directory is not a git repo");
 
-    const { ok: output, error } = this.execGit([
+    const { ok: output, error } = GitService.execGit([
       "rev-parse",
       "--show-toplevel",
     ]);
@@ -404,7 +402,7 @@ class GitService {
     return Ok(output.stdout);
   }
   static setRepoPath(value: string) {
-    this.repoPath = value;
+    GitService.repoPath = value;
   }
 }
 
