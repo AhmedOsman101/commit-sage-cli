@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/nursery/noAwaitInLoop: intended */
 
+import { basename } from "node:path";
 import { Secret } from "@cliffy/prompt/secret";
 import { Err, ErrFromText, isErr, Ok, type Result } from "lib-result";
 import type {
@@ -9,8 +10,8 @@ import type {
   ConfigSection,
   ConfigValue,
 } from "../lib/configServiceTypes.d.ts";
-import { configPath, defaultConfig } from "../lib/constants.ts";
-import { logError, logInfo, logSuccess } from "../lib/Logger.ts";
+import { CONFIG_PATH, DEFAULT_CONFIG } from "../lib/constants.ts";
+import { logError, logInfo, logSuccess } from "../lib/logger.ts";
 import { AiServiceError, ConfigurationError } from "../models/errors.ts";
 import ConfigValidationService from "./configValidationService.ts";
 import FileSystemService from "./fileSystemService.ts";
@@ -21,13 +22,13 @@ class ConfigService {
 
   static async createConfigFile(): Promise<Result<null>> {
     const { ok: file, error: createFileError } =
-      await FileSystemService.createFile(configPath);
+      await FileSystemService.createFile(CONFIG_PATH);
 
     if (createFileError !== undefined) return Err(createFileError);
 
     const { error: writeFileError } = await FileSystemService.writeFile(
-      configPath,
-      JSON.stringify(defaultConfig, null, 2),
+      CONFIG_PATH,
+      JSON.stringify(DEFAULT_CONFIG, null, 2),
       file
     );
     file.close();
@@ -41,7 +42,7 @@ class ConfigService {
     let checked = false;
     while (true) {
       const { ok: configFile, error } =
-        await FileSystemService.readFile(configPath);
+        await FileSystemService.readFile(CONFIG_PATH);
 
       if (error !== undefined) {
         if (checked) break;
@@ -72,7 +73,7 @@ class ConfigService {
     const { ok: config, error } = await ConfigService.load();
     if (error !== undefined) return Err(error);
 
-    const value = config[section][key] ?? defaultConfig[section][key];
+    const value = config[section][key] ?? DEFAULT_CONFIG[section][key];
 
     return Ok(value);
   }
@@ -91,7 +92,7 @@ class ConfigService {
     if (isErr(validation)) logError(validation.error.message);
 
     const writeResult = await FileSystemService.writeFile(
-      configPath,
+      CONFIG_PATH,
       JSON.stringify(config)
     );
 
@@ -103,8 +104,7 @@ class ConfigService {
   static async getApiKey(service: ApiService): Promise<string> {
     try {
       if (!ConfigService.shell) {
-        const parts = Deno.env.get("SHELL")?.split("/") || ["bash"];
-        ConfigService.shell = parts[parts.length - 1];
+        ConfigService.shell = basename(Deno.env.get("SHELL") ?? "bash");
       }
       const key =
         Deno.env.get(`${service.toUpperCase()}_API_KEY`) ||
@@ -131,15 +131,15 @@ class ConfigService {
       zsh: "~/.zshrc",
       fish: "~/.config/fish/config.fish",
     };
-    const configFile =
+    const shellConfigFile =
       shellConfigMap[ConfigService.shell.toLowerCase()] ||
       `${ConfigService.shell} config`;
 
     return `
-To set the ${service} API key for future use, add the following line to your ${configFile} file:
+To set the ${service} API key for future use, add the following line to your ${shellConfigFile} file:
   export ${service.toUpperCase()}_API_KEY="your_api_key"
 Replace "your_api_key" with your actual API key.
-After adding the line, restart your terminal or run 'source ${configFile}' to apply the changes.`;
+After adding the line, restart your terminal or run 'source ${shellConfigFile}' to apply the changes.`;
   }
 
   protected static async promptForApiKey(service: ApiService): Promise<string> {
