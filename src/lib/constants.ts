@@ -1,13 +1,34 @@
+import { homedir } from "node:os";
+import { join } from "node:path";
 import GitService from "../services/gitService.ts";
 import type { Config } from "./configServiceTypes.d.ts";
 
-const homedir = Deno.env.get("HOME");
+function getConfigPath(): string {
+  switch (Deno.build.os) {
+    case "freebsd":
+    case "netbsd":
+    case "darwin":
+    case "linux":
+      return join(`${HOME_DIR}/.config/commitSage/config.json`);
+    // biome-ignore lint/suspicious/noFallthroughSwitchClause: If no config dir is found, fall through to the default case
+    case "windows": {
+      const configDir = Deno.env.get("APPDATA");
+      if (configDir) {
+        return join(configDir, "commitSage", "config.json");
+      }
+    }
+    default:
+      return join(HOME_DIR, "commitSage", "config.json");
+  }
+}
 
-export const configPath = `${homedir}/.config/commitSage/config.json`;
+export const HOME_DIR: Readonly<string> = homedir();
 
-export const repoPath = GitService.initialize();
+export const CONFIG_PATH: Readonly<string> = getConfigPath();
 
-export const defaultConfig: Config = {
+export const REPO_PATH: Readonly<string> = GitService.initialize();
+
+export const DEFAULT_CONFIG: Readonly<Config> = {
   $schema:
     "https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/refs/heads/main/config.schema.json",
   general: {
@@ -41,23 +62,7 @@ export const defaultConfig: Config = {
   },
 };
 
-export const messages = {
-  fetchingDiff: "Fetching Git changes...",
-  analyzingChanges: "Analyzing code changes...",
-  generating: "Generating commit message...",
-  settingMessage: "Setting commit message...",
-  done: "Done!",
-  success: "Commit message generated using {0} model",
-  noStagedChanges:
-    "No staged changes to commit. Please stage your changes first.",
-  gitConfigError:
-    "Git user.name or user.email is not configured. Please configure Git before committing.",
-  checkingGitConfig: "Checking Git configuration...",
-  committing: "Committing changes...",
-  pushing: "Pushing changes...",
-};
-
-export const errorMessages = {
+export const ERROR_MESSAGES = {
   commandExecution: "Error in command execution:",
   generateCommitMessage: "Failed to generate commit message",
   apiError: "API Error: {0}",
@@ -82,4 +87,4 @@ export const errorMessages = {
   noCommitsYet: "Repository has no commits yet",
   fileNotCommitted: "File has not been committed yet",
   fileDeleted: "File has been deleted",
-};
+} as const;
