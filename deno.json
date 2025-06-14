@@ -21,7 +21,12 @@
   },
   "lint": {
     "rules": {
-      "exclude": ["no-unused-vars", "no-explicit-any", "ban-types"]
+      "exclude": [
+        "no-unused-vars",
+        "no-explicit-any",
+        "ban-types",
+        "no-fallthrough"
+      ]
     }
   },
   "nodeModulesDir": "auto"
