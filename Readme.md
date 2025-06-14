@@ -1,6 +1,6 @@
 # Commit Sage
 
-A powerful Deno CLI application that helps you generate meaningful commit messages by analyzing your Git changes.
+A powerful CLI tool that helps you generate meaningful commit messages with AI by analyzing your Git changes.
 
 ## Overview
 
