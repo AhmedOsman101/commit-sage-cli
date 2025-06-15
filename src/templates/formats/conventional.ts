@@ -1,45 +1,75 @@
 export const conventionalTemplate = {
   english: `Generate a commit message following the Conventional Commits format:
+
 <type>[optional scope]: <description>
 
 [optional body with bullet points]
 
-Rules:
-1. First line: type(scope): description (max 50 chars)
-2. For small changes use only first line
-3. For complex changes list key points in body:
-   - Each line starts with "- "
-   - Each line max 50 chars
-   - Limit to 5 bullet points
-   - Summarize changes concisely
+### Rules:
 
-Type selection rules:
-- docs: ANY changes to documentation files (*.md, docs/*, etc.)
-- feat: New features or significant functional changes
-- fix: Bug fixes and error corrections
-- style: Changes not affecting the code, e.g. formatting, semicolons, etc.
-- refactor: Code changes, neither fix a bug nor add a feature.
-- perf: Performance improvements
-- test: Adding or updating tests
-- build: Changes affecting the build system or external dependencies.
-- ci: CI/CD changes
-- chore: Updates to build configuration, libraries, and other maintenance tasks.
-- revert: Reverting a previous commit.
+1. **First line**: type(scope): description (max 50 chars)
+   - Use **imperative mood** for the description (e.g., "add" not "added").
+   - Scope should be in **lowercase**; description starts with a **lowercase letter**.
+2. **For small changes**, use only the first line.
+3. **For complex changes**, list key points in the body:
+   - Each line starts with "- " and is max 50 chars.
+   - Limit to 5 bullet points.
+   - Use **present tense** and **active voice**.
+   - Focus on **what** and **why**, not **how** (unless necessary).
+4. **References**: Optionally, reference issues or PRs (e.g., "Closes #123").
 
-Examples:
-Documentation change:
+### Type Selection Rules:
+
+Choose the most appropriate type based on the change:
+
+- **docs**: ANY changes to documentation files (*.md, docs/*, etc.)
+- **feat**: New features or significant functional changes
+- **fix**: Bug fixes and error corrections
+- **style**: Changes not affecting the code (e.g., formatting, semicolons)
+- **refactor**: Code changes that neither fix a bug nor add a feature
+- **perf**: Performance improvements
+- **test**: Adding or updating tests
+- **build**: Changes affecting the build system or external dependencies
+- **ci**: CI/CD changes
+- **chore**: Updates to build configuration, libraries, and other maintenance tasks
+- **revert**: Reverting a previous commit
+
+**Important**: The type is crucial for categorizing changes and may impact automated tools (e.g., changelog generation).
+
+### Examples:
+
+- **Documentation change**:
+
 docs: update installation and usage guides
 
-- Added new features description
-- Updated configuration section
-- Added usage examples
+- add new features description
+- update configuration section
+- add usage examples
 
-Feature change:
+- **Feature change**:
+
 feat(auth): add user authentication
 
-- Implemented OAuth2 provider integration
-- Created auth service module
-- Added session management`,
+- implement OAuth2 provider integration
+- create auth service module
+- add session management
+
+- **Fix change**:
+
+fix(api): resolve null pointer exception in user service
+
+- **Refactor change**:
+
+refactor(core): simplify error handling logic
+
+- **Test change**:
+
+test: add unit tests for authentication module
+
+### Additional Tips:
+
+- Keep commits focused on a **single logical change**, especially for complex changes.
+- For more details, refer to the [Conventional Commits specification](https://www.conventionalcommits.org/).`,
 
   russian: `Создайте сообщение коммита в формате Conventional Commits:
 <тип>[опциональная область]: <описание>
