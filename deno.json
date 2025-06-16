@@ -2,8 +2,8 @@
   "tasks": {
     "dev": "deno run -A --watch src/main.ts",
     "run": "deno run -A src/main.ts",
-    "format": "deno run -A npm:@biomejs/biome@2.0.0-beta.5 check --fix src/",
-    "format:check": "deno run -A npm:@biomejs/biome@2.0.0-beta.5 check src/",
+    "format": "pnpm dlx @biomejs/biome@2.0.0-beta.6 check --fix .",
+    "format:check": "pnpm dlx @biomejs/biome@2.0.0-beta.6 check .",
     "compile": "deno compile -A -o $HOME/.local/bin/commit-sage src/main.ts",
     "compile-dev": "deno compile -A -o $HOME/scripts/bin/commit-sage src/main.ts",
     "compile-windows": "deno compile -A -o bin/commit-sage --target x86_64-pc-windows-msvc src/main.ts",
@@ -28,6 +28,5 @@
         "no-fallthrough"
       ]
     }
-  },
-  "nodeModulesDir": "auto"
+  }
 }
