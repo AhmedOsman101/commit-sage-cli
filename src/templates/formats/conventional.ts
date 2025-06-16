@@ -9,7 +9,7 @@ export const conventionalTemplate = {
 
 1. **First line**: type(scope): description (max 50 chars)
    - Use **imperative mood** for the description (e.g., "add" not "added").
-   - Scope should be in **lowercase**; description starts with a **lowercase letter**.
+   - Description should start with a **lowercase letter**.
 2. **For small changes**, use only the first line.
 3. **For complex changes**, list key points in the body:
    - Each line starts with "- " and is max 50 chars.
