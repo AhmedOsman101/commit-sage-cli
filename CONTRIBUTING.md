@@ -26,7 +26,8 @@ deno task dev
 ## Making Changes
 
 - Ensure your changes pass all existing logic.
-- Format with `deno task format` before committing.
+- Format with `deno task format` before committing any changes.
+  - Requires `pnpm` to run Biome via `pnpm dlx`, since Deno does not currently support `devDependencies`.
 - Follow the [Conventional Commits](https://www.conventionalcommits.org/) format.
 
 ## Submitting a PR
@@ -36,8 +37,8 @@ deno task dev
 - Push your changes and open a pull request
 - Write a clear title and description of your changes
 
-<!-- ## Issues -->
+## Issues
 
-<!-- Use the issue templates when possible. For small enhancements, feel free to open a discussion first. -->
+Use the issue templates when possible. For small enhancements, feel free to open a discussion first.
 
 > "If you have questions or suggestions, feel free to [open an issue](https://github.com/AhmedOsman101/commit-sage-cli/issues) or [email me directly](mailto:ahmad.ali.othman@outlook.com).”
