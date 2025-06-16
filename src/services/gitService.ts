@@ -1,10 +1,14 @@
 import { Buffer } from "node:buffer";
 import * as path from "node:path";
-import { Err, ErrFromText, isErr, Ok, type Result } from "lib-result";
+import { Err, ErrFromText, Ok, type Result } from "lib-result";
+import {
+  NoChangesDetectedError,
+  NoRepositoriesFoundError,
+} from "../lib/errors.ts";
 import type { CommandOutput } from "../lib/index.d.ts";
 import { logError } from "../lib/logger.ts";
-import { NoChangesDetectedError } from "../models/errors.ts";
 import CommandService from "./commandService.ts";
+import FileSystemService from "./fileSystemService.ts";
 
 const GIT_STATUS_CODES = {
   modified: "M",
@@ -28,28 +32,24 @@ class GitService {
   static repoPath = "";
 
   static initialize(): string {
-    const { ok: output, error } = GitService.getRepoPath();
+    const repoPath = GitService.getRepoPath();
+    if (repoPath.isError()) logError(repoPath.error.message);
 
-    if (error !== undefined) logError(error.message);
-    GitService.setRepoPath(output);
-    return output;
+    GitService.setRepoPath(repoPath.ok);
+    return repoPath.ok;
   }
   static execGit(args: string[]): Result<CommandOutput> {
-    const { ok: output, error } = CommandService.execute(
-      "git",
-      args,
-      GitService.repoPath
-    );
-    if (error !== undefined) return Err(error);
+    const cmd = CommandService.execute("git", args, GitService.repoPath);
+    if (cmd.isError()) return Err(cmd.error);
 
-    const { stderr, code } = output;
+    const { stderr, code } = cmd.ok;
 
     if (code !== 0)
       return ErrFromText(
         `Git Command failed with code ${code}${stderr ? `: ${stderr}` : ""}`
       );
 
-    return Ok(output);
+    return Ok(cmd.ok);
   }
   static calculateFileHash(content: string): string {
     // Simple hash calculation for git index
@@ -57,9 +57,8 @@ class GitService {
     return hash.substring(0, 7);
   }
   static hasHead(): boolean {
-    const { ok: output, error } = GitService.execGit(["rev-parse", "HEAD"]);
-    if (error !== undefined) return false;
-    return output.code === 0;
+    const cmd = GitService.execGit(["rev-parse", "HEAD"]);
+    return cmd.isOk() && cmd.ok.code === 0;
   }
   static hasChanges(
     type: "staged" | "unstaged" | "untracked" | "deleted"
@@ -82,23 +81,17 @@ class GitService {
         throw new Error(`Invalid change type: ${type}`);
     }
 
-    const { ok: output, error } = GitService.execGit(command);
-    if (error !== undefined) {
+    const cmd = GitService.execGit(command);
+    if (cmd.isError()) {
       logError(`Error checking for ${type} changes`);
     }
 
-    return output.stdout.trim().length > 0;
+    return cmd.ok.stdout.trim().length > 0;
   }
   static isSubmodule(file: string): boolean {
-    const { ok: output, error } = GitService.execGit([
-      "ls-files",
-      "--stage",
-      "--",
-      file,
-    ]);
+    const cmd = GitService.execGit(["ls-files", "--stage", "--", file]);
 
-    if (error !== undefined) return false;
-    return output.stdout.includes("160000");
+    return cmd.isOk() && cmd.ok.stdout.includes("160000");
   }
   static async getDiff(onlyStagedChanges: boolean): Promise<string> {
     try {
@@ -130,7 +123,7 @@ class GitService {
           "--cached",
           "--name-only",
         ]);
-        if (isErr(diffResult)) throw diffResult.error;
+        if (diffResult.isError()) throw diffResult.error;
 
         const { stdout: stagedFiles } = diffResult.ok;
 
@@ -140,15 +133,12 @@ class GitService {
 
         for (const file of stagedFilesArray) {
           if (!GitService.isSubmodule(file)) {
-            const diffCached = GitService.execGit([
+            const { stdout: fileDiff } = GitService.execGit([
               "diff",
               "--cached",
               "--",
               file,
-            ]);
-            if (isErr(diffCached)) throw diffCached.error;
-
-            const { stdout: fileDiff } = diffCached.ok;
+            ]).unwrap();
 
             if (fileDiff.trim()) diffs.push(fileDiff);
           }
@@ -163,11 +153,12 @@ class GitService {
           "--cached",
           "--name-only",
         ]);
-        if (isErr(diffResult)) {
+
+        if (diffResult.isError()) {
           throw new Error(`${diffResult.error.message} hasStagedChanges`);
         }
-        const { stdout: stagedFiles } = diffResult.ok;
 
+        const { stdout: stagedFiles } = diffResult.ok;
         const stagedFilesArray = stagedFiles
           .split("\n")
           .filter(file => file.trim());
@@ -181,13 +172,13 @@ class GitService {
               file,
             ]);
 
-            if (isErr(diffCached)) {
+            if (diffCached.isError()) {
               throw new Error(
                 `${diffCached.error.message} hasStagedChanges ${file} loop`
               );
             }
-            const { stdout: fileDiff } = diffCached.ok;
 
+            const { stdout: fileDiff } = diffCached.ok;
             if (fileDiff.trim()) {
               diffs.push(`# Staged changes:\n${fileDiff}`);
             }
@@ -196,11 +187,10 @@ class GitService {
       }
 
       if (hasUnstagedChanges) {
-        const diffResult = GitService.execGit(["diff", "--name-only"]);
-
-        if (isErr(diffResult)) throw diffResult.error;
-
-        const { stdout: unstagedFiles } = diffResult.ok;
+        const { stdout: unstagedFiles } = GitService.execGit([
+          "diff",
+          "--name-only",
+        ]).unwrap();
 
         const unstagedFilesArray = unstagedFiles
           .split("\n")
@@ -208,10 +198,11 @@ class GitService {
 
         for (const file of unstagedFilesArray) {
           if (!GitService.isSubmodule(file)) {
-            const diffUnstaged = GitService.execGit(["diff", "--", file]);
-            if (isErr(diffUnstaged)) throw diffUnstaged.error;
-
-            const { stdout: fileDiff } = diffUnstaged.ok;
+            const { stdout: fileDiff } = GitService.execGit([
+              "diff",
+              "--",
+              file,
+            ]).unwrap();
 
             if (fileDiff.trim()) {
               diffs.push(`# Unstaged changes:\n${fileDiff}`);
@@ -221,14 +212,11 @@ class GitService {
       }
 
       if (hasUntrackedFiles) {
-        const diffResult = GitService.execGit([
+        const { stdout: untrackedFiles } = GitService.execGit([
           "ls-files",
           "--others",
           "--exclude-standard",
-        ]);
-
-        if (isErr(diffResult)) throw diffResult.error;
-        const { stdout: untrackedFiles } = diffResult.ok;
+        ]).unwrap();
 
         const untrackedDiff = await Promise.all(
           untrackedFiles
@@ -237,9 +225,10 @@ class GitService {
             .map(async file => {
               try {
                 // Read the content of the new file
-                const content = await Deno.readTextFile(
+                const content = await FileSystemService.readFile(
                   path.join(GitService.repoPath, file)
-                );
+                ).then(result => result.unwrap());
+
                 const lines = content.split("\n");
                 const contentDiff = lines
                   .map((line: string) => `+${line}`)
@@ -259,23 +248,20 @@ class GitService {
       }
 
       if (hasDeletedFiles) {
-        const diffResult = GitService.execGit(["ls-files", "--deleted"]);
-
-        if (isErr(diffResult)) throw diffResult.error;
-        const { stdout: deletedFiles } = diffResult.ok;
+        const { stdout: deletedFiles } = GitService.execGit([
+          "ls-files",
+          "--deleted",
+        ]).unwrap();
 
         const deletedDiff = deletedFiles
           .split("\n")
           .filter(file => file.trim())
           .map(file => {
             try {
-              const { ok: output, error } = GitService.execGit([
+              const { stdout: oldContent } = GitService.execGit([
                 "show",
                 `HEAD:${file}`,
-              ]);
-
-              if (error !== undefined) throw error;
-              const { stdout: oldContent } = output;
+              ]).unwrap();
 
               return `diff --git a/${file} b/${file}\ndeleted file mode 100644\n--- a/${file}\n+++ /dev/null\n@@ -1 +0,0 @@\n-${oldContent.trim()}\n`;
             } catch {
@@ -301,12 +287,7 @@ class GitService {
   }
   static getChangedFiles(onlyStaged = false): string[] {
     try {
-      const { ok: output, error } = GitService.execGit([
-        "status",
-        "--porcelain",
-      ]);
-
-      if (error !== undefined) throw error;
+      const output = GitService.execGit(["status", "--porcelain"]).unwrap();
 
       return output.stdout
         .split("\n")
@@ -342,64 +323,51 @@ class GitService {
   }
   static isNewFile(filePath: string): boolean {
     const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
-    const { ok: output, error } = GitService.execGit([
+    const { stdout } = GitService.execGit([
       "status",
       "--porcelain",
       normalizedPath,
-    ]);
-
-    if (error !== undefined) throw error;
-
-    const { stdout } = output;
+    ]).unwrap();
 
     const status = stdout.slice(0, 2);
     return status.startsWith("??") || status.startsWith("A ");
   }
   static isFileDeleted(filePath: string): boolean {
     const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
-    const { ok: output, error } = GitService.execGit([
+    const { stdout } = GitService.execGit([
       "status",
       "--porcelain",
       normalizedPath,
-    ]);
-
-    if (error !== undefined) throw error;
-
-    const { stdout } = output;
+    ]).unwrap();
 
     const status = stdout.slice(0, 2);
     return status === " D" || status === "D ";
   }
   static isGitRepo(): boolean {
-    const { ok: output, error } = CommandService.execute("git", [
+    const cmd = CommandService.execute("git", [
       "rev-parse",
       "--is-inside-work-tree",
     ]);
 
-    if (error !== undefined) return false;
-    const { stdout, stderr, code } = output;
+    if (cmd.isError()) return false;
 
-    if (code !== 0) return false;
-    if (stderr) return false;
-
-    return stdout.startsWith("true");
+    const { stdout, stderr, code } = cmd.ok;
+    return code === 0 && !stderr && stdout.startsWith("true");
   }
   static getRepoPath(): Result<string> {
-    if (!GitService.isGitRepo())
-      return ErrFromText("Directory is not a git repo");
+    if (!GitService.isGitRepo()) {
+      return Err(new NoRepositoriesFoundError());
+    }
 
-    const { ok: output, error } = GitService.execGit([
-      "rev-parse",
-      "--show-toplevel",
-    ]);
+    const cmd = GitService.execGit(["rev-parse", "--show-toplevel"]);
 
-    if (error !== undefined || output.stderr || output.code !== 0) {
+    if (cmd.isError() || cmd.ok.stderr || cmd.ok.code !== 0) {
       return ErrFromText(
         "Unable to determine the Git repository root directory."
       );
     }
 
-    return Ok(output.stdout);
+    return Ok(cmd.ok.stdout);
   }
   static setRepoPath(value: string) {
     GitService.repoPath = value;
