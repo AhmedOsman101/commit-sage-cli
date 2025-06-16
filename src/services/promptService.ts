@@ -4,17 +4,14 @@ import ConfigService from "./configService.ts";
 
 const PromptService = {
   async generatePrompt(diff: string, blameAnalysis: string): Promise<string> {
-    const { ok: format, error: formatError } = await ConfigService.get(
-      "commit",
-      "commitFormat"
+    const format = await ConfigService.get("commit", "commitFormat").then(
+      result => result.unwrap()
     );
 
-    if (formatError !== undefined) throw formatError;
-
-    const { ok: commitLanguage, error: commitLanguageError } =
-      await ConfigService.get("commit", "commitLanguage");
-
-    if (commitLanguageError !== undefined) throw commitLanguageError;
+    const commitLanguage = await ConfigService.get(
+      "commit",
+      "commitLanguage"
+    ).then(result => result.unwrap());
 
     const languagePrompt = PromptService.getLanguagePrompt(commitLanguage);
     const template = getTemplate(format, commitLanguage);

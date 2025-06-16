@@ -61,11 +61,9 @@ export abstract class ModelService {
     void logWarning(`Generation attempt ${attempt} failed:`, error);
     const { errorMessage, shouldRetry } = ModelService.handleApiError(error);
 
-    const { ok: maxRetries, error: maxRetriesError } = await ConfigService.get(
-      "general",
-      "maxRetries"
+    const maxRetries = await ConfigService.get("general", "maxRetries").then(
+      result => result.unwrap()
     );
-    if (maxRetriesError !== undefined) throw maxRetriesError;
 
     if (shouldRetry && attempt < maxRetries) {
       const delayMs = ModelService.calculateRetryDelay(attempt);
