@@ -1,5 +1,5 @@
-import { a } from "@arrirpc/schema";
-import { ErrFromText, isErr, Ok, type Result } from "lib-result";
+import { a, type ValidationException } from "@arrirpc/schema";
+import { ErrFromText, Ok, type Result } from "lib-result";
 import type { Config } from "../lib/configServiceTypes.d.ts";
 import { CONFIG_PATH } from "../lib/constants.ts";
 import { logError, logWarning } from "../lib/logger.ts";
@@ -77,7 +77,7 @@ const ConfigValidationService = {
       }
 
       return ErrFromText("URL must be string");
-    } catch (_error) {
+    } catch {
       return ErrFromText("Invalid URL");
     }
   },
@@ -114,7 +114,7 @@ const ConfigValidationService = {
   validateGeneral(general: object): Result<boolean> {
     if ("maxRetries" in general) {
       const maxRetries = this.validateInt(general.maxRetries);
-      if (isErr(maxRetries)) {
+      if (maxRetries.isError()) {
         logError(
           `Error at key general.maxRetries => ${maxRetries.error.message}`
         );
@@ -122,7 +122,7 @@ const ConfigValidationService = {
     }
     if ("initialRetryDelayMs" in general) {
       const validation = this.validateInt(general.initialRetryDelayMs);
-      if (isErr(validation)) {
+      if (validation.isError()) {
         logError(
           `Error at key general.initialRetryDelayMs => ${validation.error.message}`
         );
@@ -133,7 +133,7 @@ const ConfigValidationService = {
   validateModelUrl(model: object, name: "ollama" | "openai"): Result<boolean> {
     if ("baseUrl" in model) {
       const baseUrl = this.validateUrl(model.baseUrl);
-      if (isErr(baseUrl)) {
+      if (baseUrl.isError()) {
         logError(`Error at key ${name}.baseUrl => ${baseUrl.error.message}`);
       }
     }
@@ -149,9 +149,7 @@ const ConfigValidationService = {
           : config;
     } catch (e) {
       logError(
-        this.transformErrorMessage(
-          (e as { errors: { message: string }[] }).errors[0].message
-        )
+        this.transformErrorMessage((e as ValidationException).errors[0].message)
       );
     }
 
@@ -180,7 +178,7 @@ const ConfigValidationService = {
           configContent.$schema !== null
         ) {
           const validation = this.validateUrl(configContent.$schema);
-          if (isErr(validation)) {
+          if (validation.isError()) {
             logError(`Error at key $schema => ${validation.error.message}`);
           }
         }
