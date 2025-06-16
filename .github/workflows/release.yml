@@ -22,8 +22,36 @@ jobs:
           cache: true
           # ensures 'deno compile' is available on the runner
 
+      - name: Cache Biome
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/bin/biome
+          key: biome-${{ env.BIOME_VERSION }}-linux-x64
+          restore-keys: biome-${{ env.BIOME_VERSION }}-
+
+      - name: Install Biome
+        if: steps.cache-biome.outputs.cache-hit != 'true'
+        run: |
+          curl -L https://github.com/biomejs/biome/releases/download/%40biomejs%2Fbiome%40${{ env.BIOME_VERSION }}/biome-linux-x64 -o biome
+          chmod +x biome
+          mv biome /usr/local/bin/biome
+        env:
+          BIOME_VERSION: 2.0.0-beta.6  # Pin to a specific version
+
+      - name: Format code with Biome
+        run: biome check --fix .
+        # Formats all files in the project and writes changes
+
+      - name: Commit formatted files
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "style: format code with Biome" || echo "No changes to commit"
+          git push
+
       - name: Make release script executable
-        run: chmod +x ./release.sh
+        run: chmod +x release.sh
 
       - name: Build binaries
         run: ./release.sh
@@ -31,7 +59,7 @@ jobs:
       - name: Create Tag
         id: create_tag
         run: |
-          VERSION=$(cat commit-sage-cli/version.txt)
+          VERSION=$(cat version.txt)
           git tag v$VERSION
           git push origin v$VERSION
 
