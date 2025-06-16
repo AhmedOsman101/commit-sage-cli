@@ -1,6 +1,6 @@
 import axios from "axios";
+import { ConfigurationError } from "../lib/errors.ts";
 import type { CommitMessage, ErrorWithResponse } from "../lib/index.d.ts";
-import { ConfigurationError } from "../models/errors.ts";
 import ConfigService from "./configService.ts";
 import { ModelService } from "./modelService.ts";
 
@@ -20,11 +20,9 @@ class CodestralService extends ModelService {
     try {
       const apiKey: string = await ConfigService.getApiKey("Codestral");
 
-      const { ok: model, error: modelError } = await ConfigService.get(
-        "codestral",
-        "model"
+      const model = await ConfigService.get("codestral", "model").then(result =>
+        result.unwrap()
       );
-      if (modelError !== undefined) throw modelError;
 
       const apiUrl = "https://codestral.mistral.ai/v1/chat/completions";
 

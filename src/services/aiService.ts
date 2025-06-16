@@ -32,12 +32,9 @@ const AiService = {
         blameAnalysis
       );
 
-      const { ok: provider, error: providerError } = await ConfigService.get(
-        "provider",
-        "type"
+      const provider = await ConfigService.get("provider", "type").then(
+        result => result.unwrap()
       );
-
-      if (providerError !== undefined) throw providerError;
 
       switch (provider) {
         case "openai":
@@ -55,10 +52,10 @@ const AiService = {
   },
   async generateAndApplyMessage() {
     GitService.initialize();
-    const { ok: onlyStagedSetting, error: onlyStagedSettingError } =
-      await ConfigService.get("commit", "onlyStagedChanges");
-
-    if (onlyStagedSettingError !== undefined) throw onlyStagedSettingError;
+    const onlyStagedSetting = await ConfigService.get(
+      "commit",
+      "onlyStagedChanges"
+    ).then(result => result.unwrap());
 
     const hasStagedChanges = GitService.hasChanges("staged");
 

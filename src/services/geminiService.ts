@@ -1,7 +1,7 @@
 import axios, { type AxiosError } from "axios";
 import { ERROR_MESSAGES } from "../lib/constants.ts";
+import { ConfigurationError } from "../lib/errors.ts";
 import type { CommitMessage } from "../lib/index.d.ts";
-import { ConfigurationError } from "../models/errors.ts";
 import ConfigService from "./configService.ts";
 import { ModelService } from "./modelService.ts";
 
@@ -23,11 +23,9 @@ class GeminiService extends ModelService {
     try {
       const apiKey: string = await ConfigService.getApiKey("Gemini");
 
-      const { ok: model, error: modelError } = await ConfigService.get(
-        "gemini",
-        "model"
+      const model = await ConfigService.get("gemini", "model").then(result =>
+        result.unwrap()
       );
-      if (modelError !== undefined) throw modelError;
 
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
