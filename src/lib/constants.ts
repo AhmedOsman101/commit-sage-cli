@@ -4,10 +4,10 @@ import GitService from "../services/gitService.ts";
 import type { Config } from "./configServiceTypes.d.ts";
 
 function getConfigPath(): string {
-  switch (Deno.build.os) {
+  switch (OS) {
     case "freebsd":
     case "netbsd":
-    case "darwin":
+    case "darwin": // macOS
     case "linux":
       return join(`${HOME_DIR}/.config/commitSage/config.json`);
     // biome-ignore lint/suspicious/noFallthroughSwitchClause: If no config dir is found, fall through to the default case
@@ -21,6 +21,8 @@ function getConfigPath(): string {
       return join(HOME_DIR, "commitSage", "config.json");
   }
 }
+
+export const OS: Readonly<string> = Deno.build.os;
 
 export const HOME_DIR: Readonly<string> = homedir();
 

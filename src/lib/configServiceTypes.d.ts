@@ -30,8 +30,6 @@ type OpenaiConfig = {
   baseUrl: "https://api.openai.com/v1" | string;
 };
 
-export type CommitLanguage = "english" | "russian" | "chinese" | "japanese";
-
 // Configuration for commit-related settings
 type CommitConfig = {
   autoCommit: boolean;
@@ -46,6 +44,8 @@ type CommitConfig = {
 type ProviderConfig = {
   type: "gemini" | "codestral" | "openai" | "ollama";
 };
+
+export type CommitLanguage = "english" | "russian" | "chinese" | "japanese";
 
 // Main configuration type combining all sub-types
 export type Config = {
