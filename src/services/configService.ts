@@ -1,8 +1,6 @@
-/** biome-ignore-all lint/nursery/noAwaitInLoop: intended */
-
 import { basename } from "node:path";
 import { Secret } from "@cliffy/prompt/secret";
-import { Err, ErrFromText, isErr, Ok, type Result } from "lib-result";
+import { Err, ErrFromText, Ok, type Result } from "lib-result";
 import type {
   ApiService,
   Config,
@@ -10,9 +8,9 @@ import type {
   ConfigSection,
   ConfigValue,
 } from "../lib/configServiceTypes.d.ts";
-import { CONFIG_PATH, DEFAULT_CONFIG } from "../lib/constants.ts";
+import { CONFIG_PATH, DEFAULT_CONFIG, OS } from "../lib/constants.ts";
+import { AiServiceError, ConfigurationError } from "../lib/errors.ts";
 import { logError, logInfo, logSuccess } from "../lib/logger.ts";
-import { AiServiceError, ConfigurationError } from "../models/errors.ts";
 import ConfigValidationService from "./configValidationService.ts";
 import FileSystemService from "./fileSystemService.ts";
 import KeyValidationService from "./keyValidationService.ts";
@@ -20,45 +18,45 @@ import KeyValidationService from "./keyValidationService.ts";
 class ConfigService {
   protected static shell = "";
 
-  static async createConfigFile(): Promise<Result<null>> {
-    const { ok: file, error: createFileError } =
+  static async createConfigFile(): Promise<Result<boolean>> {
+    const { ok: file, error: creationError } =
       await FileSystemService.createFile(CONFIG_PATH);
 
-    if (createFileError !== undefined) return Err(createFileError);
+    if (creationError !== undefined) return Err(creationError);
 
-    const { error: writeFileError } = await FileSystemService.writeFile(
+    const writeResult = await FileSystemService.writeFile(
       CONFIG_PATH,
       JSON.stringify(DEFAULT_CONFIG, null, 2),
       file
     );
     file.close();
 
-    if (writeFileError !== undefined) return Err(writeFileError);
+    if (writeResult.isError()) return Err(writeResult.error);
 
-    return Ok(null);
+    return Ok(true);
   }
 
   static async load(): Promise<Result<Config>> {
     let checked = false;
     while (true) {
-      const { ok: configFile, error } =
+      const { ok: configContents, error } =
+        // biome-ignore lint/nursery/noAwaitInLoop: Inteded
         await FileSystemService.readFile(CONFIG_PATH);
 
       if (error !== undefined) {
         if (checked) break;
-        const { error: createConfigError } =
-          await ConfigService.createConfigFile();
-        if (createConfigError !== undefined) return Err(createConfigError);
+        const createConfigResult = await ConfigService.createConfigFile();
+        if (createConfigResult.isError()) return Err(createConfigResult.error);
         checked = true;
         continue;
       }
 
-      if (configFile === null) {
-        return ErrFromText("Config file is null after successful read");
+      if (!configContents) {
+        return ErrFromText("Config file is empty after successful read");
       }
 
-      const validation = ConfigValidationService.validate(configFile);
-      if (isErr(validation)) logError(validation.error.message);
+      const validation = ConfigValidationService.validate(configContents);
+      if (validation.isError()) logError(validation.error.message);
 
       return Ok(validation.ok);
     }
@@ -66,14 +64,14 @@ class ConfigService {
     return ErrFromText("Cannot create config file");
   }
 
-  static async get<T extends ConfigSection, G extends ConfigKey<T>>(
+  static async get<T extends ConfigSection, K extends ConfigKey<T>>(
     section: T,
-    key: G
-  ): Promise<Awaited<Result<ConfigValue<T, G>>>> {
-    const { ok: config, error } = await ConfigService.load();
-    if (error !== undefined) return Err(error);
+    key: K
+  ): Promise<Result<ConfigValue<T, K>>> {
+    const configResult = await ConfigService.load();
+    if (configResult.isError()) return Err(configResult.error);
 
-    const value = config[section][key] ?? DEFAULT_CONFIG[section][key];
+    const value = configResult.ok[section][key] ?? DEFAULT_CONFIG[section][key];
 
     return Ok(value);
   }
@@ -89,14 +87,14 @@ class ConfigService {
     config[section][key] = value;
 
     const validation = ConfigValidationService.validate(config);
-    if (isErr(validation)) logError(validation.error.message);
+    if (validation.isError()) logError(validation.error.message);
 
     const writeResult = await FileSystemService.writeFile(
       CONFIG_PATH,
       JSON.stringify(config)
     );
 
-    if (isErr(writeResult)) return Err(writeResult.error);
+    if (writeResult.isError()) return Err(writeResult.error);
 
     return Ok(true);
   }
@@ -107,7 +105,7 @@ class ConfigService {
         ConfigService.shell = basename(Deno.env.get("SHELL") ?? "bash");
       }
       const key =
-        Deno.env.get(`${service.toUpperCase()}_API_KEY`) ||
+        Deno.env.get(`${service.toUpperCase()}_API_KEY`) ??
         (await ConfigService.promptForApiKey(service));
 
       if (key) ConfigService.validateApiKey(service, key);
@@ -124,6 +122,26 @@ class ConfigService {
     }
   }
 
+  protected static getShell() {
+    if (!ConfigService.shell) {
+      const shellPath = Deno.env.get("SHELL");
+      if (shellPath) ConfigService.shell = basename(shellPath);
+      else
+        switch (OS) {
+          case "windows":
+            ConfigService.shell = "powershell";
+            break;
+          case "linux":
+            ConfigService.shell = "sh";
+            break;
+          case "darwin": // macOS
+            ConfigService.shell = "bash";
+            break;
+        }
+    }
+    return ConfigService.shell.toLowerCase();
+  }
+
   protected static infoMessage(service: ApiService) {
     // Map shell to common config files, with a fallback
     const shellConfigMap: Record<string, string> = {
@@ -132,8 +150,8 @@ class ConfigService {
       fish: "~/.config/fish/config.fish",
     };
     const shellConfigFile =
-      shellConfigMap[ConfigService.shell.toLowerCase()] ||
-      `${ConfigService.shell} config`;
+      shellConfigMap[ConfigService.getShell()] ||
+      `${ConfigService.getShell()} config`;
 
     return `
 To set the ${service} API key for future use, add the following line to your ${shellConfigFile} file:
@@ -150,15 +168,15 @@ After adding the line, restart your terminal or run 'source ${shellConfigFile}' 
       minLength: 32,
     });
 
-    const { error: validationErr } = KeyValidationService.baseValidation(key);
+    const validation = KeyValidationService.baseValidation(key);
 
-    if (validationErr !== undefined) {
-      throw new ConfigurationError(validationErr.message);
+    if (validation.isError()) {
+      throw new ConfigurationError(validation.error.message, {
+        cause: validation.error,
+      });
     }
 
-    logSuccess(
-      `${service} API key has been successfully validated and saved for this session`
-    );
+    logSuccess(`${service} API key has been set for this run`);
     logInfo(ConfigService.infoMessage(service));
 
     return key;
@@ -169,17 +187,23 @@ After adding the line, restart your terminal or run 'source ${shellConfigFile}' 
       switch (service) {
         case "Codestral": {
           const { error } = KeyValidationService.validateCodestralApiKey(key);
-          if (error !== undefined) throw new AiServiceError(error.message);
+          if (error !== undefined) {
+            throw new AiServiceError(error.message, { cause: error });
+          }
           break;
         }
         case "Gemini": {
           const { error } = KeyValidationService.validateGeminiApiKey(key);
-          if (error !== undefined) throw new AiServiceError(error.message);
+          if (error !== undefined) {
+            throw new AiServiceError(error.message, { cause: error });
+          }
           break;
         }
         case "OpenAI": {
           const { error } = KeyValidationService.validateOpenAIApiKey(key);
-          if (error !== undefined) throw new AiServiceError(error.message);
+          if (error !== undefined) {
+            throw new AiServiceError(error.message, { cause: error });
+          }
           break;
         }
       }
