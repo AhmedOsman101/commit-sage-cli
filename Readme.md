@@ -16,9 +16,9 @@ Commit Sage analyzes the changes in your Git repository and uses AI to generate 
 
 ## Requirements
 
-- Deno 2.x or higher (if compiling from source)
 - Git installed and accessible in your PATH
 - Internet connection for AI service communication (unless using [Ollama](https://github.com/ollama/ollama))
+- Deno 2.x or higher (if compiling from source)
 
 ## How It Works
 
@@ -222,18 +222,16 @@ The following are known limitations in the current version of **commit-sage**, w
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines before submitting a Pull Request.
 By contributing to `commit-sage-cli`, you agree to license your contributions under the GNU General Public License v3.0.
 
 ## Acknowledgment
 
-`commit-sage-cli` is a derivative work based on the [CommitSage VS Code extension](https://marketplace.visualstudio.com/items?itemName=VizzleTF.geminicommit) by Ivan K. ([GitHub](https://github.com/VizzleTF/CommitSage)), licensed under the MIT License. I cloned and significantly modified the CommitSage codebase to create a Deno CLI tool, adapting its innovative approach to commit generation for CLI use. Thank you, Ivan, for your open-source contribution, which inspired and enabled this project!
+`commit-sage-cli` was inspired by the [CommitSage VS Code extension](https://marketplace.visualstudio.com/items?itemName=VizzleTF.geminicommit) by Ivan K. ([GitHub](https://github.com/VizzleTF/CommitSage)), licensed under the MIT License. His project motivated me to create a Deno CLI tool, adapting its approach to commit generation for CLI use. Thank you, Ivan, for your open-source contribution.
 
 ## License
 
 `commit-sage-cli` is licensed under the [GNU General Public License v3.0](LICENSE). The full text of the GPLv3 is available in the [LICENSE](LICENSE) file.
-
-For reference, the original CommitSage project is licensed under the MIT License by Ivan K. The MIT License text is available at [https://github.com/VizzleTF/CommitSage/](https://github.com/VizzleTF/CommitSage/) for further details.
 
 ## Contact
 
