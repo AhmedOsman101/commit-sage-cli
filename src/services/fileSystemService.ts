@@ -1,6 +1,5 @@
 import { dirname } from "node:path";
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
-import { CONFIG_PATH } from "../lib/constants.ts";
 
 const FileSystemService = {
   async fileExists(path: string): Promise<Result<boolean>> {
@@ -29,11 +28,11 @@ const FileSystemService = {
   },
   async readFile(path: string): Promise<Result<string>> {
     try {
-      const { error: isFileError } = await this.fileExists(path);
-      if (isFileError) return Err(isFileError);
+      const isFile = await this.fileExists(path);
+      if (isFile.isError()) return Err(isFile.error);
 
       return Ok(await Deno.readTextFile(path));
-    } catch (_error) {
+    } catch {
       return ErrFromText(`Cannot read file: '${path}'.`);
     }
   },
@@ -50,46 +49,44 @@ const FileSystemService = {
         return Ok(true);
       }
 
-      const { error: isFileError } = await this.fileExists(path);
-      if (isFileError !== undefined) return Err(isFileError);
+      const isFile = await this.fileExists(path);
+      if (isFile.isError()) return Err(isFile.error);
 
       Deno.writeTextFileSync(path, content);
       return Ok(true);
-    } catch (_error) {
+    } catch {
       return ErrFromText(`Cannot write to file: '${path}'.`);
     }
   },
   async createFile(path: string): Promise<Result<Deno.FsFile>> {
     try {
-      const dir = dirname(CONFIG_PATH);
+      const dir = dirname(path);
 
-      const { ok: dirExists, error: dirExistsError } =
-        await this.dirExists(dir);
+      const dirExists = await this.dirExists(dir);
 
-      if (dirExistsError !== undefined || !dirExists) {
-        const { error: createDirError } = await this.createDir(dir);
-        if (createDirError !== undefined) return Err(createDirError);
+      if (dirExists.isError() || !dirExists.ok) {
+        const createDir = await this.createDir(dir);
+        if (createDir.isError()) return Err(createDir.error);
       }
 
-      const { ok: isFile, error: isFileError } = await this.fileExists(path);
-      if (isFileError !== undefined || !isFile) {
+      const isFile = await this.fileExists(path);
+      if (isFile.isError() || !isFile.ok) {
         return Ok(await Deno.create(path));
       }
       return ErrFromText(`Cannot create file: '${path}'.`);
-    } catch (_error) {
+    } catch {
       return ErrFromText(`Cannot create file: '${path}'.`);
     }
   },
-  async createDir(path: string): Promise<Result<null>> {
+  async createDir(path: string): Promise<Result<boolean>> {
     try {
-      const { ok: dirExists, error: dirExistsError } =
-        await this.dirExists(path);
+      const dirExists = await this.dirExists(path);
 
-      if (dirExistsError !== undefined || !dirExists) {
+      if (dirExists.isError() || !dirExists.ok) {
         await Deno.mkdir(path, { recursive: true });
       }
 
-      return Ok(null);
+      return Ok(true);
     } catch (error) {
       if (error instanceof Deno.errors.AlreadyExists) {
         return ErrFromText(`Directory: '${path}' already exists.`);
