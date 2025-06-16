@@ -1,0 +1,36 @@
+name: Format
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  BIOME_VERSION: 2.0.0-beta.6
+
+jobs:
+  biome-format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Biome
+        id: cache-biome
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/bin/biome
+          key: biome-${{ env.BIOME_VERSION }}-linux-x64
+          restore-keys: biome-${{ env.BIOME_VERSION }}-
+
+      - name: Install Biome
+        if: steps.cache-biome.outputs.cache-hit != 'true'
+        run: |
+          curl -L https://github.com/biomejs/biome/releases/download/%40biomejs%2Fbiome%40${{ env.BIOME_VERSION }}/biome-linux-x64 -o biome
+          chmod +x biome
+          sudo mv biome /usr/local/bin/biome
+
+      - name: Run Biome formatter
+        run: biome check .
