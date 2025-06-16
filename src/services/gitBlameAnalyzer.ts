@@ -14,8 +14,8 @@ type BlameInfo = {
   line: string;
 };
 
-const GitBlameAnalyzer = {
-  async getGitBlame(filePath: string): Promise<BlameInfo[]> {
+class GitBlameAnalyzer {
+  static async getGitBlame(filePath: string): Promise<BlameInfo[]> {
     try {
       const absoluteFilePath = path.resolve(REPO_PATH, filePath);
       if (!(await FileSystemService.fileExists(absoluteFilePath))) {
@@ -29,14 +29,14 @@ const GitBlameAnalyzer = {
       if (GitService.isNewFile(filePath)) {
         throw new Error(ERROR_MESSAGES.fileNotCommitted);
       }
-      const blameOutput = this.executeGitBlame(filePath);
-      return this.parseBlameOutput(blameOutput);
+      const blameOutput = GitBlameAnalyzer.executeGitBlame(filePath);
+      return GitBlameAnalyzer.parseBlameOutput(blameOutput);
     } catch (error) {
       logError("Error getting blame info:", (error as Error).message);
     }
-  },
+  }
 
-  parseBlameOutput(blameOutput: string): BlameInfo[] {
+  static parseBlameOutput(blameOutput: string): BlameInfo[] {
     const lines = blameOutput.split("\n");
     const blameInfos: BlameInfo[] = [];
     let currentBlame: Partial<BlameInfo> = {};
@@ -53,14 +53,8 @@ const GitBlameAnalyzer = {
         ).toISOString();
       } else if (line.startsWith("\t")) {
         currentBlame.line = line.substring(1);
-        if (
-          currentBlame.author &&
-          currentBlame.email &&
-          currentBlame.date &&
-          currentBlame.timestamp &&
-          currentBlame.line
-        ) {
-          blameInfos.push(currentBlame as BlameInfo);
+        if (GitBlameAnalyzer.isCompleteBlameInfo(currentBlame)) {
+          blameInfos.push(currentBlame);
         }
         currentBlame = {};
       } else if (line.match(/^[0-9a-f]{40}/)) {
@@ -69,29 +63,28 @@ const GitBlameAnalyzer = {
     }
 
     return blameInfos;
-  },
-  executeGitBlame(filePath: string): string {
-    const { ok: output, error } = CommandService.execute(
+  }
+  static executeGitBlame(filePath: string): string {
+    const { stdout } = CommandService.execute(
       "git",
       ["blame", "--line-porcelain", filePath.replaceAll('"', "")],
       REPO_PATH
-    );
+    ).unwrap();
 
-    if (error !== undefined) throw error;
-    return output.stdout;
-  },
+    return stdout;
+  }
 
-  getDiff(filePath: string): string {
-    const { ok: output, error } = GitService.execGit([
+  static getDiff(filePath: string): string {
+    const { stdout } = GitService.execGit([
       "diff",
       "--unified=0",
       "--",
       filePath,
-    ]);
-    if (error !== undefined) throw error;
-    return output.stdout;
-  },
-  async analyzeChanges(filePath: string): Promise<string> {
+    ]).unwrap();
+
+    return stdout;
+  }
+  static async analyzeChanges(filePath: string): Promise<string> {
     try {
       // First check if file is deleted or new, as these don't need blame analysis
       // Use git status to check file state
@@ -119,9 +112,9 @@ const GitBlameAnalyzer = {
     } catch (error) {
       logError("Error analyzing changes:", (error as Error).message);
     }
-  },
+  }
 
-  parseChangedLines(diff: string): Set<number> {
+  static parseChangedLines(diff: string): Set<number> {
     const changedLines = new Set<number>();
     const lines = diff.split("\n");
     let currentLine = 0;
@@ -139,9 +132,9 @@ const GitBlameAnalyzer = {
     }
 
     return changedLines;
-  },
+  }
 
-  analyzeBlameInfo(
+  static analyzeBlameInfo(
     blame: BlameInfo[],
     changedLines: Set<number>
   ): Map<string, { count: number; lines: number[] }> {
@@ -159,9 +152,9 @@ const GitBlameAnalyzer = {
     });
 
     return authorChanges;
-  },
+  }
 
-  formatAnalysis(
+  static formatAnalysis(
     authorChanges: Map<string, { count: number; lines: number[] }>
   ): string {
     if (authorChanges.size === 0) {
@@ -178,8 +171,8 @@ const GitBlameAnalyzer = {
           `${author} modified ${count} line${count === 1 ? "" : "s"} (${lines.join(", ")})`
       )
       .join("\n");
-  },
-  getBlameInfo(filePath: string): BlameInfo[] {
+  }
+  static getBlameInfo(filePath: string): BlameInfo[] {
     try {
       if (!GitService.hasHead()) {
         throw new Error(ERROR_MESSAGES.noCommitsYet);
@@ -198,7 +191,20 @@ const GitBlameAnalyzer = {
     } catch (error) {
       logError("Error getting blame info:", (error as Error).message);
     }
-  },
-};
+  }
+
+  protected static isCompleteBlameInfo(
+    blame: Partial<BlameInfo>
+  ): blame is BlameInfo {
+    return (
+      blame.commit !== undefined &&
+      blame.author !== undefined &&
+      blame.email !== undefined &&
+      blame.date !== undefined &&
+      blame.timestamp !== undefined &&
+      blame.line !== undefined
+    );
+  }
+}
 
 export default GitBlameAnalyzer;
