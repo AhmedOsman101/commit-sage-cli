@@ -16,7 +16,7 @@
     "npm:@arrirpc/schema@0.79": "0.79.1",
     "npm:@types/node@*": "22.15.15",
     "npm:axios@^1.8.4": "1.9.0",
-    "npm:lib-result@^2.1.4": "2.1.4"
+    "npm:lib-result@3": "3.0.0"
   },
   "jsr": {
     "@cliffy/ansi@1.0.0-rc.7": {
@@ -201,8 +201,8 @@
         "function-bind"
       ]
     },
-    "lib-result@2.1.4": {
-      "integrity": "sha512-zoBPHaDy1RwbWm1LBZUJ0j3f02VEMsOgABYo8fDgLnYk/vUp6hDm4OM445jp5kZjB63KUeqG9dxWrJr+TB0PqQ=="
+    "lib-result@3.0.0": {
+      "integrity": "sha512-RnR+FTVs+xzMDlBVsSFOYQ9d+yKa1YvVxr6jHsJ+vXD+2oIBjbGZkUajZPmpbuH3L4Fz6VSSebkhmkb3RyEndQ=="
     },
     "math-intrinsics@1.1.0": {
       "integrity": "sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g=="
@@ -235,7 +235,7 @@
       "jsr:@std/fmt@*",
       "npm:@arrirpc/schema@0.79",
       "npm:axios@^1.8.4",
-      "npm:lib-result@^2.1.4"
+      "npm:lib-result@3"
     ]
   }
 }
