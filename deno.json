@@ -17,7 +17,7 @@
     "@arrirpc/schema": "npm:@arrirpc/schema@^0.80.3",
     "@cliffy/prompt": "jsr:@cliffy/prompt@^1.0.0-rc.8",
     "@std/fmt": "jsr:@std/fmt",
-    "axios": "npm:axios@^1.10.0",
+    "axios": "npm:axios@^1.11.0",
     "lib-result": "npm:lib-result@^3.2.2"
   },
   "lint": {
