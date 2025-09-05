@@ -29,6 +29,11 @@ class GitBlameAnalyzer {
       if (GitService.isNewFile(filePath)) {
         throw new Error(ERROR_MESSAGES.fileNotCommitted);
       }
+
+      if (GitService.isFileDeleted(filePath)) {
+        throw new Error(ERROR_MESSAGES.fileDeleted);
+      }
+
       const blameOutput = GitBlameAnalyzer.executeGitBlame(filePath);
       return GitBlameAnalyzer.parseBlameOutput(blameOutput);
     } catch (error) {
@@ -86,15 +91,15 @@ class GitBlameAnalyzer {
   }
   static async analyzeChanges(filePath: string): Promise<string> {
     try {
-      // First check if file is deleted or new, as these don't need blame analysis
-      // Use git status to check file state
       const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
 
-      if (GitService.isFileDeleted(normalizedPath)) {
+      // First check if file is deleted or new, as these don't need blame analysis
+      // Use git status to check file state
+      if (GitService.isFileDeleted(filePath)) {
         return `Deleted file: ${normalizedPath}`;
       }
 
-      if (GitService.isNewFile(normalizedPath)) {
+      if (GitService.isNewFile(filePath)) {
         return `New file: ${normalizedPath}`;
       }
 
@@ -183,6 +188,7 @@ class GitBlameAnalyzer {
       }
 
       if (GitService.isFileDeleted(filePath)) {
+        console.log(`${filePath} is deleted`);
         throw new Error(ERROR_MESSAGES.fileDeleted);
       }
 
