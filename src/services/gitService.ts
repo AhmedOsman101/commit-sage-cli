@@ -334,6 +334,8 @@ class GitService {
   }
   static isFileDeleted(filePath: string): boolean {
     const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
+
+    // TODO: use `git ls-files --deleted` instead of `git status`
     const { stdout } = GitService.execGit(["status", "--porcelain"]).unwrap();
 
     if (!stdout.trim()) return false;
