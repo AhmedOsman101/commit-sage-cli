@@ -334,14 +334,20 @@ class GitService {
   }
   static isFileDeleted(filePath: string): boolean {
     const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
-    const { stdout } = GitService.execGit([
-      "status",
-      "--porcelain",
-      normalizedPath,
-    ]).unwrap();
+    const { stdout } = GitService.execGit(["status", "--porcelain"]).unwrap();
 
-    const status = stdout.slice(0, 2);
-    return status === " D" || status === "D ";
+    if (!stdout.trim()) return false;
+
+    const lines = stdout.split("\n");
+    for (const line of lines) {
+      // Check for deletion in working tree (D ) or index ( D)
+      if (line.startsWith("D ") || line.startsWith(" D")) {
+        const [, ...gitPath] = line.split(/\s+/);
+        if (gitPath.join(" ") === normalizedPath) return true;
+      }
+    }
+
+    return false;
   }
   static isGitRepo(): boolean {
     const cmd = CommandService.execute("git", [
