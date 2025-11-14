@@ -40,7 +40,6 @@ class ConfigService {
     let checked = false;
     while (true) {
       const { ok: configContents, error } =
-        // biome-ignore lint/nursery/noAwaitInLoop: Inteded
         await FileSystemService.readFile(CONFIG_PATH);
 
       if (error !== undefined) {

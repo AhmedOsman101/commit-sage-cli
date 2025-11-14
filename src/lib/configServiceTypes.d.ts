@@ -1,3 +1,7 @@
+import type { google } from "@ai-sdk/google";
+import type { openai } from "@ai-sdk/openai";
+import type { ollama } from "ollama-ai-provider-v2";
+
 // Configuration for the general section
 type GeneralConfig = {
   maxRetries: number;
@@ -6,16 +10,13 @@ type GeneralConfig = {
 
 // Configuration for the Gemini provider
 type GeminiConfig = {
-  model:
-    | "gemini-2.0-flash-exp"
-    | "gemini-1.0-pro"
-    | "gemini-1.5-pro"
-    | "gemini-1.5-flash";
+  model: Parameters<typeof google>[0];
+  baseUrl?: string;
 };
 
 // Configuration for the Ollama provider
 type OllamaConfig = {
-  model: string;
+  model: Parameters<typeof ollama>[0];
   baseUrl: "http://localhost:11434" | string;
 };
 
@@ -26,8 +27,7 @@ type CodestralConfig = {
 
 // Configuration for the OpenAI provider
 type OpenaiConfig = {
-  model: string;
-  baseUrl: "https://api.openai.com/v1" | string;
+  model: Parameters<typeof openai>[0];
 };
 
 // Configuration for commit-related settings

@@ -38,18 +38,17 @@ export const DEFAULT_CONFIG: Readonly<Config> = {
     initialRetryDelayMs: 1000,
   },
   gemini: {
-    model: "gemini-2.0-flash-exp",
+    model: "gemini-2.5-flash-lite",
   },
   ollama: {
     model: "llama3.2",
-    baseUrl: "http://localhost:11434",
+    baseUrl: "http://localhost:11434/api",
   },
   codestral: {
     model: "codestral-2405",
   },
   openai: {
-    model: "gpt-3.5-turbo",
-    baseUrl: "https://api.openai.com/v1",
+    model: "gpt-5-nano"
   },
   commit: {
     autoCommit: false,

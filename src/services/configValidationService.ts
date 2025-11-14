@@ -19,19 +19,14 @@ const ConfigSchema = a.object(
       })
     ),
     gemini: a.object({
-      model: a.stringEnum([
-        "gemini-2.0-flash-exp",
-        "gemini-1.0-pro",
-        "gemini-1.5-pro",
-        "gemini-1.5-flash",
-      ]),
+      model: a.string(),
+      baseUrl: a.string(),
     }),
     codestral: a.object({
       model: a.stringEnum(["codestral-2405", "codestral-latest"]),
     }),
     openai: a.object({
       model: a.string(),
-      baseUrl: a.string(),
     }),
     ollama: a.object({
       model: a.string(),
