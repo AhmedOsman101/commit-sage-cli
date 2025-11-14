@@ -20,15 +20,15 @@ const ConfigSchema = a.object(
     ),
     gemini: a.object({
       model: a.string(),
-      baseUrl: a.string(),
+      baseUrl: a.optional(a.string()),
     }),
     openai: a.object({
       model: a.string(),
-      baseUrl: a.string(),
+      baseUrl: a.optional(a.string()),
     }),
     ollama: a.object({
       model: a.string(),
-      baseUrl: a.string(),
+      baseUrl: a.optional(a.string()),
     }),
     commit: a.object({
       autoCommit: a.optional(a.boolean()),
@@ -123,14 +123,16 @@ const ConfigValidationService = {
     }
     return Ok(true);
   },
-  validateModelUrl(model: object, name: "ollama" | "openai"): Result<boolean> {
+  validateModelUrl(
+    model: object,
+    name: "ollama" | "openai" | "gemini"
+  ): Result<boolean> {
     if ("baseUrl" in model) {
       const baseUrl = this.validateUrl(model.baseUrl);
       if (baseUrl.isError()) {
         logError(`Error at key ${name}.baseUrl => ${baseUrl.error.message}`);
       }
-    }
-
+    } else logError(`Key ${name}.baseUrl is missing`);
     return Ok(true);
   },
   validate(config: unknown): Result<Config> {
@@ -203,6 +205,15 @@ const ConfigValidationService = {
           configContent.openai !== null
         ) {
           this.validateModelUrl(configContent.openai, "openai");
+        }
+      }
+
+      if ("gemini" in configContent) {
+        if (
+          typeof configContent.gemini === "object" &&
+          configContent.gemini !== null
+        ) {
+          this.validateModelUrl(configContent.gemini, "gemini");
         }
       }
     }
