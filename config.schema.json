@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "required": ["gemini", "ollama", "codestral", "openai", "commit", "provider"],
+  "required": ["gemini", "ollama", "openai", "commit", "provider"],
   "properties": {
     "general": {
       "type": "object",
@@ -42,16 +42,6 @@
         "baseUrl": {
           "type": "string",
           "format": "uri"
-        }
-      }
-    },
-    "codestral": {
-      "type": "object",
-      "required": ["model"],
-      "properties": {
-        "model": {
-          "type": "string",
-          "enum": ["codestral-2405", "codestral-latest"]
         }
       }
     },
@@ -100,7 +90,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["gemini", "codestral", "openai", "ollama"]
+          "enum": ["gemini", "openai", "ollama"]
         }
       }
     }

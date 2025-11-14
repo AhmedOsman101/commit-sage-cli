@@ -22,9 +22,6 @@ const ConfigSchema = a.object(
       model: a.string(),
       baseUrl: a.string(),
     }),
-    codestral: a.object({
-      model: a.stringEnum(["codestral-2405", "codestral-latest"]),
-    }),
     openai: a.object({
       model: a.string(),
     }),
@@ -52,7 +49,7 @@ const ConfigSchema = a.object(
       promptForRefs: a.optional(a.boolean()),
     }),
     provider: a.object({
-      type: a.stringEnum(["gemini", "codestral", "openai", "ollama"]),
+      type: a.stringEnum(["gemini", "openai", "ollama"]),
     }),
   },
   {

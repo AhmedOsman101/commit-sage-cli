@@ -49,15 +49,6 @@ const KeyValidationService = {
     }
     return Ok(key);
   },
-  validateCodestralApiKey(key: string): Result<string> {
-    if (!key) {
-      return ErrFromText(apiValidation.errorMessages.emptyKey);
-    }
-    if (!apiValidation.keyFormat.test(key)) {
-      return ErrFromText(apiValidation.errorMessages.invalidChars);
-    }
-    return Ok(key);
-  },
 };
 
 export default KeyValidationService;

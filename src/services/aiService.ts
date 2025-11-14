@@ -1,7 +1,6 @@
 import { ERROR_MESSAGES } from "../lib/constants.ts";
 import type { CommitMessage } from "../lib/index.d.ts";
 import { logError } from "../lib/logger.ts";
-import CodestralService from "./codestralService.ts";
 import ConfigService from "./configService.ts";
 import GeminiService from "./geminiService.ts";
 import GitBlameAnalyzer from "./gitBlameAnalyzer.ts";
@@ -39,8 +38,6 @@ const AiService = {
       switch (provider) {
         case "openai":
           return await OpenAiService.generateCommitMessage(prompt);
-        case "codestral":
-          return await CodestralService.generateCommitMessage(prompt);
         case "ollama":
           return await OllamaService.generateCommitMessage(prompt);
         default: // gemini

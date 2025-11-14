@@ -39,16 +39,14 @@ export const DEFAULT_CONFIG: Readonly<Config> = {
   },
   gemini: {
     model: "gemini-2.5-flash-lite",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta/models",
   },
   ollama: {
     model: "llama3.2",
     baseUrl: "http://localhost:11434/api",
   },
-  codestral: {
-    model: "codestral-2405",
-  },
   openai: {
-    model: "gpt-5-nano"
+    model: "gpt-5-nano",
   },
   commit: {
     autoCommit: false,

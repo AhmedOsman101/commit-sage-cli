@@ -20,11 +20,6 @@ type OllamaConfig = {
   baseUrl: "http://localhost:11434" | string;
 };
 
-// Configuration for the Codestral provider
-type CodestralConfig = {
-  model: "codestral-2405" | "codestral-latest";
-};
-
 // Configuration for the OpenAI provider
 type OpenaiConfig = {
   model: Parameters<typeof openai>[0];
@@ -42,7 +37,7 @@ type CommitConfig = {
 
 // Configuration for the provider selection
 type ProviderConfig = {
-  type: "gemini" | "codestral" | "openai" | "ollama";
+  type: "gemini" | "openai" | "ollama";
 };
 
 export type CommitLanguage = "english" | "russian" | "chinese" | "japanese";
@@ -53,7 +48,6 @@ export type Config = {
   general: GeneralConfig;
   gemini: GeminiConfig;
   ollama: OllamaConfig;
-  codestral: CodestralConfig;
   openai: OpenaiConfig;
   commit: CommitConfig;
   provider: ProviderConfig;
@@ -66,4 +60,4 @@ export type ConfigValue<
   G extends ConfigKey<T>,
 > = Config[T][G];
 
-export type ApiService = "Gemini" | "OpenAI" | "Codestral";
+export type ApiService = "Gemini" | "OpenAI";

@@ -184,13 +184,6 @@ After adding the line, restart your terminal or run 'source ${shellConfigFile}' 
   static validateApiKey(service: ApiService, key: string): void {
     try {
       switch (service) {
-        case "Codestral": {
-          const { error } = KeyValidationService.validateCodestralApiKey(key);
-          if (error !== undefined) {
-            throw new AiServiceError(error.message, { cause: error });
-          }
-          break;
-        }
         case "Gemini": {
           const { error } = KeyValidationService.validateGeminiApiKey(key);
           if (error !== undefined) {

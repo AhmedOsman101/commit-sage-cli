@@ -165,14 +165,6 @@ The configuration file allows customization of retry behavior, model providers, 
 
 ---
 
-##### `codestral`
-
-| Key     | Type   | Default            | Options                                  |
-| ------- | ------ | ------------------ | ---------------------------------------- |
-| `model` | string | `"codestral-2405"` | `"codestral-2405"`, `"codestral-latest"` |
-
----
-
 ##### `openai`
 
 | Key       | Type   | Default                       | Description          |
@@ -199,16 +191,16 @@ The configuration file allows customization of retry behavior, model providers, 
 
 | Key    | Type   | Default    | Options                                           |
 | ------ | ------ | ---------- | ------------------------------------------------- |
-| `type` | string | `"gemini"` | `"gemini"`, `"codestral"`, `"openai"`, `"ollama"` |
+| `type` | string | `"gemini"` | `"gemini"`, `"openai"`, `"ollama"` |
 
 ## Limitations / Not Yet Implemented
 
 The following are known limitations in the current version of **commit-sage**, with plans to address them in future updates:
 
-- [x] **Handle files with spaces in their names**  
+- [x] **Handle files with spaces in their names**
        Previously, the program may have failed or behaved unexpectedly when processing files with spaces in their names. This has been resolved.
 
-- [ ] **Configuration options not yet implemented**  
+- [ ] **Configuration options not yet implemented**
        The following options are defined in the schema for forward compatibility, but are currently **non-functional** and will be ignored at runtime:
   - [ ] `commit.autoCommit`
   - [ ] `commit.autoPush`
@@ -217,7 +209,7 @@ The following are known limitations in the current version of **commit-sage**, w
 
 > [!NOTE]
 >
-> These options can safely remain in your config. They won't cause any errors, but currently have no effect.  
+> These options can safely remain in your config. They won't cause any errors, but currently have no effect.
 > They are included as placeholders for upcoming features that are under active consideration or development.
 
 ## Contributing
