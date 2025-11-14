@@ -11,18 +11,19 @@ type GeneralConfig = {
 // Configuration for the Gemini provider
 type GeminiConfig = {
   model: Parameters<typeof google>[0];
-  baseUrl?: string;
+  baseUrl: "https://generativelanguage.googleapis.com/v1beta" | (string & {});
 };
 
 // Configuration for the Ollama provider
 type OllamaConfig = {
   model: Parameters<typeof ollama>[0];
-  baseUrl: "http://localhost:11434" | string;
+  baseUrl: "http://localhost:11434" | (string & {});
 };
 
 // Configuration for the OpenAI provider
 type OpenaiConfig = {
   model: Parameters<typeof openai>[0];
+  baseUrl: "https://api.openai.com/v1/models" | (string & {});
 };
 
 // Configuration for commit-related settings

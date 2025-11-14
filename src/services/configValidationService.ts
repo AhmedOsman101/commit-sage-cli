@@ -24,6 +24,7 @@ const ConfigSchema = a.object(
     }),
     openai: a.object({
       model: a.string(),
+      baseUrl: a.string(),
     }),
     ollama: a.object({
       model: a.string(),
