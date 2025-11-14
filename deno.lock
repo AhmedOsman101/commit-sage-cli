@@ -9,19 +9,25 @@
     "jsr:@std/encoding@~1.0.5": "1.0.10",
     "jsr:@std/fmt@*": "1.0.8",
     "jsr:@std/fmt@~1.0.2": "1.0.8",
+    "jsr:@std/io@~0.224.9": "0.224.9",
     "jsr:@std/path@~1.0.6": "1.0.9",
     "jsr:@std/text@~1.0.7": "1.0.15",
+    "npm:@ai-sdk/google@^2.0.31": "2.0.31_zod@4.1.12",
+    "npm:@ai-sdk/openai@^2.0.66": "2.0.66_zod@4.1.12",
     "npm:@arrirpc/schema@~0.80.3": "0.80.3",
     "npm:@types/node@*": "22.15.15",
+    "npm:ai@^5.0.93": "5.0.93_zod@4.1.12",
     "npm:axios@^1.11.0": "1.11.0",
-    "npm:lib-result@^3.2.2": "3.2.2"
+    "npm:lib-result@^3.2.2": "3.2.2",
+    "npm:ollama-ai-provider-v2@^1.5.4": "1.5.4_zod@4.1.12"
   },
   "jsr": {
     "@cliffy/ansi@1.0.0-rc.8": {
       "integrity": "ba37f10ce55bbfbdd8ddd987f91f029b17bce88385b98ba3058870f3b007b80c",
       "dependencies": [
         "jsr:@cliffy/internal",
-        "jsr:@std/encoding"
+        "jsr:@std/encoding",
+        "jsr:@std/io"
       ]
     },
     "@cliffy/internal@1.0.0-rc.8": {
@@ -38,6 +44,7 @@
         "jsr:@cliffy/keycode",
         "jsr:@std/assert",
         "jsr:@std/fmt@~1.0.2",
+        "jsr:@std/io",
         "jsr:@std/path",
         "jsr:@std/text"
       ]
@@ -51,6 +58,9 @@
     "@std/fmt@1.0.8": {
       "integrity": "71e1fc498787e4434d213647a6e43e794af4fd393ef8f52062246e06f7e372b7"
     },
+    "@std/io@0.224.9": {
+      "integrity": "4414664b6926f665102e73c969cfda06d2c4c59bd5d0c603fd4f1b1c840d6ee3"
+    },
     "@std/path@1.0.9": {
       "integrity": "260a49f11edd3db93dd38350bf9cd1b4d1366afa98e81b86167b4e3dd750129e"
     },
@@ -59,6 +69,46 @@
     }
   },
   "npm": {
+    "@ai-sdk/gateway@2.0.9_zod@4.1.12": {
+      "integrity": "sha512-E6x4h5CPPPJ0za1r5HsLtHbeI+Tp3H+YFtcH8G3dSSPFE6w+PZINzB4NxLZmg1QqSeA5HTP3ZEzzsohp0o2GEw==",
+      "dependencies": [
+        "@ai-sdk/provider",
+        "@ai-sdk/provider-utils",
+        "@vercel/oidc",
+        "zod"
+      ]
+    },
+    "@ai-sdk/google@2.0.31_zod@4.1.12": {
+      "integrity": "sha512-wOlUkrXHuL73sXPZd251+30BQ378zn2Zo8pW+Hq+8d9FmSJpZXOSK8cmYle1SE5ZWe/TS+eSj3eBCZ6AW+q2EA==",
+      "dependencies": [
+        "@ai-sdk/provider",
+        "@ai-sdk/provider-utils",
+        "zod"
+      ]
+    },
+    "@ai-sdk/openai@2.0.66_zod@4.1.12": {
+      "integrity": "sha512-gDtkaawt1INhjQCcqK2mFaCS3e5wQvutni6+0+wkwzyoIyznSzehb7f0jQh8JcDbeO1yNCxnzPcI6BVPWkiR5Q==",
+      "dependencies": [
+        "@ai-sdk/provider",
+        "@ai-sdk/provider-utils",
+        "zod"
+      ]
+    },
+    "@ai-sdk/provider-utils@3.0.17_zod@4.1.12": {
+      "integrity": "sha512-TR3Gs4I3Tym4Ll+EPdzRdvo/rc8Js6c4nVhFLuvGLX/Y4V9ZcQMa/HTiYsHEgmYrf1zVi6Q145UEZUfleOwOjw==",
+      "dependencies": [
+        "@ai-sdk/provider",
+        "@standard-schema/spec",
+        "eventsource-parser",
+        "zod"
+      ]
+    },
+    "@ai-sdk/provider@2.0.0": {
+      "integrity": "sha512-6o7Y2SeO9vFKB8lArHXehNuusnpddKPk7xqL7T2/b+OvXMRIXUO1rR4wcv1hAFUAT9avGZshty3Wlua/XA7TvA==",
+      "dependencies": [
+        "json-schema"
+      ]
+    },
     "@arrirpc/schema@0.80.3": {
       "integrity": "sha512-Ftx95blKAekHiDdaJQxZkBpcAaMcZsDSxHkdoyEV05EsRsPXPOEzgD7C53s2miHMMkYufkFTC301C7Gmpd2Gaw==",
       "dependencies": [
@@ -74,6 +124,9 @@
         "scule"
       ]
     },
+    "@opentelemetry/api@1.9.0": {
+      "integrity": "sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg=="
+    },
     "@standard-schema/spec@1.0.0": {
       "integrity": "sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA=="
     },
@@ -81,6 +134,19 @@
       "integrity": "sha512-R5muMcZob3/Jjchn5LcO8jdKwSCbzqmPB6ruBxMcf9kbxtniZHP327s6C37iOfuw8mbKK3cAQa7sEl7afLrQ8A==",
       "dependencies": [
         "undici-types"
+      ]
+    },
+    "@vercel/oidc@3.0.3": {
+      "integrity": "sha512-yNEQvPcVrK9sIe637+I0jD6leluPxzwJKx/Haw6F4H77CdDsszUn5V3o96LPziXkSNE2B83+Z3mjqGKBK/R6Gg=="
+    },
+    "ai@5.0.93_zod@4.1.12": {
+      "integrity": "sha512-9eGcu+1PJgPg4pRNV4L7tLjRR3wdJC9CXQoNMvtqvYNOLZHFCzjHtVIOr2SIkoJJeu2+sOy3hyiSuTmy2MA40g==",
+      "dependencies": [
+        "@ai-sdk/gateway",
+        "@ai-sdk/provider",
+        "@ai-sdk/provider-utils",
+        "@opentelemetry/api",
+        "zod"
       ]
     },
     "asynckit@0.4.0": {
@@ -139,6 +205,9 @@
         "hasown"
       ]
     },
+    "eventsource-parser@3.0.6": {
+      "integrity": "sha512-Vo1ab+QXPzZ4tCa8SwIHJFaSzy4R6SHf7BY79rFBDf0idraZWAkYrDjDj8uWaSm3S2TK+hJ7/t1CEmZ7jXw+pg=="
+    },
     "follow-redirects@1.15.11": {
       "integrity": "sha512-deG2P0JfjrTxl50XGCDyfI97ZGVCxIpfKYmfyrQ54n5FO/0gfIES8C/Psl6kWVDolizcaaxZJnTS0QSMxvnsBQ=="
     },
@@ -195,6 +264,9 @@
         "function-bind"
       ]
     },
+    "json-schema@0.4.0": {
+      "integrity": "sha512-es94M3nTIfsEPisRafak+HDLfHXnKBhV3vU5eqPcS3flIWqcxJWgXHXiey3YrpaNsanY5ei1VoYEbOzijuq9BA=="
+    },
     "lib-result@3.2.2": {
       "integrity": "sha512-ONymDVaq4JCaTMM4VMsThdEGruV5X5i1vSMuSma67xmqGzX9pwxIie8JA96+y9X9S9u8EtslW8N7RgbqNV6kTg=="
     },
@@ -210,6 +282,14 @@
         "mime-db"
       ]
     },
+    "ollama-ai-provider-v2@1.5.4_zod@4.1.12": {
+      "integrity": "sha512-OTxzIvxW7GutgkyYe55Y4lJeUbnDjH1jDkAQhjGiynffkDn0wyWbv/dD92A8HX1ni5Ec+i+ksYMXXlVOYPQR4g==",
+      "dependencies": [
+        "@ai-sdk/provider",
+        "@ai-sdk/provider-utils",
+        "zod"
+      ]
+    },
     "proxy-from-env@1.1.0": {
       "integrity": "sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg=="
     },
@@ -221,15 +301,22 @@
     },
     "undici-types@6.21.0": {
       "integrity": "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="
+    },
+    "zod@4.1.12": {
+      "integrity": "sha512-JInaHOamG8pt5+Ey8kGmdcAcg3OL9reK8ltczgHTAwNhMys/6ThXHityHxVV2p3fkw/c+MAvBHFVYHFZDmjMCQ=="
     }
   },
   "workspace": {
     "dependencies": [
       "jsr:@cliffy/prompt@^1.0.0-rc.8",
       "jsr:@std/fmt@*",
+      "npm:@ai-sdk/google@^2.0.31",
+      "npm:@ai-sdk/openai@^2.0.66",
       "npm:@arrirpc/schema@~0.80.3",
+      "npm:ai@^5.0.93",
       "npm:axios@^1.11.0",
-      "npm:lib-result@^3.2.2"
+      "npm:lib-result@^3.2.2",
+      "npm:ollama-ai-provider-v2@^1.5.4"
     ]
   }
 }

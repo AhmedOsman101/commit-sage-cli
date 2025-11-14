@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/biomejs/biome/refs/heads/main/packages/%40biomejs/biome/configuration_schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.3.0/schema.json/",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -8,16 +8,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": [
-      "**",
-      "!**/node_modules/**",
-      "!**/dist/**",
-      "!**/.git/**",
-      "!**/.vscode/**",
-      "!**/*.vue",
-      "!**/deno.json",
-      "!**/fresh.gen.ts"
-    ]
+    "includes": ["**", "!**/node_modules", "!**/dist", "!**/.git"]
   },
   "assist": {
     "enabled": true,
@@ -66,7 +57,13 @@
         "useImportType": "error",
         "useExportType": "error",
         "noUselessElse": "error",
-        "useShorthandFunctionType": "error"
+        "useShorthandFunctionType": "error",
+        "useConsistentObjectDefinitions": {
+          "level": "warn",
+          "options": {
+            "syntax": "shorthand"
+          }
+        }
       },
       "a11y": {
         "useButtonType": "off"
@@ -96,10 +93,12 @@
             "ignoreNull": false
           }
         },
-        "noAssignInExpressions": "off"
+        "noAssignInExpressions": "off",
+        "noBitwiseOperators": "off",
+        "noConstantBinaryExpressions": "info",
+        "noTsIgnore": "on"
       },
       "nursery": {
-        "noBitwiseOperators": "off",
         "useSortedClasses": {
           "fix": "safe",
           "level": "info",
@@ -107,17 +106,8 @@
             "attributes": ["classList", "class", "className"]
           }
         },
-        "noAwaitInLoop": "warn",
-        "noConstantBinaryExpression": "info",
         "noFloatingPromises": "info",
-        "noImportCycles": "error",
-        "noTsIgnore": "on",
-        "useConsistentObjectDefinition": {
-          "level": "warn",
-          "options": {
-            "syntax": "shorthand"
-          }
-        }
+        "noImportCycles": "error"
       }
     }
   },
