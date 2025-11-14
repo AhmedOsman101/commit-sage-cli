@@ -26,7 +26,7 @@ type CodestralConfig = {
 
 // Configuration for the OpenAI provider
 type OpenaiConfig = {
-  model: "gpt-3.5-turbo";
+  model: string;
   baseUrl: "https://api.openai.com/v1" | string;
 };
 

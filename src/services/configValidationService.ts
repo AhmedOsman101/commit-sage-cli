@@ -30,7 +30,7 @@ const ConfigSchema = a.object(
       model: a.stringEnum(["codestral-2405", "codestral-latest"]),
     }),
     openai: a.object({
-      model: a.stringEnum(["gpt-3.5-turbo"]),
+      model: a.string(),
       baseUrl: a.string(),
     }),
     ollama: a.object({
