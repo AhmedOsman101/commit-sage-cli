@@ -1,6 +1,7 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: Each child has different incompatible types for the same parameter */
 /** biome-ignore-all lint/correctness/noUnusedFunctionParameters: This is a base class */
 import { setTimeout } from "node:timers/promises";
+import { classifyAIError } from "../lib/handleAiErrors.ts";
 import type {
   ApiError,
   CommitMessage,
@@ -53,26 +54,28 @@ export abstract class ModelService {
     return "";
   }
 
-  protected static async handleGenerationError(
-    error: ErrorWithResponse,
-    prompt: string,
-    attempt: number
-  ): Promise<CommitMessage> {
-    void logWarning(`Generation attempt ${attempt} failed:`, error);
-    const { errorMessage, shouldRetry } = ModelService.handleApiError(error);
-
-    const maxRetries = await ConfigService.get("general", "maxRetries").then(
-      result => result.unwrap()
+  protected static async getMaxRetries() {
+    return await ConfigService.get("general", "maxRetries").then(result =>
+      result.unwrap()
     );
+  }
 
-    if (shouldRetry && attempt < maxRetries) {
-      const delayMs = ModelService.calculateRetryDelay(attempt);
+  protected static async handleGenerationError(
+    error: unknown,
+    prompt: string,
+    attempt: number,
+    retryFn: (prompt: string, attempt: number) => Promise<CommitMessage>
+  ): Promise<CommitMessage> {
+    const classified = classifyAIError(error);
 
-      await setTimeout(delayMs);
+    const maxRetries = await ModelService.getMaxRetries();
 
-      return ModelService.generateCommitMessage(prompt, attempt + 1);
+    if (classified.shouldRetry && attempt < maxRetries) {
+      const delay = this.calculateRetryDelay(attempt);
+      await setTimeout(delay);
+      return retryFn(prompt, attempt + 1);
     }
 
-    throw new Error(`Failed to generate commit message: ${errorMessage}`);
+    throw new Error(`Failed to generate commit message: ${classified.message}`);
   }
 }

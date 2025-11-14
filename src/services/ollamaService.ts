@@ -1,4 +1,5 @@
-import axios from "axios";
+import { generateText } from "ai";
+import { createOllama } from "ollama-ai-provider-v2";
 import type {
   ApiError,
   CommitMessage,
@@ -7,70 +8,34 @@ import type {
 import ConfigService from "./configService.ts";
 import { ModelService } from "./modelService.ts";
 
-type OllamaResponse = {
-  message: {
-    content: string;
-  };
-};
-
 class OllamaService extends ModelService {
   static override async generateCommitMessage(
     prompt: string,
     attempt = 1
   ): Promise<CommitMessage> {
-    const baseUrl = await ConfigService.get("ollama", "baseUrl").then(result =>
-      result.unwrap()
-    );
+    const baseURL = (await ConfigService.get("ollama", "baseUrl")).unwrap();
+    const model = (await ConfigService.get("ollama", "model")).unwrap();
+    const maxRetries = await ModelService.getMaxRetries();
 
-    const model = await ConfigService.get("ollama", "model").then(result =>
-      result.unwrap()
-    );
-
-    const apiUrl = `${baseUrl}/api/chat`;
-
-    const requestConfig = {
-      headers: {
-        "content-type": "application/json",
-      },
-      timeout: 30_000,
-    };
-
-    const payload = {
-      model,
-      messages: [{ role: "user", content: prompt }],
-      stream: false,
-    };
+    const ollama = createOllama({ baseURL });
 
     try {
-      const response = await axios.post<OllamaResponse>(
-        apiUrl,
-        payload,
-        requestConfig
-      );
+      const { text } = await generateText({
+        model: ollama(model),
+        prompt,
+        temperature: 0.7,
+        maxRetries,
+      });
 
-      const commitMessage = OllamaService.extractCommitMessage(response.data);
-
-      return { message: commitMessage, model };
+      return { message: text, model };
     } catch (error) {
       return await OllamaService.handleGenerationError(
-        error as ErrorWithResponse,
+        error,
         prompt,
-        attempt
+        attempt,
+        OllamaService.generateCommitMessage.bind(OllamaService)
       );
     }
-  }
-
-  static override extractCommitMessage(response: OllamaResponse): string {
-    if (response.message?.content) {
-      const commitMessage = OllamaService.cleanCommitMessage(
-        response.message.content
-      );
-      if (!commitMessage.trim()) {
-        throw new Error("Generated commit message is empty.");
-      }
-      return commitMessage;
-    }
-    throw new Error("Invalid response format from Ollama API");
   }
 
   static override handleApiError(error: ErrorWithResponse): ApiError {
