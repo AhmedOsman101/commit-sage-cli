@@ -36,7 +36,7 @@ jobs:
           chmod +x biome
           mv biome /usr/local/bin/biome
         env:
-          BIOME_VERSION: 2.0.0-beta.6  # Pin to a specific version
+          BIOME_VERSION: 2.3.0  # Pin to a specific version
 
       - name: Format code with Biome
         run: biome check --fix .
