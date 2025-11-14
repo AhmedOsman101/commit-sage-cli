@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.4.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.3.0...v1.4.0) (2025-11-14)
+
+
+### Features
+
+* **config:** align AI provider configs with AI SDK ([13f20e4](https://github.com/AhmedOsman101/commit-sage-cli/commit/13f20e428a6c23d549ccfc8ba6fefbd2cd2e061e))
+* **config:** update base URLs and type definitions ([705a2d7](https://github.com/AhmedOsman101/commit-sage-cli/commit/705a2d7264c005e18c155bc1d9333f740f0e9700))
+* **error:** normalize and classify AI errors ([4addd7c](https://github.com/AhmedOsman101/commit-sage-cli/commit/4addd7c3e4daa4feef463b3c1492b7ab95d4aa75))
+* Expand OpenAI model config to support any model string ([fa784d4](https://github.com/AhmedOsman101/commit-sage-cli/commit/fa784d4d8e0154f0ab061fb9468ba8ffa3cb8eed))
+* handle deleted files in git blame analyzer ([f8e4051](https://github.com/AhmedOsman101/commit-sage-cli/commit/f8e40512fa9e8f06c723f74a6f158ab35965bbf7))
+
+
+### Bug Fixes
+
+* detect deleted files in git status ([b6e32cd](https://github.com/AhmedOsman101/commit-sage-cli/commit/b6e32cda14ab775627108afd4d900d042e5f7f23))
+
+
+### Performance Improvements
+
+* improve file deletion check in git service ([ae206fe](https://github.com/AhmedOsman101/commit-sage-cli/commit/ae206fe33bc3e6b66ba0ad18312727d3b62b704b))
+
 ## [1.3.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.1.0...v1.3.0) (2025-06-16)
 
 
