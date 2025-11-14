@@ -1,29 +1,47 @@
 # Changelog
 
-## [1.3.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.1.0...v1.3.0) (2025-06-16)
-
+## [1.4.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.3.0...v1.4.0) (2025-11-14)
 
 ### Features
 
-* add arrirpc schema ([1fbfabb](https://github.com/AhmedOsman101/commit-sage-cli/commit/1fbfabb22a1e806c2a714eb5165224a970ea6bd9))
-* add config file validation ([0aa551c](https://github.com/AhmedOsman101/commit-sage-cli/commit/0aa551cc3152e1a57567ec189c511ecf0b82c463))
-* add config validation service ([53596c1](https://github.com/AhmedOsman101/commit-sage-cli/commit/53596c1817b95ae54953ff3cc1475a999e93dffa))
-* add general and model url validation ([2c7dbb0](https://github.com/AhmedOsman101/commit-sage-cli/commit/2c7dbb08a656495906c4c1fefd3e35eec8681fa1))
-* Add release-please config file ([ba99102](https://github.com/AhmedOsman101/commit-sage-cli/commit/ba99102dc24868f3bd6b0dc6638e9aa364fc2b26))
-* add url and integer validation methods ([a580b5c](https://github.com/AhmedOsman101/commit-sage-cli/commit/a580b5c8078f2228e4e3c28ee66a9927ec989969))
-* **config:** enhance api key handling ([02056d0](https://github.com/AhmedOsman101/commit-sage-cli/commit/02056d0988149a233e8e324c5697692da81df095))
-* configure release-please for multi-package ([8e2ce23](https://github.com/AhmedOsman101/commit-sage-cli/commit/8e2ce239336601c56b7a38533aeb1942069615e3))
-* **config:** validate config and API keys ([4be2a7c](https://github.com/AhmedOsman101/commit-sage-cli/commit/4be2a7ccbba3430ad4e78eb8d5a6b9a2faff6c2f))
-* create configValidationService.ts ([2e43489](https://github.com/AhmedOsman101/commit-sage-cli/commit/2e434896bff4abd45380ed3da1f6fe4f0436b92a))
-* improve config validation error messages ([e810d4b](https://github.com/AhmedOsman101/commit-sage-cli/commit/e810d4b40ad5244573640b1bd5d057c11ff47cd3))
-
+- **config:** align AI provider configs with AI SDK ([13f20e4](https://github.com/AhmedOsman101/commit-sage-cli/commit/13f20e428a6c23d549ccfc8ba6fefbd2cd2e061e))
+- **config:** update base URLs and type definitions ([705a2d7](https://github.com/AhmedOsman101/commit-sage-cli/commit/705a2d7264c005e18c155bc1d9333f740f0e9700))
+- **models**: Migrate AI services to use vercel's AI SDK ([cc562f6](https://github.com/AhmedOsman101/commit-sage-cli/commit/cc562f6f9b23a37b9868a344c415d94b278900cb))
+- **error:** normalize and classify AI errors ([4addd7c](https://github.com/AhmedOsman101/commit-sage-cli/commit/4addd7c3e4daa4feef463b3c1492b7ab95d4aa75))
+- **providers:** remove Codestral AI provider ([16e0f37l](https://github.com/AhmedOsman101/commit-sage-cli/commit/16e0f37528106238fd16eb785fc49c0121bf5971))
+- Expand OpenAI model config to support any model string ([fa784d4](https://github.com/AhmedOsman101/commit-sage-cli/commit/fa784d4d8e0154f0ab061fb9468ba8ffa3cb8eed))
+- handle deleted files in git blame analyzer ([f8e4051](https://github.com/AhmedOsman101/commit-sage-cli/commit/f8e40512fa9e8f06c723f74a6f158ab35965bbf7))
 
 ### Bug Fixes
 
-* **config:** improve config validation and error handling ([43e89b6](https://github.com/AhmedOsman101/commit-sage-cli/commit/43e89b6941cdc93bc0bbd6644d1e9cb1c98532b7))
-* handle empty commit messages from ai service ([38a3762](https://github.com/AhmedOsman101/commit-sage-cli/commit/38a37621afc5f1b559874d7bdb7636b6eb06e0de))
-* remove extra blank line in Logger.ts ([7702397](https://github.com/AhmedOsman101/commit-sage-cli/commit/77023974bda52aaa49f625406667cf4b0568e2bd))
-* update config schema URL ([1f940f7](https://github.com/AhmedOsman101/commit-sage-cli/commit/1f940f7972b3d5a2ed05c367cdc7c93b45f5b488))
+- detect deleted files in git status ([b6e32cd](https://github.com/AhmedOsman101/commit-sage-cli/commit/b6e32cda14ab775627108afd4d900d042e5f7f23))
+
+### Performance Improvements
+
+- improve file deletion check in git service ([ae206fe](https://github.com/AhmedOsman101/commit-sage-cli/commit/ae206fe33bc3e6b66ba0ad18312727d3b62b704b))
+
+## [1.3.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.1.0...v1.3.0) (2025-06-16)
+
+### Features
+
+- add arrirpc schema ([1fbfabb](https://github.com/AhmedOsman101/commit-sage-cli/commit/1fbfabb22a1e806c2a714eb5165224a970ea6bd9))
+- add config file validation ([0aa551c](https://github.com/AhmedOsman101/commit-sage-cli/commit/0aa551cc3152e1a57567ec189c511ecf0b82c463))
+- add config validation service ([53596c1](https://github.com/AhmedOsman101/commit-sage-cli/commit/53596c1817b95ae54953ff3cc1475a999e93dffa))
+- add general and model url validation ([2c7dbb0](https://github.com/AhmedOsman101/commit-sage-cli/commit/2c7dbb08a656495906c4c1fefd3e35eec8681fa1))
+- Add release-please config file ([ba99102](https://github.com/AhmedOsman101/commit-sage-cli/commit/ba99102dc24868f3bd6b0dc6638e9aa364fc2b26))
+- add url and integer validation methods ([a580b5c](https://github.com/AhmedOsman101/commit-sage-cli/commit/a580b5c8078f2228e4e3c28ee66a9927ec989969))
+- **config:** enhance api key handling ([02056d0](https://github.com/AhmedOsman101/commit-sage-cli/commit/02056d0988149a233e8e324c5697692da81df095))
+- configure release-please for multi-package ([8e2ce23](https://github.com/AhmedOsman101/commit-sage-cli/commit/8e2ce239336601c56b7a38533aeb1942069615e3))
+- **config:** validate config and API keys ([4be2a7c](https://github.com/AhmedOsman101/commit-sage-cli/commit/4be2a7ccbba3430ad4e78eb8d5a6b9a2faff6c2f))
+- create configValidationService.ts ([2e43489](https://github.com/AhmedOsman101/commit-sage-cli/commit/2e434896bff4abd45380ed3da1f6fe4f0436b92a))
+- improve config validation error messages ([e810d4b](https://github.com/AhmedOsman101/commit-sage-cli/commit/e810d4b40ad5244573640b1bd5d057c11ff47cd3))
+
+### Bug Fixes
+
+- **config:** improve config validation and error handling ([43e89b6](https://github.com/AhmedOsman101/commit-sage-cli/commit/43e89b6941cdc93bc0bbd6644d1e9cb1c98532b7))
+- handle empty commit messages from ai service ([38a3762](https://github.com/AhmedOsman101/commit-sage-cli/commit/38a37621afc5f1b559874d7bdb7636b6eb06e0de))
+- remove extra blank line in Logger.ts ([7702397](https://github.com/AhmedOsman101/commit-sage-cli/commit/77023974bda52aaa49f625406667cf4b0568e2bd))
+- update config schema URL ([1f940f7](https://github.com/AhmedOsman101/commit-sage-cli/commit/1f940f7972b3d5a2ed05c367cdc7c93b45f5b488))
 
 ## [1.1.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.0.0...v1.1.0) - 2025-05-23
 
