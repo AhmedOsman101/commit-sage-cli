@@ -1,5 +1,9 @@
 {
   "deno.enable": true,
   "deno.cacheOnSave": true,
-  "deno.lint": true
+  "deno.lint": true,
+  "licenser.author": "Ahmad Othman",
+  "licenser.projectName": "commit-sage-cli",
+  "licenser.license": "GPLv3",
+  "licenser.useSPDXLicenseFormat": false
 }
