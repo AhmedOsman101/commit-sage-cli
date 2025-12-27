@@ -20,7 +20,7 @@
     "@cliffy/prompt": "jsr:@cliffy/prompt@^1.0.0-rc.8",
     "@std/fmt": "jsr:@std/fmt",
     "ai": "npm:ai@^5.0.93",
-    "axios": "npm:axios@^1.11.0",
+    "axios": "npm:axios@1.13.2",
     "husky": "npm:husky@^9.1.7",
     "lib-result": "npm:lib-result@^3.2.2",
     "ollama-ai-provider-v2": "npm:ollama-ai-provider-v2@^1.5.4"
