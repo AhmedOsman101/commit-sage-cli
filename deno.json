@@ -3,8 +3,8 @@
   "tasks": {
     "dev": "deno run -A --watch src/main.ts",
     "run": "deno run -A src/main.ts",
-    "format": "pnpm dlx @biomejs/biome@2.3.0 check --fix .",
-    "format:check": "pnpm dlx @biomejs/biome@2.3.0 check .",
+    "format": "dx npm:@biomejs/biome@2.3.0 check --fix .",
+    "format:check": "dx npm:@biomejs/biome@2.3.0 check .",
     "compile": "deno compile -A -o $HOME/.local/bin/commit-sage src/main.ts",
     "compile-dev": "deno compile -A -o $HOME/scripts/bin/commit-sage src/main.ts",
     "compile-windows": "deno compile -A -o bin/commit-sage --target x86_64-pc-windows-msvc src/main.ts",
@@ -21,6 +21,7 @@
     "@std/fmt": "jsr:@std/fmt",
     "ai": "npm:ai@^5.0.93",
     "axios": "npm:axios@^1.11.0",
+    "husky": "npm:husky@^9.1.7",
     "lib-result": "npm:lib-result@^3.2.2",
     "ollama-ai-provider-v2": "npm:ollama-ai-provider-v2@^1.5.4"
   },

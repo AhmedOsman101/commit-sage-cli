@@ -18,6 +18,7 @@
     "npm:@types/node@*": "22.15.15",
     "npm:ai@^5.0.93": "5.0.93_zod@4.1.12",
     "npm:axios@^1.11.0": "1.11.0",
+    "npm:husky@^9.1.7": "9.1.7",
     "npm:lib-result@^3.2.2": "3.2.2",
     "npm:ollama-ai-provider-v2@^1.5.4": "1.5.4_zod@4.1.12"
   },
@@ -264,6 +265,10 @@
         "function-bind"
       ]
     },
+    "husky@9.1.7": {
+      "integrity": "sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA==",
+      "bin": true
+    },
     "json-schema@0.4.0": {
       "integrity": "sha512-es94M3nTIfsEPisRafak+HDLfHXnKBhV3vU5eqPcS3flIWqcxJWgXHXiey3YrpaNsanY5ei1VoYEbOzijuq9BA=="
     },
@@ -315,6 +320,7 @@
       "npm:@arrirpc/schema@~0.80.3",
       "npm:ai@^5.0.93",
       "npm:axios@^1.11.0",
+      "npm:husky@^9.1.7",
       "npm:lib-result@^3.2.2",
       "npm:ollama-ai-provider-v2@^1.5.4"
     ]
