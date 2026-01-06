@@ -12,6 +12,11 @@ This file contains guidelines for agentic coding assistants working on this repo
 - `deno task format:check` - Check code formatting using Biome (requires pnpm)
 - `deno task compile` - Compile binary to ~/.local/bin/commit-sage
 - `deno task compile-dev` - Compile binary to ~/scripts/bin/commit-sage
+- `deno task compile-windows` - Compile for Windows (x64)
+- `deno task compile-macos-x64` - Compile for macOS (Intel)
+- `deno task compile-macos-arm64` - Compile for macOS (Apple Silicon)
+- `deno task compile-linux-x64` - Compile for Linux (x64)
+- `deno task compile-linux-arm64` - Compile for Linux (ARM64)
 
 ### Before Committing
 
@@ -29,6 +34,15 @@ This project does not have automated tests. When adding new features, manually v
 - **Language**: TypeScript
 - **Linting/Formatting**: Biome 2.3.0
 - **Architecture**: Service-oriented with static classes and result types
+- **License**: GPL v3.0 - Add copyright header to new files
+
+### File Organization
+
+- `src/main.ts` - Entry point
+- `src/lib/` - Shared utilities (constants, errors, logger, types)
+- `src/services/` - Business logic services
+- `src/templates/` - Commit message templates and formats
+- Define types in `.d.ts` files inside `src/lib/` or subdirectories
 
 ### Imports
 
@@ -37,27 +51,31 @@ This project does not have automated tests. When adding new features, manually v
 - npm imports: `ai`, `axios`, `lib-result`, provider packages
 - Group imports: Node.js built-ins first, then external packages, then local imports
 - Use `type` keyword for type-only imports: `import type { ... }`
+- Biome auto-organizes imports on format
 
 ### Classes and Objects
 
-- Use **static classes** for services: `class GitService { static ... }`
-- Use **const objects** for simple services: `const CommandService = { ... }`
+- Use **static classes** for services with state: `class GitService { static ... }`
+- Use **const objects** for stateless utilities: `const CommandService = { ... }`
 - Extend base classes when sharing logic: `class GeminiService extends ModelService`
 - Use `default export` for services/classes: `export default GitService`
+- Disable `noStaticOnlyClass` lint rule for static services
 
 ### Types and Interfaces
 
-- Define custom types in `.d.ts` files inside `src/lib/types` directory directory (e.g., `src/lib/index.d.ts`, `configServiceTypes.d.ts`)
 - Use Result types from `lib-result`: `Result<T>`, `Ok(value)`, `Err(error)`
+- Unwrap Results with `.unwrap()` when you're sure they're valid
 - Mark configuration types as `readonly` where appropriate
 - Use `as const` for object literals that should be immutable
 - Union types for provider/model options: `"gemini" | "openai" | "ollama"`
+- Type guards with `is` keyword: `format is CommitFormat`
 
 ### Naming Conventions
 
 - **Classes**: PascalCase (`class ConfigService`)
 - **Constants**: UPPER_SNAKE_CASE (`MAX_DIFF_LENGTH`, `DEFAULT_CONFIG`)
 - **Functions/methods**: camelCase (`generateCommitMessage`, `getRepoPath`)
+- **Interfaces/Types**: PascalCase (`CommitMessage`, `CommandOutput`)
 - **Private/protected**: Use TypeScript `protected` for internal methods
 - **Error classes**: PascalCase ending with `Error` (`NoChangesDetectedError`)
 
@@ -69,6 +87,7 @@ This project does not have automated tests. When adding new features, manually v
 - Wrap errors with context: Use service-specific errors (e.g., `AiServiceError`, `ConfigurationError`)
 - Use Result types for recoverable errors, throw exceptions for unrecoverable
 - Log errors using `logError()` from `lib/logger.ts` (terminates program)
+- Log warnings with `logWarning()`, info with `logInfo()`, success with `logSuccess()`
 
 ### Constants and Configuration
 
@@ -76,6 +95,7 @@ This project does not have automated tests. When adding new features, manually v
 - Use `Readonly<T>` type for constants that should never change
 - Export as `const` with `Readonly`: `export const OS: Readonly<string> = Deno.build.os`
 - Group related constants in objects: `ERROR_MESSAGES`, `GIT_STATUS_CODES`
+- Use `as const` for constant objects to enable type inference
 
 ### Formatting (Biome rules)
 
@@ -83,22 +103,28 @@ This project does not have automated tests. When adding new features, manually v
 - **Line width**: 80 characters
 - **Quotes**: Double quotes for strings
 - **Semicolons**: Always use semicolons
-- **Trailing commas**: ES5 style (where applicable)
-- **Brackets**: Same line for opening bracket (except control flow)
+- **Trailing commas**: ES5 style
+- **Brackets**: Same line for opening bracket (control flow: new line)
 - **Arrow functions**: Parentheses as needed (`() => {}`, `x => {}`)
 - **Template literals**: Use template strings over string concatenation
-- **Properties**: Sorted properties enabled
+- **Properties**: Sorted properties enabled (auto-organized)
 - **Imports**: Auto-organize imports enabled
+- **Line ending**: LF (not CRLF)
 
-### Logging
+### Async Patterns
 
-Use the centralized logger from `src/lib/logger.ts`:
+- Use `async/await` for asynchronous operations
+- Return `Promise<T>` from async methods
+- Handle errors with try-catch or Result types
+- Use `.then()` for chaining when appropriate (e.g., `ConfigService.get().then(r => r.unwrap())`)
 
-- `logError(...)` - Error messages (terminates program)
-- `logInfo(...)` - Informational messages (blue)
-- `logWarning(...)` - Warning messages (yellow)
-- `logSuccess(...)` - Success messages (green)
-- `logDebug(...)` - Debug messages (magenta)
+### Template System
+
+- Commit formats in `src/templates/formats/`: conventional, angular, karma, semantic, emoji
+- Each format exports a `CommitTemplate` object with language variants
+- Get templates with `getTemplate(format, language)` from `src/templates/index.ts`
+- Supported languages: english, russian, chinese, japanese
+- Fallback to conventional format if invalid, english if invalid language
 
 ### Service Patterns
 
@@ -111,10 +137,10 @@ Use the centralized logger from `src/lib/logger.ts`:
    - Const objects with methods
    - Use for stateless utilities
 
-3. **Inheritance-based services** (GeminiService, OpenAiService):
+3. **Inheritance-based services** (GeminiService, OpenAiService, OllamaService):
    - Extend base class (ModelService)
    - Override specific methods
-   - Use `static override` keyword
+   - Use `static override` keyword for overridden methods
 
 ### Config Management
 
@@ -131,3 +157,22 @@ Use the centralized logger from `src/lib/logger.ts`:
 - Check error with `.isError()` and get value with `.ok`
 - Handle submodules: skip them with `GitService.isSubmodule(file)`
 - Use `GitService.getDiff(onlyStaged)` for diff generation
+- Initialize GitService before use: `GitService.initialize()`
+
+### License Headers
+
+Add to all new TypeScript files:
+```typescript
+// Copyright (C) 2025 Ahmad Othman
+// Licensed under the GNU General Public License v3.0. See LICENSE for details.
+```
+
+### Additional Biome Lint Rules
+
+- `useNodejsImportProtocol` - Enforce `node:` prefix for built-ins
+- `useAsConstAssertion` - Enforce `as const` for immutable objects
+- `useConst` - Prefer `const` over `let`
+- `useTemplate` - Use template literals over concatenation
+- `useShorthandFunctionType` - Use shorthand function types
+- `noTsIgnore` - Disallow `@ts-ignore` comments
+- `noImportCycles` - Prevent circular dependencies
