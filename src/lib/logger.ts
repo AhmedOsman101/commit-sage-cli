@@ -75,24 +75,24 @@ function makeOutput(...data: unknown[]): string {
 
 // Type never indicates that this function never returns, as it terminates program execution
 export function logError(...data: string[]): never {
-  const text = encoder.encode(red(`[ERROR] ${data.join(" ")}\n`));
+  const text = encoder.encode(`${red("[ERROR] ")}${data.join(" ")}\n`);
   Deno.stderr.writeSync(text);
 
   Deno.exit(1);
 }
 
 export function logInfo(...data: unknown[]): void {
-  console.info(blue(`[INFO] ${makeOutput(...data)}`));
+  console.info(`${blue("[INFO]")} ${makeOutput(...data)}`);
 }
 
 export function logWarning(...data: unknown[]): void {
-  console.warn(yellow(`[WARNING] ${makeOutput(...data)}`));
+  console.warn(`${yellow("[WARNING]")} ${makeOutput(...data)}`);
 }
 
 export function logSuccess(...data: unknown[]): void {
-  console.info(green(`[SUCCESS] ${makeOutput(...data)}`));
+  console.log(`${green("[SUCCESS]")} ${makeOutput(...data)}`);
 }
 
 export function logDebug(...data: unknown[]): void {
-  console.log(magenta(`[DEBUG] ${makeOutput(...data)}`));
+  console.log(`${magenta("[DEBUG]")} ${makeOutput(...data)}`);
 }

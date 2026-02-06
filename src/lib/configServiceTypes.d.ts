@@ -54,11 +54,11 @@ export type Config = {
   provider: ProviderConfig;
 };
 
+export type ApiService = "Gemini" | "OpenAI";
+
 export type ConfigSection = keyof Config;
 export type ConfigKey<T extends ConfigSection> = keyof Config[T];
 export type ConfigValue<
   T extends ConfigSection,
   G extends ConfigKey<T>,
 > = Config[T][G];
-
-export type ApiService = "Gemini" | "OpenAI";
