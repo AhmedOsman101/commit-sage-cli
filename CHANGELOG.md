@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.4.0...v1.5.0) (2026-02-25)
+
+
+### Features
+
+* improve error handling and logging ([16c6fa2](https://github.com/AhmedOsman101/commit-sage-cli/commit/16c6fa21e88e46b9744f81ee98108cfb9c975161))
+
 ## [1.4.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.3.0...v1.4.0) (2025-11-14)
 
 ### Features
