@@ -61,6 +61,7 @@ jobs:
 
   build-installer:
     name: Build Installer
+    needs: build-binaries
     runs-on: windows-latest
     steps:
       - name: Checkout code
@@ -96,6 +97,7 @@ jobs:
 
   build-dmg:
     name: Build DMG Installer
+    needs: build-binaries
     runs-on: macos-latest
     steps:
       - name: Checkout code
