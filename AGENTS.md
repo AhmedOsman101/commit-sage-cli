@@ -1,178 +1,192 @@
-# AGENTS.md
+# AGENTS.md - Commit Sage Developer Guide
 
-This file contains guidelines for agentic coding assistants working on this repository.
+This file provides guidelines for agents working on the Commit Sage codebase.
 
-## Build/Lint/Test Commands
+## Project Overview
 
-### Available Tasks (deno.json)
+Commit Sage is a CLI tool that uses AI to generate git commit messages. It is built with Deno (TypeScript) and uses Biome for formatting/linting.
 
-- `deno task dev` - Run in watch mode for development
-- `deno task run` - Run the CLI tool
-- `deno task format` - Format code using Biome (requires pnpm)
-- `deno task format:check` - Check code formatting using Biome (requires pnpm)
-- `deno task compile` - Compile binary to ~/.local/bin/commit-sage
-- `deno task compile-dev` - Compile binary to ~/scripts/bin/commit-sage
-- `deno task compile-windows` - Compile for Windows (x64)
-- `deno task compile-macos-x64` - Compile for macOS (Intel)
-- `deno task compile-macos-arm64` - Compile for macOS (Apple Silicon)
-- `deno task compile-linux-x64` - Compile for Linux (x64)
-- `deno task compile-linux-arm64` - Compile for Linux (ARM64)
+## Build, Lint, and Test Commands
 
-### Before Committing
+### Development
 
-Run `deno task format` to fix all formatting issues. This uses Biome via `pnpm dlx` since Deno doesn't support devDependencies.
+```bash
+deno task dev    # Run with file watching
+deno task run    # Run the application
+```
 
-### Testing
+### Formatting and Linting
 
-This project does not have automated tests. When adding new features, manually verify by running `deno task dev` and testing the functionality.
+```bash
+deno task format         # Format and fix issues (requires pnpm)
+deno task format:check   # Check formatting without fixing
+```
+
+### Compilation
+
+```bash
+deno task compile        # Compile to binary (~/.local/bin/commit-sage)
+deno task compile-dev    # Compile to dev location
+deno task compile-linux-x64
+deno task compile-linux-arm64
+deno task compile-macos-x64
+deno task compile-macos-arm64
+deno task compile-windows
+```
 
 ## Code Style Guidelines
 
-### Project Overview
+### General
 
-- **Runtime**: Deno 2.2+ required
-- **Language**: TypeScript
-- **Linting/Formatting**: Biome 2.3.0
-- **Architecture**: Service-oriented with static classes and result types
-- **License**: GPL v3.0 - Add copyright header to new files
+- This is a **Deno TypeScript** project (not Node.js)
+- Use **Biome** (v2.3.11) for all formatting and linting
+- Run `deno task format` before committing
 
-### File Organization
+### Formatting Rules
 
-- `src/main.ts` - Entry point
-- `src/lib/` - Shared utilities (constants, errors, logger, types)
-- `src/services/` - Business logic services
-- `src/templates/` - Commit message templates and formats
-- Define types in `.d.ts` files inside `src/lib/` or subdirectories
+- **Indent:** 2 spaces
+- **Line width:** 80 characters
+- **Quotes:** Double quotes (`"`) for strings
+- **Semicolons:** Always required
+- **Trailing commas:** ES5 style
+- **Bracket spacing:** Enabled
 
 ### Imports
 
-- Use `node:` prefix for Node.js built-ins (e.g., `import * as path from "node:path"`)
-- JSDR imports: `@std/fmt`, `@cliffy/prompt`
-- npm imports: `ai`, `axios`, `lib-result`, provider packages
-- Group imports: Node.js built-ins first, then external packages, then local imports
 - Use `type` keyword for type-only imports: `import type { ... }`
-- Biome auto-organizes imports on format
+- Use explicit file extensions in relative imports (`.ts`)
+- Use the import alias `@/lib` instead of relative paths `../lib`
+- Use `node:` prefix for Node.js built-ins (e.g., `import * as path from "node:path"`)
 
-### Classes and Objects
-
-- Use **static classes** for services with state: `class GitService { static ... }`
-- Use **const objects** for stateless utilities: `const CommandService = { ... }`
-- Extend base classes when sharing logic: `class GeminiService extends ModelService`
-- Use `default export` for services/classes: `export default GitService`
-- Disable `noStaticOnlyClass` lint rule for static services
-
-### Types and Interfaces
-
-- Use Result types from `lib-result`: `Result<T>`, `Ok(value)`, `Err(error)`
-- Unwrap Results with `.unwrap()` when you're sure they're valid
-- Mark configuration types as `readonly` where appropriate
-- Use `as const` for object literals that should be immutable
-- Union types for provider/model options: `"gemini" | "openai" | "ollama"`
-- Type guards with `is` keyword: `format is CommitFormat`
+```typescript
+import { createOpenAI } from "@ai-sdk/openai";
+import { generateText } from "ai";
+import type { CommitMessage } from "@/lib/index.d.ts";
+import ConfigService from "./configService.ts";
+```
 
 ### Naming Conventions
 
-- **Classes**: PascalCase (`class ConfigService`)
-- **Constants**: UPPER_SNAKE_CASE (`MAX_DIFF_LENGTH`, `DEFAULT_CONFIG`)
-- **Functions/methods**: camelCase (`generateCommitMessage`, `getRepoPath`)
-- **Interfaces/Types**: PascalCase (`CommitMessage`, `CommandOutput`)
-- **Private/protected**: Use TypeScript `protected` for internal methods
-- **Error classes**: PascalCase ending with `Error` (`NoChangesDetectedError`)
+- **Classes/Types:** PascalCase (`GitService`, `ConfigService`)
+- **Variables/Functions:** camelCase (`getRepoPath`, `generateCommitMessage`)
+- **Constants:** UPPER_SNAKE_CASE for config values (`MAX_DIFF_LENGTH`)
+- **Files:** camelCase (`gitService.ts`, `configService.ts`)
+
+### TypeScript Usage
+
+- Avoid `any` when possible
+- Use explicit return types for exported functions
+- Use `type` for type aliases, interfaces for objects
+
+```typescript
+type CommitMessage = {
+  message: string;
+  model: string;
+};
+
+interface MyInterface {
+  // ...
+}
+```
 
 ### Error Handling
 
-- Extend `Error` class for custom errors: `class FooError extends Error`
-- Set error name: `this.name = new.target.name`
-- Use `ErrorOptions` parameter for cause: `constructor(msg, options: ErrorOptions = {})`
-- Wrap errors with context: Use service-specific errors (e.g., `AiServiceError`, `ConfigurationError`)
-- Use Result types for recoverable errors, throw exceptions for unrecoverable
-- Log errors using `logError()` from `lib/logger.ts` (terminates program)
-- Log warnings with `logWarning()`, info with `logInfo()`, success with `logSuccess()`
+- Use the **Result** pattern from `lib-result` for operations that can fail
+- Use `Ok()` and `Err()` helpers
+- Create custom error classes extending `Error` in `src/lib/errors.ts`
 
-### Constants and Configuration
-
-- Define in `src/lib/constants.ts`
-- Use `Readonly<T>` type for constants that should never change
-- Export as `const` with `Readonly`: `export const OS: Readonly<string> = Deno.build.os`
-- Group related constants in objects: `ERROR_MESSAGES`, `GIT_STATUS_CODES`
-- Use `as const` for constant objects to enable type inference
-
-### Formatting (Biome rules)
-
-- **Indentation**: 2 spaces, spaces only
-- **Line width**: 80 characters
-- **Quotes**: Double quotes for strings
-- **Semicolons**: Always use semicolons
-- **Trailing commas**: ES5 style
-- **Brackets**: Same line for opening bracket (control flow: new line)
-- **Arrow functions**: Parentheses as needed (`() => {}`, `x => {}`)
-- **Template literals**: Use template strings over string concatenation
-- **Properties**: Sorted properties enabled (auto-organized)
-- **Imports**: Auto-organize imports enabled
-- **Line ending**: LF (not CRLF)
-
-### Async Patterns
-
-- Use `async/await` for asynchronous operations
-- Return `Promise<T>` from async methods
-- Handle errors with try-catch or Result types
-- Use `.then()` for chaining when appropriate (e.g., `ConfigService.get().then(r => r.unwrap())`)
-
-### Template System
-
-- Commit formats in `src/templates/formats/`: conventional, angular, karma, semantic, emoji
-- Each format exports a `CommitTemplate` object with language variants
-- Get templates with `getTemplate(format, language)` from `src/templates/index.ts`
-- Supported languages: english, russian, chinese, japanese
-- Fallback to conventional format if invalid, english if invalid language
-
-### Service Patterns
-
-1. **Static class services** (GitService, ConfigService):
-   - Static methods only
-   - Static properties for state (e.g., `static repoPath = ""`)
-   - Initialize with static methods: `GitService.initialize()`
-
-2. **Object-based services** (CommandService, AiService):
-   - Const objects with methods
-   - Use for stateless utilities
-
-3. **Inheritance-based services** (GeminiService, OpenAiService, OllamaService):
-   - Extend base class (ModelService)
-   - Override specific methods
-   - Use `static override` keyword for overridden methods
-
-### Config Management
-
-- Config stored at `~/.config/commitSage/config.json`
-- Use `ConfigService.get(section, key)` to read (returns Result)
-- Use `ConfigService.set(section, key, value)` to write (returns Result)
-- Config validation via `ConfigValidationService`
-- Environment variable fallback for API keys
-
-### Git Operations
-
-- Use `GitService.execGit(args)` for all git commands
-- Returns `Result<CommandOutput>` with stdout, stderr, code
-- Check error with `.isError()` and get value with `.ok`
-- Handle submodules: skip them with `GitService.isSubmodule(file)`
-- Use `GitService.getDiff(onlyStaged)` for diff generation
-- Initialize GitService before use: `GitService.initialize()`
-
-### License Headers
-
-Add to all new TypeScript files:
 ```typescript
-// Copyright (C) 2025 Ahmad Othman
-// Licensed under the GNU General Public License v3.0. See LICENSE for details.
+import { Err, Ok, type Result } from "lib-result";
+
+function getRepoPath(): Result<string, NoRepositoriesFoundError> {
+  if (!GitService.isGitRepo()) {
+    return Err(new NoRepositoriesFoundError());
+  }
+  return Ok(cmd.ok.stdout);
+}
 ```
 
-### Additional Biome Lint Rules
+### Service Pattern
 
-- `useNodejsImportProtocol` - Enforce `node:` prefix for built-ins
-- `useAsConstAssertion` - Enforce `as const` for immutable objects
-- `useConst` - Prefer `const` over `let`
-- `useTemplate` - Use template literals over concatenation
-- `useShorthandFunctionType` - Use shorthand function types
-- `noTsIgnore` - Disallow `@ts-ignore` comments
-- `noImportCycles` - Prevent circular dependencies
+- Use **static methods** for services (no instantiation needed)
+- Export default for service classes
+- Base classes should use `abstract` or `protected` methods
+
+```typescript
+class GitService {
+  static initialize(): string { ... }
+  static execGit(args: string[]): Result<CommandOutput, CommandError> { ... }
+}
+export default GitService;
+```
+
+### Logging
+
+- Use the logger functions from `@/lib/logger.ts`
+- `logError()` exits with code 1
+- `logInfo()`, `logWarning()`, `logSuccess()`, `logDebug()`
+
+```typescript
+import { logError, logInfo, logWarning } from "@/lib/logger.ts";
+```
+
+### Code Organization
+
+```
+src/
+├── main.ts              # Entry point
+├── lib/                 # Shared utilities
+│   ├── errors.ts        # Custom error classes
+│   ├── logger.ts        # Logging utilities
+│   ├── constants.ts     # Constants
+│   └── index.d.ts       # Global type definitions
+├── services/            # Service classes
+│   ├── aiService.ts
+│   ├── gitService.ts
+│   ├── configService.ts
+│   └── ...
+└── templates/           # Commit message templates
+    ├── index.ts
+    └── formats/
+```
+
+### Git Conventions
+
+- Follow [Conventional Commits](https://www.conventionalcommits.org/)
+- Use prefixes: `feat/`, `fix/`, `docs/`, `refactor/`, etc.
+- Run `deno task format` before committing
+
+### Common Patterns
+
+#### Switch Statements
+
+```typescript
+switch (provider) {
+  case "openai":
+    return await OpenAiService.generateCommitMessage(prompt);
+  case "ollama":
+    return await OllamaService.generateCommitMessage(prompt);
+  default: // gemini
+    return await GeminiService.generateCommitMessage(prompt);
+}
+```
+
+#### Unwrap Results
+
+```typescript
+const value = await ConfigService.get("provider", "type").then((result) =>
+  result.unwrap(),
+);
+```
+
+#### Async/Await with Error Handling
+
+```typescript
+async function main(): Promise<void> {
+  try {
+    const response = await AiService.generateAndApplyMessage();
+  } catch (error) {
+    logError((error as Error).message);
+  }
+}
+```
