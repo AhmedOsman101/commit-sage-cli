@@ -93,23 +93,34 @@ jobs:
     needs: [build-binaries, build-installer]
     runs-on: ubuntu-latest
     steps:
-      - name: Download all artifacts
+      - name: Download binaries
         uses: actions/download-artifact@v4
         with:
-          path: release
+          name: binaries
+          path: binaries
+
+      - name: Download installer
+        uses: actions/download-artifact@v4
+        with:
+          name: installer
+          path: installer
 
       - name: List files
-        run: ls -la release/
+        run: |
+          echo "=== Binaries ==="
+          ls -la binaries/
+          echo "=== Installer ==="
+          ls -la installer/
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            release/binaries/bin/commit-sage-linux-x64
-            release/binaries/bin/commit-sage-linux-arm64
-            release/binaries/bin/commit-sage-windows-x64.exe
-            release/binaries/bin/commit-sage-macos-x64
-            release/binaries/bin/commit-sage-macos-arm64
-            release/installer/*.exe
+            binaries/commit-sage-linux-x64
+            binaries/commit-sage-linux-arm64
+            binaries/commit-sage-windows-x64.exe
+            binaries/commit-sage-macos-x64
+            binaries/commit-sage-macos-arm64
+            installer/*.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
