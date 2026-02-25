@@ -79,7 +79,7 @@ jobs:
       - name: Build Installer
         run: |
           mkdir -p release
-          makensis installer\windows\commit-sage.nsi
+          & "C:\Program Files (x86)\NSIS\makensis.exe" installer\windows\commit-sage.nsi
 
       - name: Upload Installer
         uses: actions/upload-artifact@v4
@@ -88,59 +88,9 @@ jobs:
           path: release/*.exe
           retention-days: 7
 
-  build-dmg:
-    name: Build DMG Installer
-    needs: build-binaries
-    runs-on: macos-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download binaries
-        uses: actions/download-artifact@v4
-        with:
-          name: binaries
-          path: bin/
-
-      - name: Install create-dmg
-        run: brew install create-dmg
-
-      - name: Build DMG
-        run: |
-          mkdir -p release
-          chmod +x bin/commit-sage-macos-x64
-          chmod +x bin/commit-sage-macos-arm64
-          
-          # Create DMG for Intel
-          create-dmg \
-            --volname "Commit Sage" \
-            --window-pos 200 120 \
-            --window-size 600 400 \
-            --app-drop-link 425 178 \
-            "release/CommitSage-1.0.0-macos-x64.dmg" \
-            /Applications \
-            "bin/commit-sage-macos-x64"
-          
-          # Create DMG for Apple Silicon
-          create-dmg \
-            --volname "Commit Sage" \
-            --window-pos 200 120 \
-            --window-size 600 400 \
-            --app-drop-link 425 178 \
-            "release/CommitSage-1.0.0-macos-arm64.dmg" \
-            /Applications \
-            "bin/commit-sage-macos-arm64"
-
-      - name: Upload DMG
-        uses: actions/upload-artifact@v4
-        with:
-          name: dmg-installers
-          path: release/*.dmg
-          retention-days: 7
-
   release:
     name: Create Release
-    needs: [build-binaries, build-installer, build-dmg]
+    needs: [build-binaries, build-installer]
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -161,6 +111,5 @@ jobs:
             release/binaries/bin/commit-sage-macos-x64
             release/binaries/bin/commit-sage-macos-arm64
             release/installer/*.exe
-            release/dmg-installers/*.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

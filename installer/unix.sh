@@ -1,6 +1,6 @@
 #!/bin/bash
-# Interactive installer for Commit Sage (Linux)
-# Usage: curl -fsSL https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/main/installer/linux/install.sh | bash
+# Interactive installer for Commit Sage (Linux & macOS)
+# Usage: curl -fsSL https://get.commitsage.dev | bash
 
 set -euo pipefail
 
