@@ -1,6 +1,6 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateText } from "ai";
-import type { CommitMessage } from "../lib/index.d.ts";
+import type { CommitMessage } from "@/lib/index.d.ts";
 import ConfigService from "./configService.ts";
 import { ModelService } from "./modelService.ts";
 

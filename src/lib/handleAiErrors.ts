@@ -26,8 +26,8 @@ import {
   UnsupportedFunctionalityError,
 } from "ai";
 import type { AxiosError } from "axios";
-import { ERROR_MESSAGES } from "./constants.ts";
-import { ConfigurationError } from "./errors.ts";
+import { ERROR_MESSAGES } from "@/lib/constants.ts";
+import { ConfigurationError } from "@/lib/errors.ts";
 
 export type NormalizedAIError = {
   message: string;

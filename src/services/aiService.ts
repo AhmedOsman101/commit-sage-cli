@@ -1,6 +1,6 @@
-import { ERROR_MESSAGES } from "../lib/constants.ts";
-import type { CommitMessage } from "../lib/index.d.ts";
-import { logError } from "../lib/logger.ts";
+import { ERROR_MESSAGES } from "@/lib/constants.ts";
+import type { CommitMessage } from "@/lib/index.d.ts";
+import { logError } from "@/lib/logger.ts";
 import ConfigService from "./configService.ts";
 import GeminiService from "./geminiService.ts";
 import GitBlameAnalyzer from "./gitBlameAnalyzer.ts";

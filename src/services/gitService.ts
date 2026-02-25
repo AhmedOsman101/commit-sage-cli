@@ -2,11 +2,12 @@ import { Buffer } from "node:buffer";
 import * as path from "node:path";
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
 import {
+  CommandError,
   NoChangesDetectedError,
   NoRepositoriesFoundError,
-} from "../lib/errors.ts";
-import type { CommandOutput } from "../lib/index.d.ts";
-import { logError } from "../lib/logger.ts";
+} from "@/lib/errors.ts";
+import type { CommandOutput } from "@/lib/index.d.ts";
+import { logError } from "@/lib/logger.ts";
 import CommandService from "./commandService.ts";
 import FileSystemService from "./fileSystemService.ts";
 
@@ -38,7 +39,7 @@ class GitService {
     GitService.setRepoPath(repoPath.ok);
     return repoPath.ok;
   }
-  static execGit(args: string[]): Result<CommandOutput> {
+  static execGit(args: string[]): Result<CommandOutput, CommandError> {
     const cmd = CommandService.execute("git", args, GitService.repoPath);
     if (cmd.isError()) return Err(cmd.error);
 

@@ -1,6 +1,6 @@
 import * as path from "node:path";
-import { ERROR_MESSAGES, REPO_PATH } from "../lib/constants.ts";
-import { logError } from "../lib/logger.ts";
+import { ERROR_MESSAGES, REPO_PATH } from "@/lib/constants.ts";
+import { logError } from "@/lib/logger.ts";
 import CommandService from "./commandService.ts";
 import FileSystemService from "./fileSystemService.ts";
 import GitService from "./gitService.ts";

@@ -1,8 +1,8 @@
 import { a, type ValidationException } from "@arrirpc/schema";
 import { ErrFromText, Ok, type Result } from "lib-result";
-import type { Config } from "../lib/configServiceTypes.d.ts";
-import { CONFIG_PATH } from "../lib/constants.ts";
-import { logError, logWarning } from "../lib/logger.ts";
+import type { Config } from "@/lib/configServiceTypes.d.ts";
+import { CONFIG_PATH } from "@/lib/constants.ts";
+import { logError, logWarning } from "@/lib/logger.ts";
 
 const INF = Number.POSITIVE_INFINITY;
 const NINF = Number.NEGATIVE_INFINITY;

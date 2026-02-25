@@ -1,12 +1,12 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: Each child has different incompatible types for the same parameter */
 /** biome-ignore-all lint/correctness/noUnusedFunctionParameters: This is a base class */
 import { setTimeout } from "node:timers/promises";
-import { classifyAIError } from "../lib/handleAiErrors.ts";
+import { classifyAIError } from "@/lib/handleAiErrors.ts";
 import type {
   ApiError,
   CommitMessage,
   ErrorWithResponse,
-} from "../lib/index.d.ts";
+} from "@/lib/index.d.ts";
 import ConfigService from "./configService.ts";
 
 export abstract class ModelService {

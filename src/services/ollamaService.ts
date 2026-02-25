@@ -4,7 +4,7 @@ import type {
   ApiError,
   CommitMessage,
   ErrorWithResponse,
-} from "../lib/index.d.ts";
+} from "@/lib/index.d.ts";
 import ConfigService from "./configService.ts";
 import { ModelService } from "./modelService.ts";
 

@@ -1,5 +1,5 @@
-import type { CommitLanguage } from "../lib/configServiceTypes.d.ts";
-import { getTemplate } from "../templates/index.ts";
+import type { CommitLanguage } from "@/lib/configServiceTypes.d.ts";
+import { getTemplate } from "@/templates/index.ts";
 import ConfigService from "./configService.ts";
 
 const PromptService = {

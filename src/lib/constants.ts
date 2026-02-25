@@ -1,6 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
-import GitService from "../services/gitService.ts";
+import GitService from "@/services/gitService.ts";
 import type { Config } from "./configServiceTypes.d.ts";
 
 function getConfigPath(): string {
