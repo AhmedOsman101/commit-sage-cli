@@ -1,6 +1,7 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateText } from "ai";
 import type { CommitMessage } from "@/lib/index.d.ts";
+import { stripThinkingTags } from "@/lib/stripThinkingTags.ts";
 import ConfigService from "./configService.ts";
 import { ModelService } from "./modelService.ts";
 
@@ -24,7 +25,7 @@ class GeminiService extends ModelService {
         maxRetries,
       });
 
-      return { message: text, model };
+      return { message: stripThinkingTags(text), model };
     } catch (error) {
       return await GeminiService.handleGenerationError(
         error,
