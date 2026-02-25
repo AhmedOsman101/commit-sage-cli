@@ -53,13 +53,7 @@ Section "Install"
   ; Add to PATH
   DetailPrint "Adding to PATH..."
   ReadRegStr $0 HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path"
-  
-  ; Check if already in PATH
   StrCpy $1 "$0;$INSTDIR"
-  StrCmp $0 "$INSTDIR" +2
-  StrCmp $0 "" +2
-  StrCpy $1 "$0;$INSTDIR"
-  
   WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path" "$1"
   
   ; Notify Windows of PATH change
@@ -76,32 +70,6 @@ SectionEnd
 
 ; Uninstaller Section
 Section "Uninstall"
-  ; Remove from PATH
-  ReadRegStr $0 HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path"
-  
-  ; Remove install dir from PATH
-  StrCpy $1 ""
-  StrCpy $2 ""
-  
-  ; Simple PATH cleanup - remove INSTDIR from PATH
-  StrCpy $0 "$0;"
-  StrLen $3 "$INSTDIR"
-  loop:
-    StrCpy $2 $0 1
-    StrCpy $0 $0 1 ""
-    StrCmp $2 "" done
-    StrCmp $2 ";" found
-    goto loop
-  found:
-    StrCpy $1 $0
-    StrCpy $0 $1 1 -1
-    StrCmp $0 ";" +1 loop
-    StrCpy $1 $1 -1
-    WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path" "$1"
-  
-  ; Notify Windows
-  System::Call 'Kernel32::SendMessageTimeoutA(i 0xffff, i 0x001A, i 0, t "Environment", i 2, i 5000, i r0)'
-  
   ; Remove files
   Delete "$INSTDIR\commit-sage-windows-x64.exe"
   Delete "$INSTDIR\uninstall.exe"
