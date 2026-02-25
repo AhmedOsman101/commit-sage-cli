@@ -1,6 +1,6 @@
+import { Err, ErrFromText, ErrFromUnknown, Ok, type Result } from "lib-result";
 import { ERROR_MESSAGES } from "@/lib/constants.ts";
 import type { CommitMessage } from "@/lib/index.d.ts";
-import { logError } from "@/lib/logger.ts";
 import ConfigService from "./configService.ts";
 import GeminiService from "./geminiService.ts";
 import GitBlameAnalyzer from "./gitBlameAnalyzer.ts";
@@ -21,64 +21,81 @@ const AiService = {
   async generateCommitMessage(
     diff: string,
     blameAnalysis: string
-  ): Promise<CommitMessage> {
+  ): Promise<Result<CommitMessage, Error>> {
+    if (!diff) return ErrFromText(ERROR_MESSAGES.noChanges);
+
+    const truncatedDiff = this.truncateDiff(diff);
+    const prompt = await PromptService.generatePrompt(
+      truncatedDiff,
+      blameAnalysis
+    );
+
+    const providerResult = await ConfigService.get("provider", "type");
+    if (providerResult.isError()) return Err(providerResult.error);
+
+    const provider = providerResult.ok;
+
     try {
-      if (!diff) throw new Error(ERROR_MESSAGES.noChanges);
-
-      const truncatedDiff = this.truncateDiff(diff);
-      const prompt = await PromptService.generatePrompt(
-        truncatedDiff,
-        blameAnalysis
-      );
-
-      const provider = await ConfigService.get("provider", "type").then(
-        result => result.unwrap()
-      );
+      let commitMessage: CommitMessage;
 
       switch (provider) {
         case "openai":
-          return await OpenAiService.generateCommitMessage(prompt);
+          commitMessage = await OpenAiService.generateCommitMessage(prompt);
+          break;
         case "ollama":
-          return await OllamaService.generateCommitMessage(prompt);
-        default: // gemini
-          return await GeminiService.generateCommitMessage(prompt);
+          commitMessage = await OllamaService.generateCommitMessage(prompt);
+          break;
+        // biome-ignore lint/complexity/noUselessSwitchCase: Verbosity is better
+        case "gemini":
+        default:
+          commitMessage = await GeminiService.generateCommitMessage(prompt);
       }
+
+      return Ok(commitMessage);
     } catch (error) {
-      logError((error as Error).message);
+      return ErrFromUnknown(error);
     }
   },
-  async generateAndApplyMessage() {
+  async generateAndApplyMessage(): Promise<Result<CommitMessage, Error>> {
     GitService.initialize();
-    const onlyStagedSetting = await ConfigService.get(
+
+    const onlyStagedResult = await ConfigService.get(
       "commit",
       "onlyStagedChanges"
-    ).then(result => result.unwrap());
+    );
+    if (onlyStagedResult.isError()) return Err(onlyStagedResult.error);
 
+    const onlyStagedSetting = onlyStagedResult.ok;
     const hasStagedChanges = GitService.hasChanges("staged");
 
     const useStagedChanges = onlyStagedSetting || hasStagedChanges;
 
-    const diff = await GitService.getDiff(useStagedChanges);
+    const diffResult = await GitService.getDiff(useStagedChanges);
+    if (diffResult.isError()) return Err(diffResult.error);
 
-    if (!diff) logError("No changes to commit");
+    const diff = diffResult.ok;
 
-    const changedFiles = GitService.getChangedFiles(useStagedChanges);
+    const changedFilesResult = GitService.getChangedFiles(useStagedChanges);
+    if (changedFilesResult.isError()) return Err(changedFilesResult.error);
+
+    const changedFiles = changedFilesResult.ok;
 
     const analysesPromises = changedFiles.map(file =>
       GitBlameAnalyzer.analyzeChanges(file)
     );
 
-    const blameAnalyses = await Promise.all(analysesPromises).then(results =>
-      results.filter(
-        result => result && !result.startsWith("No changes detected")
-      )
-    );
+    const blameResults = await Promise.all(analysesPromises);
 
-    const blameAnalysis = blameAnalyses
-      .filter(analysis => analysis)
-      .join("\n\n");
+    const blameAnalysis: string[] = [];
+    for (const result of blameResults) {
+      if (result.isError()) continue;
+      const analysis = result.ok;
+      if (analysis && !analysis.startsWith("No changes detected")) {
+        blameAnalysis.push(analysis);
+      }
+    }
 
-    return await this.generateCommitMessage(diff, blameAnalysis);
+    return await this.generateCommitMessage(diff, blameAnalysis.join("\n\n"));
   },
 };
 

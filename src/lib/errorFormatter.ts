@@ -30,10 +30,7 @@ export function formatUserError(error: Error): string {
       ) {
         return "Could not connect to the AI service. Please check your network connection and API configuration.";
       }
-      if (
-        error.message.includes("API key") ||
-        error.message.includes("api key")
-      ) {
+      if (error.message.toLowerCase().includes("api key")) {
         return "API key issue. Please check your API key is set correctly.";
       }
       return error.message;

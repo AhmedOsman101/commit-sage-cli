@@ -1,6 +1,7 @@
 // Copyright (C) 2025 Ahmad Othman
 // Licensed under the GNU General Public License v3.0. See LICENSE for details.
 
+import { formatUserError } from "@/lib/errorFormatter.ts";
 import { EmptyCommitMessageError } from "@/lib/errors.ts";
 import { logError } from "@/lib/logger.ts";
 import AiService from "@/services/aiService.ts";
@@ -14,14 +15,21 @@ async function main(): Promise<void> {
   }
 
   try {
-    const response = await AiService.generateAndApplyMessage();
+    const result = await AiService.generateAndApplyMessage();
+
+    if (result.isError()) {
+      logError(formatUserError(result.error));
+    }
+
+    const response = result.ok;
+
     if (response.message.trim()) {
       console.log(response.message);
     } else {
       throw new EmptyCommitMessageError();
     }
   } catch (error) {
-    logError((error as Error).message);
+    logError(formatUserError(error as Error));
   }
 }
 

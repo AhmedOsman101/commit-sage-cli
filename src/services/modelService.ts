@@ -63,7 +63,7 @@ export abstract class ModelService {
     error: unknown,
     prompt: string,
     attempt: number,
-    retryFn: (prompt: string, attempt: number) => Promise<CommitMessage>
+    retryFn: (Prompt: string, Attempt: number) => Promise<CommitMessage>
   ): Promise<CommitMessage> {
     const classified = classifyAIError(error);
 

@@ -1,6 +1,6 @@
 import * as path from "node:path";
+import { Err, ErrFromText, Ok, type Result } from "lib-result";
 import { ERROR_MESSAGES, REPO_PATH } from "@/lib/constants.ts";
-import { logError } from "@/lib/logger.ts";
 import CommandService from "./commandService.ts";
 import FileSystemService from "./fileSystemService.ts";
 import GitService from "./gitService.ts";
@@ -15,30 +15,34 @@ type BlameInfo = {
 };
 
 class GitBlameAnalyzer {
-  static async getGitBlame(filePath: string): Promise<BlameInfo[]> {
-    try {
-      const absoluteFilePath = path.resolve(REPO_PATH, filePath);
-      if (!(await FileSystemService.fileExists(absoluteFilePath))) {
-        throw new Error(`${ERROR_MESSAGES.fileNotFound}: ${absoluteFilePath}`);
-      }
-
-      if (!GitService.hasHead()) {
-        throw new Error(ERROR_MESSAGES.noCommitsYet);
-      }
-
-      if (GitService.isNewFile(filePath)) {
-        throw new Error(ERROR_MESSAGES.fileNotCommitted);
-      }
-
-      if (GitService.isFileDeleted(filePath)) {
-        throw new Error(ERROR_MESSAGES.fileDeleted);
-      }
-
-      const blameOutput = GitBlameAnalyzer.executeGitBlame(filePath);
-      return GitBlameAnalyzer.parseBlameOutput(blameOutput);
-    } catch (error) {
-      logError("Error getting blame info:", (error as Error).message);
+  static async getGitBlame(
+    filePath: string
+  ): Promise<Result<BlameInfo[], Error>> {
+    const absoluteFilePath = path.resolve(REPO_PATH, filePath);
+    const fileExistsResult =
+      await FileSystemService.fileExists(absoluteFilePath);
+    if (fileExistsResult.isError()) {
+      return ErrFromText(`${ERROR_MESSAGES.fileNotFound}: ${absoluteFilePath}`);
     }
+    if (!fileExistsResult.ok) {
+      return ErrFromText(`${ERROR_MESSAGES.fileNotFound}: ${absoluteFilePath}`);
+    }
+
+    if (!GitService.hasHead()) {
+      return ErrFromText(ERROR_MESSAGES.noCommitsYet);
+    }
+
+    if (GitService.isNewFile(filePath)) {
+      return ErrFromText(ERROR_MESSAGES.fileNotCommitted);
+    }
+
+    if (GitService.isFileDeleted(filePath)) {
+      return ErrFromText(ERROR_MESSAGES.fileDeleted);
+    }
+    const blameResult = GitBlameAnalyzer.executeGitBlame(filePath);
+    if (blameResult.isError()) return Err(blameResult.error);
+
+    return Ok(GitBlameAnalyzer.parseBlameOutput(blameResult.ok));
   }
 
   static parseBlameOutput(blameOutput: string): BlameInfo[] {
@@ -69,54 +73,51 @@ class GitBlameAnalyzer {
 
     return blameInfos;
   }
-  static executeGitBlame(filePath: string): string {
-    const { stdout } = CommandService.execute(
+  static executeGitBlame(filePath: string): Result<string, Error> {
+    const cmdResult = CommandService.execute(
       "git",
       ["blame", "--line-porcelain", filePath.replaceAll('"', "")],
       REPO_PATH
-    ).unwrap();
+    );
 
-    return stdout;
+    if (cmdResult.isError()) return Err(cmdResult.error);
+    return Ok(cmdResult.ok.stdout);
   }
 
-  static getDiff(filePath: string): string {
-    const { stdout } = GitService.execGit([
-      "diff",
-      "--unified=0",
-      "--",
-      filePath,
-    ]).unwrap();
+  static getDiff(filePath: string): Result<string, Error> {
+    const result = GitService.execGit(["diff", "--unified=0", "--", filePath]);
 
-    return stdout;
+    if (result.isError()) return Err(result.error);
+    return Ok(result.ok.stdout);
   }
-  static async analyzeChanges(filePath: string): Promise<string> {
-    try {
-      const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
+  static async analyzeChanges(
+    filePath: string
+  ): Promise<Result<string, Error>> {
+    const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
 
-      // First check if file is deleted or new, as these don't need blame analysis
-      // Use git status to check file state
-      if (GitService.isFileDeleted(filePath)) {
-        return `Deleted file: ${normalizedPath}`;
-      }
-
-      if (GitService.isNewFile(filePath)) {
-        return `New file: ${normalizedPath}`;
-      }
-
-      // For existing files, we need to get blame info
-      const blame = await GitBlameAnalyzer.getGitBlame(normalizedPath);
-
-      const diff = GitBlameAnalyzer.getDiff(normalizedPath);
-
-      const changedLines = GitBlameAnalyzer.parseChangedLines(diff);
-      const authorChanges = GitBlameAnalyzer.analyzeBlameInfo(
-        blame,
-        changedLines
-      );
-      return GitBlameAnalyzer.formatAnalysis(authorChanges);
-    } catch (error) {
-      logError("Error analyzing changes:", (error as Error).message);
+    // First check if file is deleted or new, as these don't need blame analysis
+    // Use git status to check file state
+    if (GitService.isFileDeleted(filePath)) {
+      return Ok(`Deleted file: ${normalizedPath}`);
     }
+
+    if (GitService.isNewFile(filePath)) {
+      return Ok(`New file: ${normalizedPath}`);
+    }
+
+    // For existing files, we need to get blame info
+    const blameResult = await GitBlameAnalyzer.getGitBlame(normalizedPath);
+    if (blameResult.isError()) return Err(blameResult.error);
+
+    const diffResult = GitBlameAnalyzer.getDiff(normalizedPath);
+    if (diffResult.isError()) return Err(diffResult.error);
+
+    const changedLines = GitBlameAnalyzer.parseChangedLines(diffResult.ok);
+    const authorChanges = GitBlameAnalyzer.analyzeBlameInfo(
+      blameResult.ok,
+      changedLines
+    );
+    return Ok(GitBlameAnalyzer.formatAnalysis(authorChanges));
   }
 
   static parseChangedLines(diff: string): Set<number> {
@@ -177,26 +178,23 @@ class GitBlameAnalyzer {
       )
       .join("\n");
   }
-  static getBlameInfo(filePath: string): BlameInfo[] {
-    try {
-      if (!GitService.hasHead()) {
-        throw new Error(ERROR_MESSAGES.noCommitsYet);
-      }
-
-      if (GitService.isNewFile(filePath)) {
-        throw new Error(ERROR_MESSAGES.fileNotCommitted);
-      }
-
-      if (GitService.isFileDeleted(filePath)) {
-        console.log(`${filePath} is deleted`);
-        throw new Error(ERROR_MESSAGES.fileDeleted);
-      }
-
-      const blameOutput = GitBlameAnalyzer.executeGitBlame(filePath);
-      return GitBlameAnalyzer.parseBlameOutput(blameOutput);
-    } catch (error) {
-      logError("Error getting blame info:", (error as Error).message);
+  static getBlameInfo(filePath: string): Result<BlameInfo[], Error> {
+    if (!GitService.hasHead()) {
+      return ErrFromText(ERROR_MESSAGES.noCommitsYet);
     }
+
+    if (GitService.isNewFile(filePath)) {
+      return ErrFromText(ERROR_MESSAGES.fileNotCommitted);
+    }
+
+    if (GitService.isFileDeleted(filePath)) {
+      return ErrFromText(ERROR_MESSAGES.fileDeleted);
+    }
+
+    const blameResult = GitBlameAnalyzer.executeGitBlame(filePath);
+    if (blameResult.isError()) return Err(blameResult.error);
+
+    return Ok(GitBlameAnalyzer.parseBlameOutput(blameResult.ok));
   }
 
   protected static isCompleteBlameInfo(

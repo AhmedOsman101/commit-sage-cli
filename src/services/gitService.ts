@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import * as path from "node:path";
-import { Err, ErrFromText, Ok, type Result } from "lib-result";
+import { Err, ErrFromText, ErrFromUnknown, Ok, type Result } from "lib-result";
 import {
   CommandError,
   NoChangesDetectedError,
@@ -45,11 +45,15 @@ class GitService {
 
     const { stderr, code } = cmd.ok;
 
-    if (code !== 0)
-      return ErrFromText(
-        `Git Command failed with code ${code}${stderr ? `: ${stderr}` : ""}`
+    if (code !== 0) {
+      return Err(
+        new CommandError(
+          `Git Command failed with code ${code}${stderr ? `: ${stderr}` : ""}`,
+          `git ${args.join(" ")}`,
+          cmd.ok
+        )
       );
-
+    }
     return Ok(cmd.ok);
   }
   static calculateFileHash(content: string): string {
@@ -79,13 +83,11 @@ class GitService {
         command = ["ls-files", "--deleted"];
         break;
       default:
-        throw new Error(`Invalid change type: ${type}`);
+        return false;
     }
 
     const cmd = GitService.execGit(command);
-    if (cmd.isError()) {
-      logError(`Error checking for ${type} changes`);
-    }
+    if (cmd.isError()) return false;
 
     return cmd.ok.stdout.trim().length > 0;
   }
@@ -94,7 +96,9 @@ class GitService {
 
     return cmd.isOk() && cmd.ok.stdout.includes("160000");
   }
-  static async getDiff(onlyStagedChanges: boolean): Promise<string> {
+  static async getDiff(
+    onlyStagedChanges: boolean
+  ): Promise<Result<string, Error>> {
     try {
       const hasHead = GitService.hasHead();
 
@@ -112,7 +116,7 @@ class GitService {
         !hasUntrackedFiles &&
         !hasDeletedFiles
       ) {
-        throw new NoChangesDetectedError("No changes detected.");
+        return Err(new NoChangesDetectedError("No changes detected."));
       }
       const diffs: string[] = [];
 
@@ -124,7 +128,7 @@ class GitService {
           "--cached",
           "--name-only",
         ]);
-        if (diffResult.isError()) throw diffResult.error;
+        if (diffResult.isError()) return Err(diffResult.error);
 
         const { stdout: stagedFiles } = diffResult.ok;
 
@@ -134,17 +138,19 @@ class GitService {
 
         for (const file of stagedFilesArray) {
           if (!GitService.isSubmodule(file)) {
-            const { stdout: fileDiff } = GitService.execGit([
+            const fileDiffResult = GitService.execGit([
               "diff",
               "--cached",
               "--",
               file,
-            ]).unwrap();
+            ]);
+            if (fileDiffResult.isError()) return Err(fileDiffResult.error);
 
+            const { stdout: fileDiff } = fileDiffResult.ok;
             if (fileDiff.trim()) diffs.push(fileDiff);
           }
         }
-        return diffs.join("\n\n").trim();
+        return Ok(diffs.join("\n\n").trim());
       }
 
       // Otherwise, get all changes
@@ -156,7 +162,12 @@ class GitService {
         ]);
 
         if (diffResult.isError()) {
-          throw new Error(`${diffResult.error.message} hasStagedChanges`);
+          return Err(
+            new CommandError(
+              `${diffResult.error.message} hasStagedChanges`,
+              "git diff --cached --name-only"
+            )
+          );
         }
 
         const { stdout: stagedFiles } = diffResult.ok;
@@ -174,8 +185,11 @@ class GitService {
             ]);
 
             if (diffCached.isError()) {
-              throw new Error(
-                `${diffCached.error.message} hasStagedChanges ${file} loop`
+              return Err(
+                new CommandError(
+                  `${diffCached.error.message} hasStagedChanges ${file} loop`,
+                  `git diff --cached -- ${file}`
+                )
               );
             }
 
@@ -188,10 +202,10 @@ class GitService {
       }
 
       if (hasUnstagedChanges) {
-        const { stdout: unstagedFiles } = GitService.execGit([
-          "diff",
-          "--name-only",
-        ]).unwrap();
+        const unstagedResult = GitService.execGit(["diff", "--name-only"]);
+        if (unstagedResult.isError()) return Err(unstagedResult.error);
+
+        const { stdout: unstagedFiles } = unstagedResult.ok;
 
         const unstagedFilesArray = unstagedFiles
           .split("\n")
@@ -199,12 +213,10 @@ class GitService {
 
         for (const file of unstagedFilesArray) {
           if (!GitService.isSubmodule(file)) {
-            const { stdout: fileDiff } = GitService.execGit([
-              "diff",
-              "--",
-              file,
-            ]).unwrap();
+            const fileDiffResult = GitService.execGit(["diff", "--", file]);
+            if (fileDiffResult.isError()) return Err(fileDiffResult.error);
 
+            const { stdout: fileDiff } = fileDiffResult.ok;
             if (fileDiff.trim()) {
               diffs.push(`# Unstaged changes:\n${fileDiff}`);
             }
@@ -213,33 +225,34 @@ class GitService {
       }
 
       if (hasUntrackedFiles) {
-        const { stdout: untrackedFiles } = GitService.execGit([
+        const untrackedResult = GitService.execGit([
           "ls-files",
           "--others",
           "--exclude-standard",
-        ]).unwrap();
+        ]);
+        if (untrackedResult.isError()) return Err(untrackedResult.error);
+
+        const { stdout: untrackedFiles } = untrackedResult.ok;
 
         const untrackedDiff = await Promise.all(
           untrackedFiles
             .split("\n")
             .filter(file => file.trim())
             .map(async file => {
-              try {
-                // Read the content of the new file
-                const content = await FileSystemService.readFile(
-                  path.join(GitService.repoPath, file)
-                ).then(result => result.unwrap());
-
-                const lines = content.split("\n");
-                const contentDiff = lines
-                  .map((line: string) => `+${line}`)
-                  .join("\n");
-                return `diff --git a/${file} b/${file}\nnew file mode 100644\nindex 0000000..${GitService.calculateFileHash(content)}\n--- /dev/null\n+++ b/${file}\n@@ -0,0 +1,${lines.length} @@\n${contentDiff}`;
-              } catch (error) {
-                logError(
-                  `Error reading new file ${file}: ${(error as Error).message}`
-                );
+              // Read the content of the new file
+              const contentResult = await FileSystemService.readFile(
+                path.join(GitService.repoPath, file)
+              );
+              if (contentResult.isError()) {
+                return "";
               }
+
+              const content = contentResult.ok;
+              const lines = content.split("\n");
+              const contentDiff = lines
+                .map((line: string) => `+${line}`)
+                .join("\n");
+              return `diff --git a/${file} b/${file}\nnew file mode 100644\nindex 0000000..${GitService.calculateFileHash(content)}\n--- /dev/null\n+++ b/${file}\n@@ -0,0 +1,${lines.length} @@\n${contentDiff}`;
             })
         );
         const validUntrackedDiffs = untrackedDiff.filter(diff => diff.trim());
@@ -249,25 +262,25 @@ class GitService {
       }
 
       if (hasDeletedFiles) {
-        const { stdout: deletedFiles } = GitService.execGit([
-          "ls-files",
-          "--deleted",
-        ]).unwrap();
+        const deletedResult = GitService.execGit(["ls-files", "--deleted"]);
+        if (deletedResult.isError()) return Err(deletedResult.error);
+
+        const { stdout: deletedFiles } = deletedResult.ok;
 
         const deletedDiff = deletedFiles
           .split("\n")
           .filter(file => file.trim())
           .map(file => {
-            try {
-              const { stdout: oldContent } = GitService.execGit([
-                "show",
-                `HEAD:${file}`,
-              ]).unwrap();
-
-              return `diff --git a/${file} b/${file}\ndeleted file mode 100644\n--- a/${file}\n+++ /dev/null\n@@ -1 +0,0 @@\n-${oldContent.trim()}\n`;
-            } catch {
+            const oldContentResult = GitService.execGit([
+              "show",
+              `HEAD:${file}`,
+            ]);
+            if (oldContentResult.isError()) {
               return "";
             }
+
+            const { stdout: oldContent } = oldContentResult.ok;
+            return `diff --git a/${file} b/${file}\ndeleted file mode 100644\n--- a/${file}\n+++ /dev/null\n@@ -1 +0,0 @@\n-${oldContent.trim()}\n`;
           });
 
         const validDeletedDiffs = deletedDiff.filter(diff => diff.trim());
@@ -278,23 +291,30 @@ class GitService {
 
       const combinedDiff = diffs.join("\n\n").trim();
       if (!combinedDiff) {
-        throw new NoChangesDetectedError("No changes detected.");
+        return Err(new NoChangesDetectedError("No changes detected."));
       }
 
-      return combinedDiff;
+      return Ok(combinedDiff);
     } catch (error) {
-      logError(`Failed to get diff: ${(error as Error).message}`);
+      return ErrFromUnknown(error);
     }
   }
-  static getChangedFiles(onlyStaged = false): string[] {
+  static getChangedFiles(onlyStaged = false): Result<string[], Error> {
     try {
-      const output = GitService.execGit(["status", "--porcelain"]).unwrap();
+      const outputResult = GitService.execGit(["status", "--porcelain"]);
+      if (outputResult.isError()) return Err(outputResult.error);
 
-      return output.stdout
+      const { stdout } = outputResult.ok;
+
+      const files = stdout
         .split("\n")
         .filter(line => line.trim() !== "")
         .filter(line => {
-          if (line.includes("Subproject commit") || line.includes("Entering")) {
+          if (
+            line.includes("Subproject commit") ||
+            line.includes("Entering") ||
+            line.includes("Submodule")
+          ) {
             return false;
           }
 
@@ -318,8 +338,10 @@ class GitService {
           // Return relative path as git status returns it
           return filePath;
         });
+
+      return Ok(files);
     } catch (error) {
-      logError(`Error getting changed files: ${(error as Error).message}`);
+      return ErrFromUnknown(error);
     }
   }
   static isNewFile(filePath: string): boolean {

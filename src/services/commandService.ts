@@ -1,12 +1,13 @@
-import { ErrFromText, Ok, type Result } from "lib-result";
-import type { CommandOutput } from "../lib/index.d.ts";
+import { Err, Ok, type Result } from "lib-result";
+import { CommandError } from "@/lib/errors.ts";
+import type { CommandOutput } from "@/lib/index.d.ts";
 
 const CommandService = {
   execute(
     cmd: string,
     args: string[] = [],
     cwd = Deno.cwd()
-  ): Result<CommandOutput> {
+  ): Result<CommandOutput, CommandError> {
     try {
       const command = new Deno.Command(cmd, {
         args,
@@ -26,8 +27,12 @@ const CommandService = {
       if (code !== 0) {
         // Combine stderr and stdout for better error context if stderr is empty
         const errorOutput = stderr || stdout || "No output";
-        return ErrFromText(
-          `Command "${cmd} ${args.join(" ")}" failed with code ${code}: ${errorOutput}`
+        return Err(
+          new CommandError(
+            `Command failed with code ${code}: ${errorOutput}`,
+            `${cmd} ${args.join(" ")}`,
+            { stdout, stderr, code }
+          )
         );
       }
 
@@ -45,7 +50,12 @@ const CommandService = {
         errorMessage = error;
       }
 
-      return ErrFromText(`Failed to execute command "${cmd}": ${errorMessage}`);
+      return Err(
+        new CommandError(
+          `Failed to execute command: ${errorMessage}`,
+          `${cmd} ${args.join(" ")}`
+        )
+      );
     }
   },
 };
