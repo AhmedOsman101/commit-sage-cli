@@ -10,6 +10,7 @@ import {
   white,
   yellow,
 } from "@std/fmt/colors";
+import FileLogger from "@/services/fileLogger.ts";
 
 const encoder = new TextEncoder();
 
@@ -75,24 +76,35 @@ function makeOutput(...data: unknown[]): string {
 
 // Type never indicates that this function never returns, as it terminates program execution
 export function logError(...data: unknown[]): never {
-  const text = encoder.encode(`${red("[ERROR] ")}${makeOutput(...data)}\n`);
+  const message = makeOutput(...data);
+  const text = encoder.encode(`${red("[ERROR] ")}${message}\n`);
   Deno.stderr.writeSync(text);
+
+  FileLogger.error(message, data);
 
   Deno.exit(1);
 }
 
 export function logInfo(...data: unknown[]): void {
-  console.info(`${blue("[INFO]")} ${makeOutput(...data)}`);
+  const message = makeOutput(...data);
+  console.info(`${blue("[INFO]")} ${message}`);
+  FileLogger.info(message);
 }
 
 export function logWarning(...data: unknown[]): void {
-  console.warn(`${yellow("[WARNING]")} ${makeOutput(...data)}`);
+  const message = makeOutput(...data);
+  console.warn(`${yellow("[WARNING]")} ${message}`);
+  FileLogger.warn(message);
 }
 
 export function logSuccess(...data: unknown[]): void {
-  console.log(`${green("[SUCCESS]")} ${makeOutput(...data)}`);
+  const message = makeOutput(...data);
+  console.log(`${green("[SUCCESS]")} ${message}`);
+  FileLogger.info(message);
 }
 
 export function logDebug(...data: unknown[]): void {
-  console.log(`${magenta("[DEBUG]")} ${makeOutput(...data)}`);
+  const message = makeOutput(...data);
+  console.log(`${magenta("[DEBUG]")} ${message}`);
+  FileLogger.debug(message);
 }
