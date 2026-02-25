@@ -45,7 +45,7 @@ jobs:
           deno compile -A -o bin/commit-sage-linux-arm64 --target aarch64-unknown-linux-gnu src/main.ts
 
       - name: Build Windows binary
-        run: deno compile -A -o bin/commit-sage-windows-x64 --target x86_64-pc-windows-msvc src/main.ts
+        run: deno compile -A -o bin/commit-sage-windows-x64.exe --target x86_64-pc-windows-msvc src/main.ts
 
       - name: Build macOS binaries
         run: |
@@ -58,7 +58,7 @@ jobs:
           files: |
             bin/commit-sage-linux-x64
             bin/commit-sage-linux-arm64
-            bin/commit-sage-windows-x64
+            bin/commit-sage-windows-x64.exe
             bin/commit-sage-macos-x64
             bin/commit-sage-macos-arm64
         env:

@@ -7,7 +7,7 @@
     "format:check": "pnpm dlx @biomejs/biome@2.3.11 check .",
     "compile": "deno compile -A -o $HOME/.local/bin/commit-sage src/main.ts",
     "compile-dev": "deno compile -A -o $HOME/scripts/bin/commit-sage src/main.ts",
-    "compile-windows": "deno compile -A -o bin/commit-sage --target x86_64-pc-windows-msvc src/main.ts",
+    "compile-windows": "deno compile -A -o bin/commit-sage.exe --target x86_64-pc-windows-msvc src/main.ts",
     "compile-macos-x64": "deno compile -A -o bin/commit-sage --target x86_64-apple-darwin src/main.ts",
     "compile-macos-arm64": "deno compile -A -o bin/commit-sage --target aarch64-apple-darwin src/main.ts",
     "compile-linux-x64": "deno compile -A -o bin/commit-sage --target x86_64-unknown-linux-gnu src/main.ts",
