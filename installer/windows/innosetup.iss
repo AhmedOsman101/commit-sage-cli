@@ -46,5 +46,5 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\commit-sage.exe"; Tasks: de
 Filename: "{app}\commit-sage.exe"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [Registry]
-; Add to PATH if task selected
-Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "Path"; ValueData: "{app};{cmd:ExpandConstant({commonpf})}"; Flags: uninsdeletevalue; Tasks: addpath
+; Add to PATH if task selected - prepend app directory to user PATH
+Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "Path"; ValueData: "{app};{reg:HKCU\Environment\Path}"; Flags: uninsdeletevalue; Tasks: addpath

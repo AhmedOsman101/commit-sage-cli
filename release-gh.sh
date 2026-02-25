@@ -48,6 +48,7 @@ elif [[ "${choice}" == "gh" ]]; then
     # Create release using gh - this triggers the workflow via 'release: published'
     gh release create "${TAG_NAME}" \
       --title "Release ${TAG_NAME}" \
+      --draft \
       --generate-notes \
       --target main
 

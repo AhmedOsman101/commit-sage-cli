@@ -114,6 +114,7 @@ jobs:
 
       - name: Build DMG
         run: |
+          mkdir -p release
           chmod +x bin/commit-sage-macos-x64
           chmod +x bin/commit-sage-macos-arm64
           
