@@ -6,7 +6,7 @@
 
 ; General
 Name "Commit Sage"
-OutFile "..\release\commit-sage-setup.exe"
+OutFile "../../release/commit-sage-setup.exe"
 InstallDir "$PROGRAMFILES\commitSage"
 InstallDirRegKey HKLM "Software\commitSage" "InstallDir"
 RequestExecutionLevel admin
@@ -42,7 +42,7 @@ Section "Install"
   SetOutPath "$INSTDIR"
   
   ; Install binary
-  File "..\bin\commit-sage-windows-x64.exe"
+  File "../../bin/commit-sage-windows-x64.exe"
   
   ; Store installation folder
   WriteRegStr HKLM "Software\commitSage" "InstallDir" "$INSTDIR"
