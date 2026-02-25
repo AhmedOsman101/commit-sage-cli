@@ -35,5 +35,6 @@
         "no-fallthrough"
       ]
     }
-  }
+  },
+  "nodeModulesDir": "auto"
 }
