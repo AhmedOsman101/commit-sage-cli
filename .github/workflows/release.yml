@@ -1,15 +1,18 @@
 name: Release
 
 on:
-  workflow_dispatch:  # Enables manual triggering
+  release:
+    types: [published]
 
 permissions:
   contents: write
-  discussions: write
+
+env:
+  BIOME_VERSION: 2.3.11
 
 jobs:
   build:
-    name: Build Binaries
+    name: Build and Upload Binaries
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -19,10 +22,9 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           deno-version: "latest"
-          cache: true
-          # ensures 'deno compile' is available on the runner
 
       - name: Cache Biome
+        id: cache-biome
         uses: actions/cache@v4
         with:
           path: /usr/local/bin/biome
@@ -34,48 +36,30 @@ jobs:
         run: |
           curl -L https://github.com/biomejs/biome/releases/download/%40biomejs%2Fbiome%40${{ env.BIOME_VERSION }}/biome-linux-x64 -o biome
           chmod +x biome
-          mv biome /usr/local/bin/biome
-        env:
-          BIOME_VERSION: 2.3.0  # Pin to a specific version
+          sudo mv biome /usr/local/bin/biome
 
-      - name: Format code with Biome
-        run: biome check --fix .
-        # Formats all files in the project and writes changes
-
-      - name: Commit formatted files
+      - name: Build Linux binaries
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add .
-          git commit -m "style: format code with Biome" || echo "No changes to commit"
-          git push
+          mkdir -p bin
+          deno compile -A -o bin/commit-sage-linux-x64 --target x86_64-unknown-linux-gnu src/main.ts
+          deno compile -A -o bin/commit-sage-linux-arm64 --target aarch64-unknown-linux-gnu src/main.ts
 
-      - name: Make release script executable
-        run: chmod +x release.sh
+      - name: Build Windows binary
+        run: deno compile -A -o bin/commit-sage-windows-x64 --target x86_64-pc-windows-msvc src/main.ts
 
-      - name: Build binaries
-        run: ./release.sh
-
-      - name: Create Tag
-        id: create_tag
+      - name: Build macOS binaries
         run: |
-          VERSION=$(cat version.txt)
-          git tag v$VERSION
-          git push origin v$VERSION
+          deno compile -A -o bin/commit-sage-macos-x64 --target x86_64-apple-darwin src/main.ts
+          deno compile -A -o bin/commit-sage-macos-arm64 --target aarch64-apple-darwin src/main.ts
 
-      - name: Create Release
-        id: create_release
+      - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
         with:
-          name: Release v${{ steps.create_tag.outputs.version }}
-          draft: true
-          prerelease: false
-          generate_release_notes: false
           files: |
-            ./bin/commit-sage-linux-x64
-            ./bin/commit-sage-linux-arm64
-            ./bin/commit-sage-windows-x64.exe
-            ./bin/commit-sage-macos-x64
-            ./bin/commit-sage-macos-arm64
+            bin/commit-sage-linux-x64
+            bin/commit-sage-linux-arm64
+            bin/commit-sage-windows-x64
+            bin/commit-sage-macos-x64
+            bin/commit-sage-macos-arm64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

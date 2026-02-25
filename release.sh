@@ -3,14 +3,9 @@
 set -euo pipefail
 
 # ---  Main script logic --- #
-baseDir="$(dirname "$0")"
+baseDir="$(dirname "${BASH_SOURCE[0]}")"
 
-if [[ ! -d "${baseDir}/bin" ]]; then
-  mkdir -p "${baseDir}/bin" || {
-    echo "Cannot create bin directory" 1>&2
-    exit 1
-  }
-fi
+mkdir -p "${baseDir}/bin" &>/dev/null
 
 # --- Linux --- #
 deno compile -A -o bin/commit-sage-linux-x64 --target x86_64-unknown-linux-gnu src/main.ts

@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  BIOME_VERSION: 2.3.0
+  BIOME_VERSION: 2.3.11
 
 jobs:
   biome-format:

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # ---  Main script logic --- #
-choice=$1
+choice="$1"
 shift
 
 if [[ "${choice}" == "pr" ]]; then

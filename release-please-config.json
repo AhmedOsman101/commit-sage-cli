@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/refs/heads/main/schemas/config.json",
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/v4.0.2/schemas/config.json",
   "packages": {
     ".": {
       "release-type": "simple",
@@ -7,8 +7,8 @@
       "draft-pull-request": true,
       "include-v-in-tag": true,
       "changelog-type": "default",
-      "always-update": true,
-      "version-file": "version.txt"
+      "version-file": "version.txt",
+      "extra-files": ["deno.json"]
     }
   }
 }
