@@ -113,7 +113,7 @@ jobs:
           ls -la installer/
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.0.0
         with:
           files: |
             binaries/commit-sage-linux-x64
@@ -122,5 +122,6 @@ jobs:
             binaries/commit-sage-macos-x64
             binaries/commit-sage-macos-arm64
             installer/*.exe
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
