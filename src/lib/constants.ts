@@ -37,17 +37,9 @@ export const DEFAULT_CONFIG: Readonly<Config> = {
     maxRetries: 3,
     initialRetryDelayMs: 1000,
   },
-  gemini: {
-    model: "gemini-2.5-flash-lite",
-    baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-  },
   ollama: {
     model: "llama3.2",
     baseUrl: "http://localhost:11434/api",
-  },
-  openai: {
-    model: "gpt-5-nano",
-    baseUrl: "https://api.openai.com/v1/models",
   },
   commit: {
     autoCommit: false,
@@ -59,6 +51,7 @@ export const DEFAULT_CONFIG: Readonly<Config> = {
   },
   provider: {
     type: "gemini",
+    model: "gemini-2.5-flash-lite",
   },
 };
 

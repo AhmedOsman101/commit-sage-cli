@@ -1,29 +1,13 @@
-import type { google } from "@ai-sdk/google";
-import type { openai } from "@ai-sdk/openai";
-import type { ollama } from "ollama-ai-provider-v2";
-
 // Configuration for the general section
 type GeneralConfig = {
   maxRetries: number;
   initialRetryDelayMs: number;
 };
 
-// Configuration for the Gemini provider
-type GeminiConfig = {
-  model: Parameters<typeof google>[0];
-  baseUrl: "https://generativelanguage.googleapis.com/v1beta" | (string & {});
-};
-
-// Configuration for the Ollama provider
+// Configuration for the Ollama provider (self-hosted, requires baseUrl)
 type OllamaConfig = {
-  model: Parameters<typeof ollama>[0];
+  model: string;
   baseUrl: "http://localhost:11434" | (string & {});
-};
-
-// Configuration for the OpenAI provider
-type OpenaiConfig = {
-  model: Parameters<typeof openai>[0];
-  baseUrl: "https://api.openai.com/v1/models" | (string & {});
 };
 
 // Configuration for commit-related settings
@@ -36,9 +20,20 @@ type CommitConfig = {
   promptForRefs: boolean;
 };
 
+// Supported AI provider types
+export type ProviderType =
+  | "gemini"
+  | "openai"
+  | "anthropic"
+  | "deepseek"
+  | "mistral"
+  | "xai"
+  | "ollama";
+
 // Configuration for the provider selection
 type ProviderConfig = {
-  type: "gemini" | "openai" | "ollama";
+  type: ProviderType;
+  model: string;
 };
 
 export type CommitLanguage = "english" | "russian" | "chinese" | "japanese";
@@ -47,14 +42,18 @@ export type CommitLanguage = "english" | "russian" | "chinese" | "japanese";
 export type Config = {
   readonly $schema: "https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/refs/heads/main/config.schema.json";
   general: GeneralConfig;
-  gemini: GeminiConfig;
   ollama: OllamaConfig;
-  openai: OpenaiConfig;
   commit: CommitConfig;
   provider: ProviderConfig;
 };
 
-export type ApiService = "Gemini" | "OpenAI";
+export type ApiService =
+  | "Gemini"
+  | "OpenAI"
+  | "Anthropic"
+  | "DeepSeek"
+  | "Mistral"
+  | "Xai";
 
 export type ConfigSection = keyof Config;
 export type ConfigKey<T extends ConfigSection> = keyof Config[T];

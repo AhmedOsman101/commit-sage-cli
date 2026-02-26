@@ -12,11 +12,10 @@ class GeminiService extends ModelService {
   ): Promise<CommitMessage> {
     try {
       const apiKey = await ConfigService.getApiKey("Gemini");
-      const model = (await ConfigService.get("gemini", "model")).unwrap();
-      const baseURL = (await ConfigService.get("gemini", "baseUrl")).unwrap();
+      const model = (await ConfigService.get("provider", "model")).unwrap();
       const maxRetries = await ModelService.getMaxRetries();
 
-      const google = createGoogleGenerativeAI({ apiKey, baseURL });
+      const google = createGoogleGenerativeAI({ apiKey });
 
       const { text } = await generateText({
         model: google(model),

@@ -1,11 +1,21 @@
 import { a, type ValidationException } from "@arrirpc/schema";
 import { ErrFromText, Ok, type Result } from "lib-result";
-import type { Config } from "@/lib/configServiceTypes.d.ts";
+import type { Config, ProviderType } from "@/lib/configServiceTypes.d.ts";
 import { CONFIG_PATH } from "@/lib/constants.ts";
 import { logError, logWarning } from "@/lib/logger.ts";
 
 const INF = Number.POSITIVE_INFINITY;
 const NINF = Number.NEGATIVE_INFINITY;
+
+const SUPPORTED_PROVIDERS: ProviderType[] = [
+  "gemini",
+  "openai",
+  "anthropic",
+  "deepseek",
+  "mistral",
+  "xai",
+  "ollama",
+];
 
 const ConfigSchema = a.object(
   {
@@ -18,14 +28,6 @@ const ConfigSchema = a.object(
         initialRetryDelayMs: a.uint16(),
       })
     ),
-    gemini: a.object({
-      model: a.string(),
-      baseUrl: a.optional(a.string()),
-    }),
-    openai: a.object({
-      model: a.string(),
-      baseUrl: a.optional(a.string()),
-    }),
     ollama: a.object({
       model: a.string(),
       baseUrl: a.optional(a.string()),
@@ -50,7 +52,8 @@ const ConfigSchema = a.object(
       promptForRefs: a.optional(a.boolean()),
     }),
     provider: a.object({
-      type: a.stringEnum(["gemini", "openai", "ollama"]),
+      type: a.stringEnum(SUPPORTED_PROVIDERS),
+      model: a.string(),
     }),
   },
   {
@@ -123,16 +126,13 @@ const ConfigValidationService = {
     }
     return Ok(true);
   },
-  validateModelUrl(
-    model: object,
-    name: "ollama" | "openai" | "gemini"
-  ): Result<boolean> {
+  validateModelUrl(model: object, name: "ollama"): Result<boolean> {
     if ("baseUrl" in model) {
       const baseUrl = this.validateUrl(model.baseUrl);
       if (baseUrl.isError()) {
         logError(`Error at key ${name}.baseUrl => ${baseUrl.error.message}`);
       }
-    } else logError(`Key ${name}.baseUrl is missing`);
+    }
     return Ok(true);
   },
   validate(config: unknown): Result<Config> {
@@ -196,24 +196,6 @@ const ConfigValidationService = {
           configContent.ollama !== null
         ) {
           this.validateModelUrl(configContent.ollama, "ollama");
-        }
-      }
-
-      if ("openai" in configContent) {
-        if (
-          typeof configContent.openai === "object" &&
-          configContent.openai !== null
-        ) {
-          this.validateModelUrl(configContent.openai, "openai");
-        }
-      }
-
-      if ("gemini" in configContent) {
-        if (
-          typeof configContent.gemini === "object" &&
-          configContent.gemini !== null
-        ) {
-          this.validateModelUrl(configContent.gemini, "gemini");
         }
       }
     }

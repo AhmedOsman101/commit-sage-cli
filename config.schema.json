@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "required": ["gemini", "ollama", "openai", "commit", "provider"],
+  "required": ["ollama", "commit", "provider"],
   "properties": {
     "general": {
       "type": "object",
@@ -17,35 +17,7 @@
         }
       }
     },
-    "gemini": {
-      "type": "object",
-      "required": ["model"],
-      "properties": {
-        "model": {
-          "type": "string",
-          "enum": [
-            "gemini-2.0-flash-exp",
-            "gemini-1.0-pro",
-            "gemini-1.5-pro",
-            "gemini-1.5-flash"
-          ]
-        }
-      }
-    },
     "ollama": {
-      "type": "object",
-      "required": ["model", "baseUrl"],
-      "properties": {
-        "model": {
-          "type": "string"
-        },
-        "baseUrl": {
-          "type": "string",
-          "format": "uri"
-        }
-      }
-    },
-    "openai": {
       "type": "object",
       "required": ["model", "baseUrl"],
       "properties": {
@@ -86,11 +58,24 @@
     },
     "provider": {
       "type": "object",
-      "required": ["type"],
+      "required": ["type", "model"],
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["gemini", "openai", "ollama"]
+          "enum": [
+            "gemini",
+            "openai",
+            "anthropic",
+            "deepseek",
+            "mistral",
+            "xai",
+            "ollama"
+          ],
+          "description": "AI provider type"
+        },
+        "model": {
+          "type": "string",
+          "description": "Model ID (e.g., 'gemini-2.5-flash-lite', 'gpt-5-nano', 'claude-sonnet-4-5')"
         }
       }
     }

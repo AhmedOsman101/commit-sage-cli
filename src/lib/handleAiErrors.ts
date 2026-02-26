@@ -14,7 +14,6 @@ import {
   NoContentGeneratedError,
   NoImageGeneratedError,
   NoObjectGeneratedError,
-  NoOutputSpecifiedError,
   NoSpeechGeneratedError,
   NoSuchModelError,
   NoSuchProviderError,
@@ -107,13 +106,6 @@ export function handleAIError(error: unknown): NormalizedAIError | null {
     return {
       message: error.message,
       shouldRetry: true,
-    };
-  }
-
-  if (NoOutputSpecifiedError.isInstance(error)) {
-    return {
-      message: error.message,
-      shouldRetry: false,
     };
   }
 

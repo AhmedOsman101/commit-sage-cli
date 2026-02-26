@@ -1,13 +1,12 @@
 import { Err, ErrFromText, ErrFromUnknown, Ok, type Result } from "lib-result";
+import type { ProviderType } from "@/lib/configServiceTypes.d.ts";
 import { ERROR_MESSAGES } from "@/lib/constants.ts";
 import type { CommitMessage } from "@/lib/index.d.ts";
 import ConfigService from "./configService.ts";
-import GeminiService from "./geminiService.ts";
 import GitBlameAnalyzer from "./gitBlameAnalyzer.ts";
 import GitService from "./gitService.ts";
-import OllamaService from "./ollamaService.ts";
-import OpenAiService from "./openaiService.ts";
 import PromptService from "./promptService.ts";
+import { getProviderService } from "./providerRegistry.ts";
 
 const MAX_DIFF_LENGTH = 100_000;
 
@@ -33,23 +32,11 @@ const AiService = {
     const providerResult = await ConfigService.get("provider", "type");
     if (providerResult.isError()) return Err(providerResult.error);
 
-    const provider = providerResult.ok;
+    const providerType = providerResult.ok as ProviderType;
 
     try {
-      let commitMessage: CommitMessage;
-
-      switch (provider) {
-        case "openai":
-          commitMessage = await OpenAiService.generateCommitMessage(prompt);
-          break;
-        case "ollama":
-          commitMessage = await OllamaService.generateCommitMessage(prompt);
-          break;
-        // biome-ignore lint/complexity/noUselessSwitchCase: Verbosity is better
-        case "gemini":
-        default:
-          commitMessage = await GeminiService.generateCommitMessage(prompt);
-      }
+      const Service = getProviderService(providerType);
+      const commitMessage = await Service.generateCommitMessage(prompt, 1);
 
       return Ok(commitMessage);
     } catch (error) {

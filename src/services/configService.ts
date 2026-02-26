@@ -18,6 +18,93 @@ import KeyValidationService from "./keyValidationService.ts";
 class ConfigService {
   protected static shell = "";
 
+  static migrateConfig(config: Record<string, unknown>): Config {
+    const provider = config.provider as Record<string, unknown> | undefined;
+
+    if (!provider) {
+      return config as Config;
+    }
+
+    const hasType = "type" in provider;
+    const hasModel = "model" in provider;
+
+    const modelMap: Record<string, string> = {
+      gemini: "gemini-2.5-flash-lite",
+      openai: "gpt-5-nano",
+      anthropic: "claude-sonnet-4-5",
+      deepseek: "deepseek-chat",
+      mistral: "mistral-small-latest",
+      xai: "grok-3-mini",
+      ollama: "llama3.2",
+    };
+
+    // Case 1: Has type but no model - add default model
+    if (hasType && !hasModel) {
+      const oldType = provider.type as string;
+      const newModel = modelMap[oldType] || "gemini-2.5-flash-lite";
+
+      logInfo("Migrating config: adding provider.model...");
+      logInfo(`  type="${oldType}", model="${newModel}"`);
+
+      return {
+        ...config,
+        provider: {
+          type: oldType,
+          model: newModel,
+        },
+      } as Config;
+    }
+
+    // Case 2: Has model but no type - try to detect type from model string
+    if (hasModel && !hasType) {
+      const model = provider.model as string;
+
+      // Detect provider from model string (e.g., "google/gemini-2.5-flash-lite" -> "gemini")
+      let detectedType = "gemini";
+      if (
+        model.startsWith("gpt-") ||
+        model.startsWith("o1") ||
+        model.startsWith("o3")
+      ) {
+        detectedType = "openai";
+      } else if (model.startsWith("claude-")) {
+        detectedType = "anthropic";
+      } else if (
+        model.startsWith("deepseek-") ||
+        model.startsWith("deepseek-")
+      ) {
+        detectedType = "deepseek";
+      } else if (model.startsWith("mistral-")) {
+        detectedType = "mistral";
+      } else if (model.startsWith("grok-")) {
+        detectedType = "xai";
+      } else if (model.includes("/")) {
+        // Handle "google/gemini-2.5-flash-lite" format
+        detectedType = model.split("/")[0];
+      }
+
+      // Fix common provider names
+      if (detectedType === "google") detectedType = "gemini";
+
+      const newModel = modelMap[detectedType] || model;
+
+      logInfo("Migrating config: adding provider.type...");
+      logInfo(
+        `  model="${model}", detected type="${detectedType}", using model="${newModel}"`
+      );
+
+      return {
+        ...config,
+        provider: {
+          type: detectedType,
+          model: newModel,
+        },
+      } as Config;
+    }
+
+    return config as Config;
+  }
+
   static async createConfigFile(): Promise<Result<boolean>> {
     const { ok: file, error: creationError } =
       await FileSystemService.createFile(CONFIG_PATH);
@@ -54,7 +141,10 @@ class ConfigService {
         return ErrFromText("Config file is empty after successful read");
       }
 
-      const validation = ConfigValidationService.validate(configContents);
+      const parsedConfig = JSON.parse(configContents);
+      const migratedConfig = await ConfigService.migrateConfig(parsedConfig);
+
+      const validation = ConfigValidationService.validate(migratedConfig);
       if (validation.isError()) logError(validation.error.message);
 
       return Ok(validation.ok);
@@ -196,6 +286,12 @@ After adding the line, restart your terminal or run 'source ${shellConfigFile}' 
           if (error !== undefined) {
             throw new AiServiceError(error.message, { cause: error });
           }
+          break;
+        }
+        case "Anthropic":
+        case "DeepSeek":
+        case "Mistral":
+        case "Xai": {
           break;
         }
       }

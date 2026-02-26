@@ -1,24 +1,24 @@
-import { createOpenAI } from "@ai-sdk/openai";
+import { createXai } from "@ai-sdk/xai";
 import { generateText } from "ai";
 import type { CommitMessage } from "@/lib/index.d.ts";
 import { stripThinkingTags } from "@/lib/stripThinkingTags.ts";
 import ConfigService from "./configService.ts";
 import { ModelService } from "./modelService.ts";
 
-class OpenAiService extends ModelService {
+class XaiService extends ModelService {
   static override async generateCommitMessage(
     prompt: string,
     attempt = 1
   ): Promise<CommitMessage> {
     try {
-      const apiKey = await ConfigService.getApiKey("OpenAI");
+      const apiKey = await ConfigService.getApiKey("Xai");
       const model = (await ConfigService.get("provider", "model")).unwrap();
       const maxRetries = await ModelService.getMaxRetries();
 
-      const openai = createOpenAI({ apiKey });
+      const xai = createXai({ apiKey });
 
       const { text } = await generateText({
-        model: openai(model),
+        model: xai(model),
         prompt,
         temperature: 0.7,
         maxRetries,
@@ -26,14 +26,14 @@ class OpenAiService extends ModelService {
 
       return { message: stripThinkingTags(text), model };
     } catch (error) {
-      return await OpenAiService.handleGenerationError(
+      return await XaiService.handleGenerationError(
         error,
         prompt,
         attempt,
-        OpenAiService.generateCommitMessage.bind(OpenAiService)
+        XaiService.generateCommitMessage.bind(XaiService)
       );
     }
   }
 }
 
-export default OpenAiService;
+export default XaiService;

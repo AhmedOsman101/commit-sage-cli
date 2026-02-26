@@ -35,7 +35,7 @@ export abstract class ModelService {
    * Subclasses must provide their own implementation.
    * Default implementation returns an empty commit message.
    */
-  protected static generateCommitMessage(
+  public static generateCommitMessage(
     prompt: string,
     attempt: number
   ): Promise<CommitMessage> {
