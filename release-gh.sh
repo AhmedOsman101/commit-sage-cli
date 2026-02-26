@@ -9,15 +9,13 @@ choice="$1"
 shift
 
 # Parse additional options
-while [[ $# -gt 0 ]]; do
+while (($#)); do
   case "$1" in
   --force)
     FORCE=true
     shift
     ;;
-  *)
-    break
-    ;;
+  *) break ;;
   esac
 done
 
@@ -30,7 +28,7 @@ if [[ "${choice}" == "pr" ]]; then
 elif [[ "${choice}" == "gh" ]]; then
   if [[ "${FORCE}" == "true" ]]; then
     # Force release: create tag, then create release (triggers workflow)
-    VERSION=$(cat version.txt)
+    VERSION="$(cat version.txt)"
     TAG_NAME="v${VERSION}"
 
     echo "Force releasing v${VERSION}..."
