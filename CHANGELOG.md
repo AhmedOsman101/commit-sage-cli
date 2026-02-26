@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.6.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.5.0...v1.6.0) (2026-02-26)
+
+
+### Features
+
+* consolidate AI provider configuration ([1b95cfa](https://github.com/AhmedOsman101/commit-sage-cli/commit/1b95cfae356db659e9cdccd5b63fd88f853270fb))
+* **install:** add installer logic for Commit Sage ([2111a5a](https://github.com/AhmedOsman101/commit-sage-cli/commit/2111a5aa648171d909e1833c7b64f5ee0c436cd1))
+* strip thinking tags from LLM output ([b5d8f06](https://github.com/AhmedOsman101/commit-sage-cli/commit/b5d8f06d110bce3de67734f121a5220b27ed8276))
+
+
+### Bug Fixes
+
+* **installer:** correct output and binary paths ([15b3101](https://github.com/AhmedOsman101/commit-sage-cli/commit/15b3101a5297e198d972f2f33e4451f07114ffe0))
+
 ## [1.5.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.4.0...v1.5.0) (2026-02-25)
 
 
