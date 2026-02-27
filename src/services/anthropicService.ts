@@ -1,7 +1,10 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
-import { generateText } from "ai";
+import {
+  extractReasoningMiddleware,
+  generateText,
+  wrapLanguageModel,
+} from "ai";
 import type { CommitMessage } from "@/lib/index.d.ts";
-import { stripThinkingTags } from "@/lib/stripThinkingTags.ts";
 import ConfigService from "./configService.ts";
 import { ModelService } from "./modelService.ts";
 
@@ -17,14 +20,19 @@ class AnthropicService extends ModelService {
 
       const anthropic = createAnthropic({ apiKey });
 
-      const { text } = await generateText({
+      const wrappedModel = wrapLanguageModel({
         model: anthropic(model),
+        middleware: extractReasoningMiddleware({ tagName: "think" }),
+      });
+
+      const { text } = await generateText({
+        model: wrappedModel,
         prompt,
         temperature: 0.7,
         maxRetries,
       });
 
-      return { message: stripThinkingTags(text), model };
+      return { message: text, model };
     } catch (error) {
       return await AnthropicService.handleGenerationError(
         error,
