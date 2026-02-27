@@ -24,3 +24,11 @@ export type ApiError = {
   errorMessage: string;
   shouldRetry: boolean;
 };
+
+// Commit message format types
+export type CommitFormat =
+  | "conventional"
+  | "angular"
+  | "karma"
+  | "emoji"
+  | "semantic";
