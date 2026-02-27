@@ -2,24 +2,73 @@
 
 ## [1.6.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.5.0...v1.6.0) (2026-02-26)
 
-
 ### Features
 
-* consolidate AI provider configuration ([1b95cfa](https://github.com/AhmedOsman101/commit-sage-cli/commit/1b95cfae356db659e9cdccd5b63fd88f853270fb))
-* **install:** add installer logic for Commit Sage ([2111a5a](https://github.com/AhmedOsman101/commit-sage-cli/commit/2111a5aa648171d909e1833c7b64f5ee0c436cd1))
-* strip thinking tags from LLM output ([b5d8f06](https://github.com/AhmedOsman101/commit-sage-cli/commit/b5d8f06d110bce3de67734f121a5220b27ed8276))
+- **AI Provider Expansion**: Consolidate AI provider configuration into a unified structure
+  - Remove dedicated provider config sections (gemini, openai)
+  - Introduce unified `provider` config with `type` and `model` fields
+  - Add support for new providers: Anthropic, DeepSeek, Mistral, Xai
+  - Implement automatic config migration for existing users
 
+- **Thinking Tag Removal**: Strip thinking tags from LLM output
+  - Add utility function to remove unwanted `<thinking>`, `<tool_thinking>` tags
+  - Apply stripping to Gemini and OpenAI services
+  - Integrate reasoning middleware for Ollama service to handle reasoning models
+
+- **Installers**: Add installer logic for Commit Sage
+  - Build binaries for Linux, macOS, and Windows
+  - Create Windows installer using NSIS
+  - Add interactive Linux installer script
+  - Create macOS dmg installer (later disabled)
+
+- **Build & Release**:
+  - Switch from Inno Setup to NSIS for Windows installer
+  - Update CI workflow for artifact management
+  - Add force release option to release script
 
 ### Bug Fixes
 
-* **installer:** correct output and binary paths ([15b3101](https://github.com/AhmedOsman101/commit-sage-cli/commit/15b3101a5297e198d972f2f33e4451f07114ffe0))
+- Fix installer output and binary paths
+
+### Dependencies
+
+- Update AI SDK packages to latest versions
+- Upgrade cliffy and std libraries
+- Update ollama-ai-provider-v2
 
 ## [1.5.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.4.0...v1.5.0) (2026-02-25)
 
-
 ### Features
 
-* improve error handling and logging ([16c6fa2](https://github.com/AhmedOsman101/commit-sage-cli/commit/16c6fa21e88e46b9744f81ee98108cfb9c975161))
+- **Error Handling & Logging Improvements**:
+  - Add error formatting utility for consistent error messages
+  - Introduce file logging service for persistent logs
+  - Enhance error context reporting
+  - Use Result type for all service operations
+  - Handle errors more gracefully in main and services
+
+- **Code Quality**:
+  - Improve timestamp formatting in file logger with `formatTimestamp` helper
+  - Use synchronous file writing for log entries
+  - Simplify string concatenation with template literals
+
+- **Build & Release**:
+  - Add cross-platform compile tasks (Windows, macOS x64/arm64, Linux x64/arm64)
+  - Configure release workflow to trigger on release publish
+  - Simplify build and upload steps
+
+### Dependencies
+
+- Update Biome to version 2.3.11
+- Update axios to 1.13.2
+- Add husky dependency
+- Enable auto detection of Node modules directory
+
+### Documentation
+
+- Add agent guidelines and code style documentation in AGENTS.md
+- Document build/lint/test commands
+- Outline TypeScript and Deno code conventions
 
 ## [1.4.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.3.0...v1.4.0) (2025-11-14)
 
