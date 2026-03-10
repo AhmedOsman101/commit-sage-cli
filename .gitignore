@@ -2,3 +2,4 @@
 *.exe
 node_modules
 bin
+.worktrees
