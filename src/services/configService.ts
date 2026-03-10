@@ -36,6 +36,9 @@ class ConfigService {
       mistral: "mistral-small-latest",
       xai: "grok-3-mini",
       ollama: "llama3.2",
+      moonshotai: "kimi-k2.5",
+      zai: "glm-4.5-flash",
+      minimax: "MiniMax-M2.5",
     };
 
     // Case 1: Has type but no model - add default model
@@ -78,6 +81,12 @@ class ConfigService {
         detectedType = "mistral";
       } else if (model.startsWith("grok-")) {
         detectedType = "xai";
+      } else if (model.startsWith("kimi-")) {
+        detectedType = "moonshotai";
+      } else if (model.startsWith("glm-")) {
+        detectedType = "zai";
+      } else if (model.startsWith("MiniMax-")) {
+        detectedType = "minimax";
       } else if (model.includes("/")) {
         // Handle "google/gemini-2.5-flash-lite" format
         detectedType = model.split("/")[0];
@@ -291,7 +300,17 @@ After adding the line, restart your terminal or run 'source ${shellConfigFile}' 
         case "Anthropic":
         case "DeepSeek":
         case "Mistral":
-        case "Xai": {
+        case "Xai":
+        case "MoonshotAI":
+        case "Zai":
+        case "MiniMax": {
+          break;
+        }
+        case "OpenRouter": {
+          const { error } = KeyValidationService.validateOpenRouterApiKey(key);
+          if (error !== undefined) {
+            throw new AiServiceError(error.message, { cause: error });
+          }
           break;
         }
       }

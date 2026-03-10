@@ -37,7 +37,8 @@ export type ProviderType =
   | "ollama"
   | "moonshotai"
   | "zai"
-  | "minimax";
+  | "minimax"
+  | "openrouter";
 
 // Configuration for the provider selection
 type ProviderConfig = {

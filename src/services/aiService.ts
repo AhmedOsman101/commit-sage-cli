@@ -5,6 +5,7 @@ import type { CommitMessage } from "@/lib/index.d.ts";
 import ConfigService from "./configService.ts";
 import GitBlameAnalyzer from "./gitBlameAnalyzer.ts";
 import GitService from "./gitService.ts";
+import OpenRouterService from "./openrouterService.ts";
 import PromptService from "./promptService.ts";
 import { getProviderService } from "./providerRegistry.ts";
 
@@ -35,6 +36,15 @@ const AiService = {
     const providerType = providerResult.ok as ProviderType;
 
     try {
+      // OpenRouter reads from its own config section (not provider.model)
+      if (providerType === "openrouter") {
+        const commitMessage = await OpenRouterService.generateCommitMessage(
+          prompt,
+          1
+        );
+        return Ok(commitMessage);
+      }
+
       const Service = getProviderService(providerType);
       const commitMessage = await Service.generateCommitMessage(prompt, 1);
 

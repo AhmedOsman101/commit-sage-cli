@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "required": ["ollama", "commit", "provider"],
+  "required": ["ollama", "openrouter", "commit", "provider"],
   "properties": {
     "general": {
       "type": "object",
@@ -27,6 +27,21 @@
         "baseUrl": {
           "type": "string",
           "format": "uri"
+        }
+      }
+    },
+    "openrouter": {
+      "type": "object",
+      "required": ["model"],
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "OpenRouter model ID, e.g. 'openai/gpt-4.1-mini' or 'anthropic/claude-opus-4-5'"
+        },
+        "baseUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "OpenRouter API base URL (defaults to https://openrouter.ai/api/v1)"
         }
       }
     },
@@ -69,7 +84,11 @@
             "deepseek",
             "mistral",
             "xai",
-            "ollama"
+            "ollama",
+            "moonshotai",
+            "zai",
+            "minimax",
+            "openrouter"
           ],
           "description": "AI provider type"
         },

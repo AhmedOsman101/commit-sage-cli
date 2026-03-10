@@ -15,6 +15,10 @@ const SUPPORTED_PROVIDERS: ProviderType[] = [
   "mistral",
   "xai",
   "ollama",
+  "moonshotai",
+  "zai",
+  "minimax",
+  "openrouter",
 ];
 
 const ConfigSchema = a.object(
@@ -29,6 +33,10 @@ const ConfigSchema = a.object(
       })
     ),
     ollama: a.object({
+      model: a.string(),
+      baseUrl: a.optional(a.string()),
+    }),
+    openrouter: a.object({
       model: a.string(),
       baseUrl: a.optional(a.string()),
     }),
@@ -126,7 +134,10 @@ const ConfigValidationService = {
     }
     return Ok(true);
   },
-  validateModelUrl(model: object, name: "ollama"): Result<boolean> {
+  validateModelUrl(
+    model: object,
+    name: "ollama" | "openrouter"
+  ): Result<boolean> {
     if ("baseUrl" in model) {
       const baseUrl = this.validateUrl(model.baseUrl);
       if (baseUrl.isError()) {
@@ -196,6 +207,15 @@ const ConfigValidationService = {
           configContent.ollama !== null
         ) {
           this.validateModelUrl(configContent.ollama, "ollama");
+        }
+      }
+
+      if ("openrouter" in configContent) {
+        if (
+          typeof configContent.openrouter === "object" &&
+          configContent.openrouter !== null
+        ) {
+          this.validateModelUrl(configContent.openrouter, "openrouter");
         }
       }
     }
