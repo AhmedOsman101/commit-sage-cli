@@ -10,6 +10,12 @@ type OllamaConfig = {
   baseUrl: "http://localhost:11434" | (string & {});
 };
 
+// Configuration for the OpenRouter meta-provider
+type OpenRouterConfig = {
+  model: string;
+  baseUrl: "https://openrouter.ai/api/v1" | (string & {});
+};
+
 // Configuration for commit-related settings
 type CommitConfig = {
   autoCommit: boolean;
@@ -28,7 +34,10 @@ export type ProviderType =
   | "deepseek"
   | "mistral"
   | "xai"
-  | "ollama";
+  | "ollama"
+  | "moonshotai"
+  | "zai"
+  | "minimax";
 
 // Configuration for the provider selection
 type ProviderConfig = {
@@ -43,6 +52,7 @@ export type Config = {
   readonly $schema: "https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/refs/heads/main/config.schema.json";
   general: GeneralConfig;
   ollama: OllamaConfig;
+  openrouter: OpenRouterConfig;
   commit: CommitConfig;
   provider: ProviderConfig;
 };
@@ -53,7 +63,11 @@ export type ApiService =
   | "Anthropic"
   | "DeepSeek"
   | "Mistral"
-  | "Xai";
+  | "Xai"
+  | "MoonshotAI"
+  | "Zai"
+  | "MiniMax"
+  | "OpenRouter";
 
 export type ConfigSection = keyof Config;
 export type ConfigKey<T extends ConfigSection> = keyof Config[T];
