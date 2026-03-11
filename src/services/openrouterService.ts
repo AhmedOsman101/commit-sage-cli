@@ -11,6 +11,7 @@ import {
   generateText,
   wrapLanguageModel,
 } from "ai";
+import { DEFAULT_CONFIG } from "@/lib/constants.ts";
 import type { CommitMessage } from "@/lib/index.d.ts";
 import { logDebug } from "@/lib/logger.ts";
 import ConfigService from "./configService.ts";
@@ -26,10 +27,19 @@ class OpenRouterService extends ModelService {
     );
     try {
       const apiKey = await ConfigService.getApiKey("OpenRouter");
-      const model = (await ConfigService.get("provider", "model")).unwrap();
-      const baseURL = (
-        await ConfigService.get("openrouter", "baseUrl")
-      ).unwrap();
+
+      const modelResult = await ConfigService.get("provider", "model");
+      if (modelResult.isError()) {
+        throw new Error(
+          "provider.model is required for OpenRouter. Please set it in your config."
+        );
+      }
+      const model = modelResult.ok;
+
+      const baseURLResult = await ConfigService.get("openrouter", "baseUrl");
+      const baseURL = baseURLResult.isOk()
+        ? baseURLResult.ok
+        : DEFAULT_CONFIG.openrouter.baseUrl;
       const maxRetries = await ModelService.getMaxRetries();
 
       logDebug(
