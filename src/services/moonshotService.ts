@@ -9,16 +9,13 @@ import { logDebug } from "@/lib/logger.ts";
 import ConfigService from "./configService.ts";
 import { ModelService } from "./modelService.ts";
 
-const timestamp = () =>
-  new Date().toISOString().replace("T", "@").substring(0, 22);
-
 class MoonshotService extends ModelService {
   static override async generateCommitMessage(
     prompt: string,
     attempt = 1
   ): Promise<CommitMessage> {
     logDebug(
-      `[${timestamp()}] [moonshotService.generateCommitMessage] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
+      `[moonshotService.generateCommitMessage] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
     );
     try {
       const apiKey = await ConfigService.getApiKey("MoonshotAI");
@@ -26,7 +23,7 @@ class MoonshotService extends ModelService {
       const maxRetries = await ModelService.getMaxRetries();
 
       logDebug(
-        `[${timestamp()}] [moonshotService.generateCommitMessage] CALL API model=${model}, maxRetries=${maxRetries}`
+        `[moonshotService.generateCommitMessage] CALL API model=${model}, maxRetries=${maxRetries}`
       );
 
       const client = createMoonshotAI({ apiKey });
@@ -44,13 +41,11 @@ class MoonshotService extends ModelService {
       });
 
       logDebug(
-        `[${timestamp()}] [moonshotService.generateCommitMessage] EXIT message="${text.substring(0, 50)}..."`
+        `[moonshotService.generateCommitMessage] EXIT message="${text.substring(0, 50)}..."`
       );
       return { message: text, model };
     } catch (error) {
-      logDebug(
-        `[${timestamp()}] [moonshotService.generateCommitMessage] ERROR ${error}`
-      );
+      logDebug(`[moonshotService.generateCommitMessage] ERROR ${error}`);
       return await MoonshotService.handleGenerationError(
         error,
         prompt,

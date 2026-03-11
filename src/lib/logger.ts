@@ -109,7 +109,8 @@ export function logSuccess(...data: unknown[]): void {
 export function logDebug(...data: unknown[]): void {
   if (!DEBUG_ENABLED) return;
 
+  const timestamp = new Date().toISOString().replace("T", "@").substring(0, 22);
   const message = makeOutput(...data);
-  console.log(`${magenta("[DEBUG]")} ${message}`);
+  console.log(`${magenta("[DEBUG]")} [${timestamp}] ${message}`);
   FileLogger.debug(message);
 }

@@ -11,9 +11,6 @@ import { ModelService } from "./modelService.ts";
 
 const ZAI_BASE_URL = "https://api.z.ai/api/paas/v4/";
 
-const timestamp = () =>
-  new Date().toISOString().replace("T", "@").substring(0, 22);
-
 /**
  * Z.AI Service — GLM models via the international Z.AI platform (Zhipu AI).
  * Uses @ai-sdk/openai with a custom baseURL (no new package dependency).
@@ -26,7 +23,7 @@ class ZaiService extends ModelService {
     attempt = 1
   ): Promise<CommitMessage> {
     logDebug(
-      `[${timestamp()}] [zaiService.generateCommitMessage] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
+      `[zaiService.generateCommitMessage] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
     );
     try {
       const apiKey = await ConfigService.getApiKey("Zai");
@@ -34,7 +31,7 @@ class ZaiService extends ModelService {
       const maxRetries = await ModelService.getMaxRetries();
 
       logDebug(
-        `[${timestamp()}] [zaiService.generateCommitMessage] CALL API model=${model}, baseURL=${ZAI_BASE_URL}`
+        `[zaiService.generateCommitMessage] CALL API model=${model}, baseURL=${ZAI_BASE_URL}`
       );
 
       const client = createOpenAI({ baseURL: ZAI_BASE_URL, apiKey });
@@ -52,13 +49,11 @@ class ZaiService extends ModelService {
       });
 
       logDebug(
-        `[${timestamp()}] [zaiService.generateCommitMessage] EXIT message="${text.substring(0, 50)}..."`
+        `[zaiService.generateCommitMessage] EXIT message="${text.substring(0, 50)}..."`
       );
       return { message: text, model };
     } catch (error) {
-      logDebug(
-        `[${timestamp()}] [zaiService.generateCommitMessage] ERROR ${error}`
-      );
+      logDebug(`[zaiService.generateCommitMessage] ERROR ${error}`);
       return await ZaiService.handleGenerationError(
         error,
         prompt,
