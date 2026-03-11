@@ -7,9 +7,12 @@ import {
   NoRepositoriesFoundError,
 } from "@/lib/errors.ts";
 import type { CommandOutput } from "@/lib/index.d.ts";
-import { logError } from "@/lib/logger.ts";
+import { logDebug, logError } from "@/lib/logger.ts";
 import CommandService from "./commandService.ts";
 import FileSystemService from "./fileSystemService.ts";
+
+const timestamp = () =>
+  new Date().toISOString().replace("T", "@").substring(0, 22);
 
 const GIT_STATUS_CODES = {
   modified: "M",
@@ -33,10 +36,14 @@ class GitService {
   static repoPath = "";
 
   static initialize(): string {
+    logDebug(`[${timestamp()}] [gitService.initialize] ENTRY`);
     const repoPath = GitService.getRepoPath();
     if (repoPath.isError()) logError(repoPath.error.message);
 
     GitService.setRepoPath(repoPath.ok);
+    logDebug(
+      `[${timestamp()}] [gitService.initialize] EXIT repoPath=${repoPath.ok}`
+    );
     return repoPath.ok;
   }
   static execGit(args: string[]): Result<CommandOutput, CommandError> {
@@ -99,6 +106,9 @@ class GitService {
   static async getDiff(
     onlyStagedChanges: boolean
   ): Promise<Result<string, Error>> {
+    logDebug(
+      `[${timestamp()}] [gitService.getDiff] ENTRY onlyStagedChanges=${onlyStagedChanges}`
+    );
     try {
       const hasHead = GitService.hasHead();
 
@@ -300,6 +310,9 @@ class GitService {
     }
   }
   static getChangedFiles(onlyStaged = false): Result<string[], Error> {
+    logDebug(
+      `[${timestamp()}] [gitService.getChangedFiles] ENTRY onlyStaged=${onlyStaged}`
+    );
     try {
       const outputResult = GitService.execGit(["status", "--porcelain"]);
       if (outputResult.isError()) return Err(outputResult.error);

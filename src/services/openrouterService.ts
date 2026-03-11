@@ -12,14 +12,21 @@ import {
   wrapLanguageModel,
 } from "ai";
 import type { CommitMessage } from "@/lib/index.d.ts";
+import { logDebug } from "@/lib/logger.ts";
 import ConfigService from "./configService.ts";
 import { ModelService } from "./modelService.ts";
+
+const timestamp = () =>
+  new Date().toISOString().replace("T", "@").substring(0, 22);
 
 class OpenRouterService extends ModelService {
   static override async generateCommitMessage(
     prompt: string,
     attempt = 1
   ): Promise<CommitMessage> {
+    logDebug(
+      `[${timestamp()}] [openrouterService.generateCommitMessage] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
+    );
     try {
       const apiKey = await ConfigService.getApiKey("OpenRouter");
       const model = (await ConfigService.get("openrouter", "model")).unwrap();
@@ -27,6 +34,10 @@ class OpenRouterService extends ModelService {
         await ConfigService.get("openrouter", "baseUrl")
       ).unwrap();
       const maxRetries = await ModelService.getMaxRetries();
+
+      logDebug(
+        `[${timestamp()}] [openrouterService.generateCommitMessage] CALL API model=${model}, baseURL=${baseURL}`
+      );
 
       const client = createOpenRouter({
         apiKey,
@@ -49,8 +60,14 @@ class OpenRouterService extends ModelService {
         maxRetries,
       });
 
+      logDebug(
+        `[${timestamp()}] [openrouterService.generateCommitMessage] EXIT message="${text.substring(0, 50)}..."`
+      );
       return { message: text, model };
     } catch (error) {
+      logDebug(
+        `[${timestamp()}] [openrouterService.generateCommitMessage] ERROR ${error}`
+      );
       return await OpenRouterService.handleGenerationError(
         error,
         prompt,

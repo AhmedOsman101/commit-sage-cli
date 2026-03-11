@@ -14,6 +14,9 @@ import FileLogger from "@/services/fileLogger.ts";
 
 const encoder = new TextEncoder();
 
+// Cached debug flag - checked once at module load
+const DEBUG_ENABLED = Deno.env.get("DEBUG") === "1";
+
 function toCustomString(value: unknown, indentLevel = 0): string {
   const indent = "  ".repeat(indentLevel); // 2 spaces for indentation
 
@@ -104,6 +107,8 @@ export function logSuccess(...data: unknown[]): void {
 }
 
 export function logDebug(...data: unknown[]): void {
+  if (!DEBUG_ENABLED) return;
+
   const message = makeOutput(...data);
   console.log(`${magenta("[DEBUG]")} ${message}`);
   FileLogger.debug(message);

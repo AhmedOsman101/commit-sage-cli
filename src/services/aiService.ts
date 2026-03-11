@@ -2,6 +2,7 @@ import { Err, ErrFromText, ErrFromUnknown, Ok, type Result } from "lib-result";
 import type { ProviderType } from "@/lib/configServiceTypes.d.ts";
 import { ERROR_MESSAGES } from "@/lib/constants.ts";
 import type { CommitMessage } from "@/lib/index.d.ts";
+import { logDebug } from "@/lib/logger.ts";
 import ConfigService from "./configService.ts";
 import GitBlameAnalyzer from "./gitBlameAnalyzer.ts";
 import GitService from "./gitService.ts";
@@ -10,6 +11,9 @@ import PromptService from "./promptService.ts";
 import { getProviderService } from "./providerRegistry.ts";
 
 const MAX_DIFF_LENGTH = 100_000;
+
+const timestamp = () =>
+  new Date().toISOString().replace("T", "@").substring(0, 22);
 
 const AiService = {
   truncateDiff(diff: string): string {
@@ -22,39 +26,73 @@ const AiService = {
     diff: string,
     blameAnalysis: string
   ): Promise<Result<CommitMessage, Error>> {
+    logDebug(
+      `[${timestamp()}] [aiService.generateCommitMessage] ENTRY diff.length=${diff.length}, hasBlame=${!!blameAnalysis}`
+    );
+
     if (!diff) return ErrFromText(ERROR_MESSAGES.noChanges);
 
     const truncatedDiff = this.truncateDiff(diff);
+    logDebug(
+      `[${timestamp()}] [aiService.generateCommitMessage] STEP truncated diff, length=${truncatedDiff.length}`
+    );
+
     const prompt = await PromptService.generatePrompt(
       truncatedDiff,
       blameAnalysis
+    );
+    logDebug(
+      `[${timestamp()}] [aiService.generateCommitMessage] STEP prompt generated, length=${prompt.length}`
     );
 
     const providerResult = await ConfigService.get("provider", "type");
     if (providerResult.isError()) return Err(providerResult.error);
 
     const providerType = providerResult.ok as ProviderType;
+    logDebug(
+      `[${timestamp()}] [aiService.generateCommitMessage] STEP provider=${providerType}`
+    );
 
     try {
       // OpenRouter reads from its own config section (not provider.model)
       if (providerType === "openrouter") {
+        logDebug(
+          `[${timestamp()}] [aiService.generateCommitMessage] CALL OpenRouterService`
+        );
         const commitMessage = await OpenRouterService.generateCommitMessage(
           prompt,
           1
+        );
+        logDebug(
+          `[${timestamp()}] [aiService.generateCommitMessage] EXIT message="${commitMessage.message.substring(0, 50)}..."`
         );
         return Ok(commitMessage);
       }
 
       const Service = getProviderService(providerType);
+      logDebug(
+        `[${timestamp()}] [aiService.generateCommitMessage] CALL ${Service.name}`
+      );
       const commitMessage = await Service.generateCommitMessage(prompt, 1);
 
+      logDebug(
+        `[${timestamp()}] [aiService.generateCommitMessage] EXIT message="${commitMessage.message.substring(0, 50)}..."`
+      );
       return Ok(commitMessage);
     } catch (error) {
+      logDebug(
+        `[${timestamp()}] [aiService.generateCommitMessage] ERROR ${error}`
+      );
       return ErrFromUnknown(error);
     }
   },
   async generateAndApplyMessage(): Promise<Result<CommitMessage, Error>> {
+    logDebug(`[${timestamp()}] [aiService.generateAndApplyMessage] ENTRY`);
+
     GitService.initialize();
+    logDebug(
+      `[${timestamp()}] [aiService.generateAndApplyMessage] STEP git initialized`
+    );
 
     const onlyStagedResult = await ConfigService.get(
       "commit",
@@ -66,16 +104,25 @@ const AiService = {
     const hasStagedChanges = GitService.hasChanges("staged");
 
     const useStagedChanges = onlyStagedSetting || hasStagedChanges;
+    logDebug(
+      `[${timestamp()}] [aiService.generateAndApplyMessage] STEP useStagedChanges=${useStagedChanges}`
+    );
 
     const diffResult = await GitService.getDiff(useStagedChanges);
     if (diffResult.isError()) return Err(diffResult.error);
 
     const diff = diffResult.ok;
+    logDebug(
+      `[${timestamp()}] [aiService.generateAndApplyMessage] STEP diff length=${diff.length}`
+    );
 
     const changedFilesResult = GitService.getChangedFiles(useStagedChanges);
     if (changedFilesResult.isError()) return Err(changedFilesResult.error);
 
     const changedFiles = changedFilesResult.ok;
+    logDebug(
+      `[${timestamp()}] [aiService.generateAndApplyMessage] STEP changed files=${changedFiles.length}`
+    );
 
     const analysesPromises = changedFiles.map(file =>
       GitBlameAnalyzer.analyzeChanges(file)
@@ -92,7 +139,26 @@ const AiService = {
       }
     }
 
-    return await this.generateCommitMessage(diff, blameAnalysis.join("\n\n"));
+    logDebug(
+      `[${timestamp()}] [aiService.generateAndApplyMessage] STEP blame analyses=${blameAnalysis.length}`
+    );
+
+    const result = await this.generateCommitMessage(
+      diff,
+      blameAnalysis.join("\n\n")
+    );
+
+    if (result.isOk()) {
+      logDebug(
+        `[${timestamp()}] [aiService.generateAndApplyMessage] EXIT success message="${result.ok.message.substring(0, 50)}..."`
+      );
+    } else {
+      logDebug(
+        `[${timestamp()}] [aiService.generateAndApplyMessage] EXIT error=${result.error.message}`
+      );
+    }
+
+    return result;
   },
 };
 
