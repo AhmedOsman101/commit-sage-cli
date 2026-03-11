@@ -26,7 +26,7 @@ class OpenRouterService extends ModelService {
     );
     try {
       const apiKey = await ConfigService.getApiKey("OpenRouter");
-      const model = (await ConfigService.get("openrouter", "model")).unwrap();
+      const model = (await ConfigService.get("provider", "model")).unwrap();
       const baseURL = (
         await ConfigService.get("openrouter", "baseUrl")
       ).unwrap();

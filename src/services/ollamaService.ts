@@ -5,6 +5,7 @@ import {
 } from "ai";
 import { createOllama } from "ollama-ai-provider-v2";
 import type { CommitMessage } from "@/lib/index.d.ts";
+import { logDebug } from "@/lib/logger.ts";
 import ConfigService from "./configService.ts";
 import { ModelService } from "./modelService.ts";
 
@@ -14,8 +15,12 @@ class OllamaService extends ModelService {
     attempt = 1
   ): Promise<CommitMessage> {
     const baseURL = (await ConfigService.get("ollama", "baseUrl")).unwrap();
-    const model = (await ConfigService.get("ollama", "model")).unwrap();
+    const model = (await ConfigService.get("provider", "model")).unwrap();
     const maxRetries = await ModelService.getMaxRetries();
+
+    logDebug(
+      `[ollamaService.generateCommitMessage] CALL API model=${model}, baseURL=${baseURL}`
+    );
 
     const ollama = createOllama({ baseURL });
 
