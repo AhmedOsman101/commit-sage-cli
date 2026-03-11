@@ -1,5 +1,50 @@
 # Changelog
 
+## [Unreleased]
+
+### Features
+
+- **New AI Providers**: Add support for four additional AI providers
+  - **Moonshot AI (Kimi models)** via `@ai-sdk/moonshotai` (official SDK)
+    - Set `provider.type = "moonshotai"` and `MOONSHOTAI_API_KEY`
+    - Default model: `kimi-k2.5` (flagship multimodal + reasoning model)
+    - Reasoning mode supported via `<think>` block middleware
+    - Register at <https://platform.moonshot.ai>
+  - **Z.AI (GLM models)** via `@ai-sdk/openai` adapter with custom base URL
+    - Set `provider.type = "zai"` and `ZAI_API_KEY`
+    - Default model: `glm-4.5-flash` (fast GLM model)
+    - Uses the international Z.AI platform (`api.z.ai`) — no extra dependency
+    - Register at <https://z.ai>
+  - **MiniMax** via `vercel-minimax-ai-provider` (provider-maintained SDK)
+    - Set `provider.type = "minimax"` and `MINIMAX_API_KEY`
+    - Default model: `MiniMax-M2.5`
+    - Uses OpenAI-compatible adapter
+    - Register at <https://platform.minimax.io>
+  - **OpenRouter** via `@openrouter/ai-sdk-provider` (OpenRouter-maintained SDK)
+    - Set `provider.type = "openrouter"` and `OPENROUTER_API_KEY`
+    - Requires a dedicated `openrouter` config section with `model` and optional `baseUrl`
+    - Default model: `openai/gpt-4.1-mini` (model IDs are provider-prefixed, e.g.
+      `anthropic/claude-opus-4-5`, `meta-llama/llama-3.1-405b-instruct`)
+    - Routes to hundreds of models from a single API key
+    - Register at <https://openrouter.ai>
+
+- **DeepSeek integration confirmed**: The existing DeepSeek integration
+  (introduced in v1.6.0) has been audited and verified complete across all
+  integration touchpoints (types, registry, config migration, validation).
+
+### Configuration
+
+- New `openrouter` config section added to `config.json` (alongside the existing
+  `ollama` section) for OpenRouter-specific settings
+- Default values added to `DEFAULT_CONFIG` for all new providers
+- Config migration (`migrateConfig`) handles automatic model-to-provider
+  detection for Kimi (`kimi-*`), GLM (`glm-*`), and MiniMax (`MiniMax-*`) models
+
+### Validation
+
+- `OPENROUTER_API_KEY` is validated against the known `sk-or-v1-` prefix format
+- `config.schema.json` updated with new provider types and `openrouter` section
+
 ## [1.6.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.5.0...v1.6.0) (2026-02-26)
 
 ### Features

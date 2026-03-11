@@ -4,7 +4,9 @@ import {
   wrapLanguageModel,
 } from "ai";
 import { createOllama } from "ollama-ai-provider-v2";
+import { DEFAULT_CONFIG } from "@/lib/constants.ts";
 import type { CommitMessage } from "@/lib/index.d.ts";
+import { logDebug } from "@/lib/logger.ts";
 import ConfigService from "./configService.ts";
 import { ModelService } from "./modelService.ts";
 
@@ -13,9 +15,29 @@ class OllamaService extends ModelService {
     prompt: string,
     attempt = 1
   ): Promise<CommitMessage> {
-    const baseURL = (await ConfigService.get("ollama", "baseUrl")).unwrap();
-    const model = (await ConfigService.get("ollama", "model")).unwrap();
+    logDebug(
+      `[ollamaService.generateCommitMessage] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
+    );
+
+    const baseURLResult = await ConfigService.get("ollama", "baseUrl");
+    const baseURL =
+      baseURLResult.isOk() && baseURLResult.ok
+        ? baseURLResult.ok
+        : (DEFAULT_CONFIG.ollama.baseUrl as string);
+
+    const modelResult = await ConfigService.get("provider", "model");
+    if (modelResult.isError()) {
+      throw new Error(
+        "provider.model is required for Ollama. Please set it in your config."
+      );
+    }
+    const model = modelResult.ok;
+
     const maxRetries = await ModelService.getMaxRetries();
+
+    logDebug(
+      `[ollamaService.generateCommitMessage] CALL API model=${model}, baseURL=${baseURL}`
+    );
 
     const ollama = createOllama({ baseURL });
 

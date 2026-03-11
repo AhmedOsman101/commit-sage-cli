@@ -15,6 +15,8 @@ const apiValidation = {
       `Custom API validation failed: ${status}`,
     invalidOpenaiKey:
       'Invalid OpenAI API key format. Key should start with "sk-"',
+    invalidOpenRouterKey:
+      'Invalid OpenRouter API key format. Key should start with "sk-or-v1-"',
   },
 } as const;
 
@@ -46,6 +48,15 @@ const KeyValidationService = {
     }
     if (!apiValidation.keyFormat.test(key)) {
       return ErrFromText(apiValidation.errorMessages.invalidChars);
+    }
+    return Ok(key);
+  },
+  validateOpenRouterApiKey(key: string): Result<string> {
+    if (!key) {
+      return ErrFromText(apiValidation.errorMessages.emptyKey);
+    }
+    if (!key.startsWith("sk-or-v1-")) {
+      return ErrFromText(apiValidation.errorMessages.invalidOpenRouterKey);
     }
     return Ok(key);
   },

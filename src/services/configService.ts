@@ -7,6 +7,7 @@ import type {
   ConfigKey,
   ConfigSection,
   ConfigValue,
+  ProviderType,
 } from "@/lib/configServiceTypes.d.ts";
 import { CONFIG_PATH, DEFAULT_CONFIG, OS } from "@/lib/constants.ts";
 import { AiServiceError, ConfigurationError } from "@/lib/errors.ts";
@@ -18,17 +19,17 @@ import KeyValidationService from "./keyValidationService.ts";
 class ConfigService {
   protected static shell = "";
 
-  static migrateConfig(config: Record<string, unknown>): Config {
+  static async migrateConfig(
+    config: Record<string, unknown>
+  ): Promise<Result<boolean>> {
     const provider = config.provider as Record<string, unknown> | undefined;
 
-    if (!provider) {
-      return config as Config;
-    }
+    if (!provider) return Ok(true);
 
     const hasType = "type" in provider;
     const hasModel = "model" in provider;
 
-    const modelMap: Record<string, string> = {
+    const modelMap: Record<ProviderType, string> = {
       gemini: "gemini-2.5-flash-lite",
       openai: "gpt-5-nano",
       anthropic: "claude-sonnet-4-5",
@@ -36,23 +37,33 @@ class ConfigService {
       mistral: "mistral-small-latest",
       xai: "grok-3-mini",
       ollama: "llama3.2",
+      moonshotai: "kimi-k2.5",
+      zai: "glm-4.5-flash",
+      minimax: "MiniMax-M2.5",
+      openrouter: "openai/gpt-4.1-mini",
     };
 
     // Case 1: Has type but no model - add default model
     if (hasType && !hasModel) {
-      const oldType = provider.type as string;
+      const oldType = provider.type as ProviderType;
       const newModel = modelMap[oldType] || "gemini-2.5-flash-lite";
 
       logInfo("Migrating config: adding provider.model...");
       logInfo(`  type="${oldType}", model="${newModel}"`);
+      const updateTypeResult = await ConfigService.set(
+        "provider",
+        "type",
+        oldType as ProviderType
+      );
+      if (updateTypeResult.isError()) return Err(updateTypeResult.error);
+      const updateModelResult = await ConfigService.set(
+        "provider",
+        "model",
+        newModel
+      );
+      if (updateModelResult.isError()) return Err(updateModelResult.error);
 
-      return {
-        ...config,
-        provider: {
-          type: oldType,
-          model: newModel,
-        },
-      } as Config;
+      return Ok(true);
     }
 
     // Case 2: Has model but no type - try to detect type from model string
@@ -60,7 +71,7 @@ class ConfigService {
       const model = provider.model as string;
 
       // Detect provider from model string (e.g., "google/gemini-2.5-flash-lite" -> "gemini")
-      let detectedType = "gemini";
+      let detectedType: ProviderType = "gemini";
       if (
         model.startsWith("gpt-") ||
         model.startsWith("o1") ||
@@ -78,13 +89,19 @@ class ConfigService {
         detectedType = "mistral";
       } else if (model.startsWith("grok-")) {
         detectedType = "xai";
+      } else if (model.startsWith("kimi-")) {
+        detectedType = "moonshotai";
+      } else if (model.startsWith("glm-")) {
+        detectedType = "zai";
+      } else if (model.startsWith("MiniMax-")) {
+        detectedType = "minimax";
       } else if (model.includes("/")) {
         // Handle "google/gemini-2.5-flash-lite" format
-        detectedType = model.split("/")[0];
+        detectedType = model.split("/")[0] as ProviderType;
       }
 
       // Fix common provider names
-      if (detectedType === "google") detectedType = "gemini";
+      if ((detectedType as string) === "google") detectedType = "gemini";
 
       const newModel = modelMap[detectedType] || model;
 
@@ -93,16 +110,23 @@ class ConfigService {
         `  model="${model}", detected type="${detectedType}", using model="${newModel}"`
       );
 
-      return {
-        ...config,
-        provider: {
-          type: detectedType,
-          model: newModel,
-        },
-      } as Config;
+      const updateTypeResult = await ConfigService.set(
+        "provider",
+        "type",
+        detectedType as ProviderType
+      );
+      if (updateTypeResult.isError()) return Err(updateTypeResult.error);
+      const updateModelResult = await ConfigService.set(
+        "provider",
+        "model",
+        newModel
+      );
+      if (updateModelResult.isError()) return Err(updateModelResult.error);
+
+      return Ok(true);
     }
 
-    return config as Config;
+    return Ok(true);
   }
 
   static async createConfigFile(): Promise<Result<boolean>> {
@@ -142,7 +166,15 @@ class ConfigService {
       }
 
       const parsedConfig = JSON.parse(configContents);
-      const migratedConfig = await ConfigService.migrateConfig(parsedConfig);
+      const migrationResult = await ConfigService.migrateConfig(parsedConfig);
+      if (migrationResult.isError()) {
+        return Err(migrationResult.error);
+      }
+
+      // Convert parsed config to Config type for validation
+      // Note: we use the parsed config directly rather than re-loading,
+      // to avoid infinite migration loop
+      const migratedConfig = parsedConfig as unknown as Config;
 
       const validation = ConfigValidationService.validate(migratedConfig);
       if (validation.isError()) logError(validation.error.message);
@@ -160,7 +192,11 @@ class ConfigService {
     const configResult = await ConfigService.load();
     if (configResult.isError()) return Err(configResult.error);
 
-    const value = configResult.ok[section][key] ?? DEFAULT_CONFIG[section][key];
+    const sectionValue = configResult.ok[section];
+    const value =
+      sectionValue && typeof sectionValue === "object" && key in sectionValue
+        ? sectionValue[key]
+        : DEFAULT_CONFIG[section]?.[key];
 
     return Ok(value);
   }
@@ -291,7 +327,17 @@ After adding the line, restart your terminal or run 'source ${shellConfigFile}' 
         case "Anthropic":
         case "DeepSeek":
         case "Mistral":
-        case "Xai": {
+        case "Xai":
+        case "MoonshotAI":
+        case "Zai":
+        case "MiniMax": {
+          break;
+        }
+        case "OpenRouter": {
+          const { error } = KeyValidationService.validateOpenRouterApiKey(key);
+          if (error !== undefined) {
+            throw new AiServiceError(error.message, { cause: error });
+          }
           break;
         }
       }

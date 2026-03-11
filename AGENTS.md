@@ -1,4 +1,4 @@
-# AGENTS.md - Commit Sage Developer Guide
+# Commit Sage Developer Guide
 
 This file provides guidelines for agents working on the Commit Sage codebase.
 
