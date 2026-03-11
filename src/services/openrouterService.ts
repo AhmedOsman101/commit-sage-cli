@@ -37,9 +37,10 @@ class OpenRouterService extends ModelService {
       const model = modelResult.ok;
 
       const baseURLResult = await ConfigService.get("openrouter", "baseUrl");
-      const baseURL = baseURLResult.isOk()
-        ? baseURLResult.ok
-        : DEFAULT_CONFIG.openrouter.baseUrl;
+      const baseURL =
+        baseURLResult.isOk() && baseURLResult.ok
+          ? baseURLResult.ok
+          : (DEFAULT_CONFIG.openrouter.baseUrl as string);
       const maxRetries = await ModelService.getMaxRetries();
 
       logDebug(

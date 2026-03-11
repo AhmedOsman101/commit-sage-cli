@@ -192,7 +192,11 @@ class ConfigService {
     const configResult = await ConfigService.load();
     if (configResult.isError()) return Err(configResult.error);
 
-    const value = configResult.ok[section][key] ?? DEFAULT_CONFIG[section][key];
+    const sectionValue = configResult.ok[section];
+    const value =
+      sectionValue && typeof sectionValue === "object" && key in sectionValue
+        ? sectionValue[key]
+        : DEFAULT_CONFIG[section]?.[key];
 
     return Ok(value);
   }

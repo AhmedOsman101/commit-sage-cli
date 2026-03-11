@@ -20,9 +20,10 @@ class OllamaService extends ModelService {
     );
 
     const baseURLResult = await ConfigService.get("ollama", "baseUrl");
-    const baseURL = baseURLResult.isOk()
-      ? baseURLResult.ok
-      : DEFAULT_CONFIG.ollama.baseUrl;
+    const baseURL =
+      baseURLResult.isOk() && baseURLResult.ok
+        ? baseURLResult.ok
+        : (DEFAULT_CONFIG.ollama.baseUrl as string);
 
     const modelResult = await ConfigService.get("provider", "model");
     if (modelResult.isError()) {

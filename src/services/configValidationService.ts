@@ -32,14 +32,18 @@ const ConfigSchema = a.object(
         initialRetryDelayMs: a.uint16(),
       })
     ),
-    ollama: a.object({
-      model: a.string(),
-      baseUrl: a.optional(a.string()),
-    }),
-    openrouter: a.object({
-      model: a.string(),
-      baseUrl: a.optional(a.string()),
-    }),
+    ollama: a.optional(
+      a.object({
+        model: a.string(),
+        baseUrl: a.optional(a.string()),
+      })
+    ),
+    openrouter: a.optional(
+      a.object({
+        model: a.string(),
+        baseUrl: a.optional(a.string()),
+      })
+    ),
     commit: a.object({
       autoCommit: a.optional(a.boolean()),
       autoPush: a.optional(a.boolean()),
