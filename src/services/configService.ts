@@ -142,7 +142,7 @@ class ConfigService {
       }
 
       const parsedConfig = JSON.parse(configContents);
-      const migratedConfig = await ConfigService.migrateConfig(parsedConfig);
+      const migratedConfig = ConfigService.migrateConfig(parsedConfig);
 
       const validation = ConfigValidationService.validate(migratedConfig);
       if (validation.isError()) logError(validation.error.message);
