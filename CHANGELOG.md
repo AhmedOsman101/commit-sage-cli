@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.6.0...v1.6.1) (2026-02-27)
+
+
+### Features
+
+* **ai:** use extractReasoningMiddleware for thinking tag removal ([fbd2bf0](https://github.com/AhmedOsman101/commit-sage-cli/commit/fbd2bf0fc9983c4c907ffd3413b69274548898ff))
+
 ## [1.6.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.5.0...v1.6.0) (2026-02-26)
 
 ### Features
