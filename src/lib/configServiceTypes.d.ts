@@ -16,6 +16,12 @@ type OpenRouterConfig = {
   baseUrl?: "https://openrouter.ai/api/v1" | (string & {});
 };
 
+// Configuration for any OpenAI-compatible provider
+type OpenaiConfig = {
+  baseUrl: "https://api.openai.com/v1" | (string & {});
+  apiKeyEnvVar: string;
+};
+
 // Configuration for commit-related settings
 type CommitConfig = {
   autoCommit: boolean;
@@ -54,6 +60,7 @@ export type Config = {
   general: GeneralConfig;
   ollama: OllamaConfig;
   openrouter: OpenRouterConfig;
+  openai: OpenaiConfig;
   commit: CommitConfig;
   provider: ProviderConfig;
 };

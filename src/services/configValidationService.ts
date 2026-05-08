@@ -44,6 +44,12 @@ const ConfigSchema = a.object(
         baseUrl: a.optional(a.string()),
       })
     ),
+    openai: a.optional(
+      a.object({
+        baseUrl: a.optional(a.string()),
+        apiKeyEnvVar: a.optional(a.string()),
+      })
+    ),
     commit: a.object({
       autoCommit: a.optional(a.boolean()),
       autoPush: a.optional(a.boolean()),
@@ -140,7 +146,7 @@ const ConfigValidationService = {
   },
   validateModelUrl(
     model: object,
-    name: "ollama" | "openrouter"
+    name: "ollama" | "openrouter" | "openai"
   ): Result<boolean> {
     if ("baseUrl" in model) {
       const baseUrl = this.validateUrl(model.baseUrl);
@@ -148,6 +154,19 @@ const ConfigValidationService = {
         logError(`Error at key ${name}.baseUrl => ${baseUrl.error.message}`);
       }
     }
+    return Ok(true);
+  },
+  validateEnvVarName(value: unknown): Result<boolean> {
+    if (typeof value !== "string") {
+      return ErrFromText("Environment variable name must be a string");
+    }
+
+    if (!/^[A-Z_][A-Z0-9_]*$/.test(value)) {
+      return ErrFromText(
+        "Environment variable name must match /^[A-Z_][A-Z0-9_]*$/"
+      );
+    }
+
     return Ok(true);
   },
   validate(config: unknown): Result<Config> {
@@ -220,6 +239,25 @@ const ConfigValidationService = {
           configContent.openrouter !== null
         ) {
           this.validateModelUrl(configContent.openrouter, "openrouter");
+        }
+      }
+      
+      if ("openai" in configContent) {
+        if (
+          typeof configContent.openai === "object" &&
+          configContent.openai !== null
+        ) {
+          this.validateModelUrl(configContent.openai, "openai");
+          if ("apiKeyEnvVar" in configContent.openai) {
+            const validation = this.validateEnvVarName(
+              configContent.openai.apiKeyEnvVar
+            );
+            if (validation.isError()) {
+              logError(
+                `Error at key openai.apiKeyEnvVar => ${validation.error.message}`
+              );
+            }
+          }
         }
       }
     }

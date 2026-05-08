@@ -229,8 +229,9 @@ class ConfigService {
       if (!ConfigService.shell) {
         ConfigService.shell = basename(Deno.env.get("SHELL") ?? "bash");
       }
+      const envVarName = await ConfigService.getApiKeyEnvVar(service);
       const key =
-        Deno.env.get(`${service.toUpperCase()}_API_KEY`) ??
+        Deno.env.get(envVarName) ??
         (await ConfigService.promptForApiKey(service));
 
       if (key) ConfigService.validateApiKey(service, key);
@@ -278,11 +279,43 @@ class ConfigService {
       shellConfigMap[ConfigService.getShell()] ||
       `${ConfigService.getShell()} config`;
 
+    const defaultEnvVarName = `${service.toUpperCase()}_API_KEY`;
+
     return `
 To set the ${service} API key for future use, add the following line to your ${shellConfigFile} file:
-  export ${service.toUpperCase()}_API_KEY="your_api_key"
+  export ${defaultEnvVarName}="your_api_key"
 Replace "your_api_key" with your actual API key.
 After adding the line, restart your terminal or run 'source ${shellConfigFile}' to apply the changes.`;
+  }
+
+  protected static async getApiKeyEnvVar(service: ApiService): Promise<string> {
+    if (service !== "OpenAI") {
+      return `${service.toUpperCase()}_API_KEY`;
+    }
+
+    const envVarResult = await ConfigService.get("openai", "apiKeyEnvVar");
+    if (envVarResult.isError()) {
+      throw new ConfigurationError(envVarResult.error.message, {
+        cause: envVarResult.error,
+      });
+    }
+
+    return envVarResult.ok;
+  }
+
+  protected static async getApiKeyInfoMessage(
+    service: ApiService
+  ): Promise<string> {
+    if (service !== "OpenAI") {
+      return ConfigService.infoMessage(service);
+    }
+
+    const envVarName = await ConfigService.getApiKeyEnvVar(service);
+
+    return ConfigService.infoMessage(service).replace(
+      `${service.toUpperCase()}_API_KEY`,
+      envVarName
+    );
   }
 
   protected static async promptForApiKey(service: ApiService): Promise<string> {
@@ -290,7 +323,6 @@ After adding the line, restart your terminal or run 'source ${shellConfigFile}' 
       message: `Enter your ${service} API Key:`,
       label: "API Key",
       prefix: "",
-      minLength: 32,
     });
 
     const validation = KeyValidationService.baseValidation(key);
@@ -302,7 +334,7 @@ After adding the line, restart your terminal or run 'source ${shellConfigFile}' 
     }
 
     logSuccess(`${service} API key has been set for this run`);
-    logInfo(ConfigService.infoMessage(service));
+    logInfo(await ConfigService.getApiKeyInfoMessage(service));
 
     return key;
   }
@@ -317,28 +349,21 @@ After adding the line, restart your terminal or run 'source ${shellConfigFile}' 
           }
           break;
         }
-        case "OpenAI": {
-          const { error } = KeyValidationService.validateOpenAIApiKey(key);
-          if (error !== undefined) {
-            throw new AiServiceError(error.message, { cause: error });
-          }
-          break;
-        }
-        case "Anthropic":
-        case "DeepSeek":
-        case "Mistral":
-        case "Xai":
-        case "MoonshotAI":
-        case "Zai":
-        case "MiniMax": {
-          break;
-        }
         case "OpenRouter": {
           const { error } = KeyValidationService.validateOpenRouterApiKey(key);
           if (error !== undefined) {
             throw new AiServiceError(error.message, { cause: error });
           }
           break;
+        }
+        default: {
+          const validation = KeyValidationService.baseValidation(key);
+
+          if (validation.isError()) {
+            throw new AiServiceError(validation.error.message, {
+              cause: validation.error,
+            });
+          }
         }
       }
     } catch (error) {
