@@ -43,6 +43,7 @@ export const DEFAULT_CONFIG: Readonly<Config> = {
   },
   openai: {
     baseUrl: "https://api.openai.com/v1",
+    apiKeyEnvVar: "OPENAI_API_KEY",
   },
   commit: {
     autoCommit: false,

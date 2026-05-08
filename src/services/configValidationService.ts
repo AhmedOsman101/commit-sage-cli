@@ -35,6 +35,7 @@ const ConfigSchema = a.object(
     openai: a.optional(
       a.object({
         baseUrl: a.optional(a.string()),
+        apiKeyEnvVar: a.optional(a.string()),
       })
     ),
     commit: a.object({
@@ -140,6 +141,19 @@ const ConfigValidationService = {
     }
     return Ok(true);
   },
+  validateEnvVarName(value: unknown): Result<boolean> {
+    if (typeof value !== "string") {
+      return ErrFromText("Environment variable name must be a string");
+    }
+
+    if (!/^[A-Z_][A-Z0-9_]*$/.test(value)) {
+      return ErrFromText(
+        "Environment variable name must match /^[A-Z_][A-Z0-9_]*$/"
+      );
+    }
+
+    return Ok(true);
+  },
   validate(config: unknown): Result<Config> {
     let configContent: unknown;
     try {
@@ -210,6 +224,16 @@ const ConfigValidationService = {
           configContent.openai !== null
         ) {
           this.validateModelUrl(configContent.openai, "openai");
+          if ("apiKeyEnvVar" in configContent.openai) {
+            const validation = this.validateEnvVarName(
+              configContent.openai.apiKeyEnvVar
+            );
+            if (validation.isError()) {
+              logError(
+                `Error at key openai.apiKeyEnvVar => ${validation.error.message}`
+              );
+            }
+          }
         }
       }
     }

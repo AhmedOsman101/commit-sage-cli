@@ -13,6 +13,7 @@ type OllamaConfig = {
 // Configuration for any OpenAI-compatible provider
 type OpenaiConfig = {
   baseUrl: "https://api.openai.com/v1" | (string & {});
+  apiKeyEnvVar: string;
 };
 
 // Configuration for commit-related settings
