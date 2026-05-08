@@ -26,6 +26,16 @@
           "minimum": 0,
           "maximum": 2,
           "description": "Global generation temperature used by all providers"
+        },
+        "maxInputChars": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum diff size sent to the model before truncation"
+        },
+        "diffStrategy": {
+          "type": "string",
+          "enum": ["staged", "unstaged", "auto"],
+          "description": "Whether to analyze staged changes, unstaged changes, or automatically prefer staged changes when present"
         }
       }
     },
@@ -63,6 +73,10 @@
           "type": "string",
           "pattern": "^[A-Z_][A-Z0-9_]*$",
           "description": "Environment variable name used to read the OpenAI-compatible API key"
+        },
+        "useChatCompletions": {
+          "type": "boolean",
+          "description": "Use the Chat Completions API instead of the Responses API for OpenAI-compatible providers"
         }
       }
     },
@@ -90,6 +104,16 @@
         },
         "promptForRefs": {
           "type": "boolean"
+        },
+        "maxSubjectLength": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum allowed length for the first line of the commit message"
+        },
+        "bodyStyle": {
+          "type": "string",
+          "enum": ["subject-only", "subject-body", "subject-body-footer"],
+          "description": "Controls whether the generated commit message includes only a subject, a subject and body, or a subject, body, and optional footer"
         }
       }
     },
@@ -118,6 +142,16 @@
         "model": {
           "type": "string",
           "description": "Model ID for the selected provider (e.g. 'gemini-2.5-flash-lite', 'gpt-5-nano', 'openai/gpt-4.1-mini')"
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Request timeout in milliseconds for model generation. Set to 0 to disable the timeout."
+        },
+        "reasoning": {
+          "type": "string",
+          "enum": ["off", "low", "medium", "high"],
+          "description": "Reasoning effort level for providers that support it"
         }
       }
     }

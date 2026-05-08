@@ -35,7 +35,7 @@ class OpenRouterService extends ModelService {
         );
       }
       const model = modelResult.ok;
-      const temperature = await ModelService.getTemperature();
+      const generationOptions = await ModelService.getGenerationOptions();
 
       const baseURLResult = await ConfigService.get("openrouter", "baseUrl");
       const baseURL =
@@ -63,7 +63,7 @@ class OpenRouterService extends ModelService {
       const { text } = await generateText({
         model: wrappedModel,
         prompt,
-        temperature,
+        ...generationOptions,
       });
 
       logDebug(

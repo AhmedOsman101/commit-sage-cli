@@ -32,7 +32,7 @@ class OllamaService extends ModelService {
       );
     }
     const model = modelResult.ok;
-    const temperature = await ModelService.getTemperature();
+    const generationOptions = await ModelService.getGenerationOptions();
 
     logDebug(
       `[ollamaService.generateCommitMessage] CALL API model=${model}, baseURL=${baseURL}`
@@ -49,7 +49,7 @@ class OllamaService extends ModelService {
       const response = await generateText({
         model: wrappedModel,
         prompt,
-        temperature,
+        ...generationOptions,
       });
 
       return { message: response.text, model };

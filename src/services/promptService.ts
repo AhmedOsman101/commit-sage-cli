@@ -16,12 +16,20 @@ const PromptService = {
       "commit",
       "commitLanguage"
     ).then(result => result.unwrap());
+    const maxSubjectLength = await ConfigService.get(
+      "commit",
+      "maxSubjectLength"
+    ).then(r => r.unwrap());
+    const bodyStyle = await ConfigService.get("commit", "bodyStyle").then(r =>
+      r.unwrap()
+    );
 
     const languagePrompt = PromptService.getLanguagePrompt(commitLanguage);
     const template = getTemplate(format, commitLanguage);
     const blameSection = blameAnalysis.trim()
       ? blameAnalysis
       : "No git blame analysis available.";
+    const bodyStylePrompt = PromptService.getBodyStylePrompt(bodyStyle);
 
     return `You generate exactly one git commit message.
 
@@ -32,12 +40,16 @@ Rules:
 - Do not describe the diff before the answer.
 - Do not include surrounding whitespace before or after the commit message.
 - If the diff is unclear, still return the single best commit message based on the strongest visible change.
+- The first line must be at most ${maxSubjectLength} characters.
 
 Commit format requirements:
 ${template}
 
 Language requirement:
 ${languagePrompt}
+
+Output structure requirement:
+${bodyStylePrompt}
 
 Use the git blame analysis only as supporting context. Base the commit message primarily on the diff itself.
 
@@ -48,6 +60,19 @@ Git blame analysis:
 ${blameSection}
 
 Final instruction: return only the commit message.`;
+  },
+
+  getBodyStylePrompt(
+    bodyStyle: "subject-only" | "subject-body" | "subject-body-footer"
+  ): string {
+    switch (bodyStyle) {
+      case "subject-body":
+        return "Return a subject line, then one blank line, then a short body. Do not include a footer.";
+      case "subject-body-footer":
+        return "Return a subject line, then one blank line, then a short body. Add a footer only when the diff clearly needs one, such as an issue reference or breaking change note.";
+      default:
+        return "Return only a single subject line. Do not include a body or footer.";
+    }
   },
 
   getLanguagePrompt(language: CommitLanguage): string {

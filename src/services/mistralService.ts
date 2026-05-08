@@ -16,7 +16,7 @@ class MistralService extends ModelService {
     try {
       const apiKey = await ConfigService.getApiKey("Mistral");
       const model = (await ConfigService.get("provider", "model")).unwrap();
-      const temperature = await ModelService.getTemperature();
+      const generationOptions = await ModelService.getGenerationOptions();
       const mistral = createMistral({ apiKey });
 
       const wrappedModel = wrapLanguageModel({
@@ -27,7 +27,7 @@ class MistralService extends ModelService {
       const { text } = await generateText({
         model: wrappedModel,
         prompt,
-        temperature,
+        ...generationOptions,
       });
 
       return { message: text, model };

@@ -5,17 +5,42 @@ import { logDebug } from "@/lib/logger.ts";
 import ConfigService from "./configService.ts";
 import GitBlameAnalyzer from "./gitBlameAnalyzer.ts";
 import GitService from "./gitService.ts";
-import OpenRouterService from "./openrouterService.ts";
 import PromptService from "./promptService.ts";
 import { getProviderService } from "./providerRegistry.ts";
 
-const MAX_DIFF_LENGTH = 100_000;
-
 const AiService = {
-  truncateDiff(diff: string): string {
-    return diff.length > MAX_DIFF_LENGTH
-      ? `${diff.substring(0, MAX_DIFF_LENGTH)}\n...(truncated)`
+  truncateDiff(diff: string, maxInputChars: number): string {
+    return diff.length > maxInputChars
+      ? `${diff.substring(0, maxInputChars)}\n...(truncated)`
       : diff;
+  },
+
+  async resolveDiffMode(): Promise<Result<"staged" | "unstaged", Error>> {
+    const diffStrategyResult = await ConfigService.get(
+      "general",
+      "diffStrategy"
+    );
+    if (diffStrategyResult.isError()) return Err(diffStrategyResult.error);
+
+    const hasStagedChanges = GitService.hasChanges("staged");
+
+    switch (diffStrategyResult.ok) {
+      case "staged":
+        return Ok("staged");
+      case "unstaged":
+        return Ok("unstaged");
+      default: {
+        const onlyStagedResult = await ConfigService.get(
+          "commit",
+          "onlyStagedChanges"
+        );
+        if (onlyStagedResult.isError()) return Err(onlyStagedResult.error);
+
+        return Ok(
+          onlyStagedResult.ok || hasStagedChanges ? "staged" : "unstaged"
+        );
+      }
+    }
   },
 
   async generateCommitMessage(
@@ -28,7 +53,13 @@ const AiService = {
 
     if (!diff) return ErrFromText(ERROR_MESSAGES.noChanges);
 
-    const truncatedDiff = this.truncateDiff(diff);
+    const maxInputCharsResult = await ConfigService.get(
+      "general",
+      "maxInputChars"
+    );
+    if (maxInputCharsResult.isError()) return Err(maxInputCharsResult.error);
+
+    const truncatedDiff = this.truncateDiff(diff, maxInputCharsResult.ok);
     logDebug(
       `[aiService.generateCommitMessage] STEP truncated diff, length=${truncatedDiff.length}`
     );
@@ -48,18 +79,6 @@ const AiService = {
     logDebug(`[aiService.generateCommitMessage] STEP provider=${providerType}`);
 
     try {
-      if (providerType === "openrouter") {
-        logDebug("[aiService.generateCommitMessage] CALL OpenRouterService");
-        const commitMessage = await OpenRouterService.generateCommitMessage(
-          prompt,
-          1
-        );
-        logDebug(
-          `[aiService.generateCommitMessage] EXIT message="${commitMessage.message.substring(0, 50)}..."`
-        );
-        return Ok(commitMessage);
-      }
-
       const Service = getProviderService(providerType);
       logDebug(`[aiService.generateCommitMessage] CALL ${Service.name}`);
       const commitMessage = await Service.generateCommitMessage(prompt, 1);
@@ -79,21 +98,14 @@ const AiService = {
     GitService.initialize();
     logDebug("[aiService.generateAndApplyMessage] STEP git initialized");
 
-    const onlyStagedResult = await ConfigService.get(
-      "commit",
-      "onlyStagedChanges"
-    );
-    if (onlyStagedResult.isError()) return Err(onlyStagedResult.error);
+    const diffModeResult = await this.resolveDiffMode();
+    if (diffModeResult.isError()) return Err(diffModeResult.error);
 
-    const onlyStagedSetting = onlyStagedResult.ok;
-    const hasStagedChanges = GitService.hasChanges("staged");
+    const diffMode = diffModeResult.ok;
+    const useStagedChanges = diffMode === "staged";
+    logDebug(`[aiService.generateAndApplyMessage] STEP diffMode=${diffMode}`);
 
-    const useStagedChanges = onlyStagedSetting || hasStagedChanges;
-    logDebug(
-      `[aiService.generateAndApplyMessage] STEP useStagedChanges=${useStagedChanges}`
-    );
-
-    const diffResult = await GitService.getDiff(useStagedChanges);
+    const diffResult = await GitService.getDiff(diffMode);
     if (diffResult.isError()) return Err(diffResult.error);
 
     const diff = diffResult.ok;
@@ -101,7 +113,7 @@ const AiService = {
       `[aiService.generateAndApplyMessage] STEP diff length=${diff.length}`
     );
 
-    const changedFilesResult = GitService.getChangedFiles(useStagedChanges);
+    const changedFilesResult = GitService.getChangedFiles(diffMode);
     if (changedFilesResult.isError()) return Err(changedFilesResult.error);
 
     const changedFiles = changedFilesResult.ok;

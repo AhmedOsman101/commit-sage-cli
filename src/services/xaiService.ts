@@ -16,7 +16,8 @@ class XaiService extends ModelService {
     try {
       const apiKey = await ConfigService.getApiKey("Xai");
       const model = (await ConfigService.get("provider", "model")).unwrap();
-      const temperature = await ModelService.getTemperature();
+      const generationOptions = await ModelService.getGenerationOptions();
+      const providerOptions = await ModelService.getXaiProviderOptions();
       const xai = createXai({ apiKey });
 
       const wrappedModel = wrapLanguageModel({
@@ -27,7 +28,8 @@ class XaiService extends ModelService {
       const { text } = await generateText({
         model: wrappedModel,
         prompt,
-        temperature,
+        ...generationOptions,
+        providerOptions,
       });
 
       return { message: text, model };

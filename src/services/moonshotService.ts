@@ -20,7 +20,7 @@ class MoonshotService extends ModelService {
     try {
       const apiKey = await ConfigService.getApiKey("MoonshotAI");
       const model = (await ConfigService.get("provider", "model")).unwrap();
-      const temperature = await ModelService.getTemperature();
+      const generationOptions = await ModelService.getGenerationOptions();
       logDebug(
         `[moonshotService.generateCommitMessage] CALL API model=${model}`
       );
@@ -35,7 +35,7 @@ class MoonshotService extends ModelService {
       const { text } = await generateText({
         model: wrappedModel,
         prompt,
-        temperature,
+        ...generationOptions,
       });
 
       logDebug(

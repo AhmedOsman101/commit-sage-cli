@@ -1,6 +1,10 @@
 import { a, type ValidationException } from "@arrirpc/schema";
 import { ErrFromText, Ok, type Result } from "lib-result";
-import type { Config, ProviderType } from "@/lib/configServiceTypes.d.ts";
+import type {
+  Config,
+  ProviderReasoning,
+  ProviderType,
+} from "@/lib/configServiceTypes.d.ts";
 import { CONFIG_PATH } from "@/lib/constants.ts";
 import { logError, logWarning } from "@/lib/logger.ts";
 
@@ -21,6 +25,13 @@ const SUPPORTED_PROVIDERS: ProviderType[] = [
   "openrouter",
 ];
 
+const SUPPORTED_REASONING_LEVELS: ProviderReasoning[] = [
+  "off",
+  "low",
+  "medium",
+  "high",
+];
+
 const ConfigSchema = a.object(
   {
     $schema: a.stringEnum([
@@ -31,6 +42,8 @@ const ConfigSchema = a.object(
         maxRetries: a.uint8(),
         initialRetryDelayMs: a.uint16(),
         temperature: a.float64(),
+        maxInputChars: a.float64(),
+        diffStrategy: a.stringEnum(["staged", "unstaged", "auto"]),
       })
     ),
     ollama: a.optional(
@@ -47,6 +60,7 @@ const ConfigSchema = a.object(
       a.object({
         baseUrl: a.optional(a.string()),
         apiKeyEnvVar: a.optional(a.string()),
+        useChatCompletions: a.optional(a.boolean()),
       })
     ),
     commit: a.object({
@@ -67,10 +81,16 @@ const ConfigSchema = a.object(
         "japanese",
       ]),
       promptForRefs: a.optional(a.boolean()),
+      maxSubjectLength: a.optional(a.float64()),
+      bodyStyle: a.optional(
+        a.stringEnum(["subject-only", "subject-body", "subject-body-footer"])
+      ),
     }),
     provider: a.object({
       type: a.stringEnum(SUPPORTED_PROVIDERS),
       model: a.string(),
+      timeoutMs: a.optional(a.float64()),
+      reasoning: a.optional(a.stringEnum(SUPPORTED_REASONING_LEVELS)),
     }),
   },
   {
@@ -158,6 +178,38 @@ const ConfigValidationService = {
         }
       }
     }
+    if ("maxInputChars" in general) {
+      const validation = this.validateInt(general.maxInputChars, 1);
+      if (validation.isError()) {
+        logError(
+          `Error at key general.maxInputChars => ${validation.error.message}`
+        );
+      }
+    }
+    return Ok(true);
+  },
+  validateCommit(commit: object): Result<boolean> {
+    if ("maxSubjectLength" in commit) {
+      const validation = this.validateInt(commit.maxSubjectLength, 1);
+      if (validation.isError()) {
+        logError(
+          `Error at key commit.maxSubjectLength => ${validation.error.message}`
+        );
+      }
+    }
+
+    return Ok(true);
+  },
+  validateProvider(provider: object): Result<boolean> {
+    if ("timeoutMs" in provider) {
+      const validation = this.validateInt(provider.timeoutMs, 0);
+      if (validation.isError()) {
+        logError(
+          `Error at key provider.timeoutMs => ${validation.error.message}`
+        );
+      }
+    }
+
     return Ok(true);
   },
   validateProviderUrl(
@@ -240,6 +292,15 @@ const ConfigValidationService = {
         }
       }
 
+      if ("commit" in configContent) {
+        if (
+          typeof configContent.commit === "object" &&
+          configContent.commit !== null
+        ) {
+          this.validateCommit(configContent.commit);
+        }
+      }
+
       if ("ollama" in configContent) {
         if (
           typeof configContent.ollama === "object" &&
@@ -274,6 +335,15 @@ const ConfigValidationService = {
               );
             }
           }
+        }
+      }
+
+      if ("provider" in configContent) {
+        if (
+          typeof configContent.provider === "object" &&
+          configContent.provider !== null
+        ) {
+          this.validateProvider(configContent.provider);
         }
       }
     }

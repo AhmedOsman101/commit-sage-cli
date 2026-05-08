@@ -3,6 +3,8 @@ type GeneralConfig = {
   maxRetries: number;
   initialRetryDelayMs: number;
   temperature: number;
+  maxInputChars: number;
+  diffStrategy: "staged" | "unstaged" | "auto";
 };
 
 // Configuration for the Ollama provider (self-hosted, requires baseUrl)
@@ -19,6 +21,7 @@ type OpenRouterConfig = {
 type OpenaiConfig = {
   baseUrl: "https://api.openai.com/v1" | (string & {});
   apiKeyEnvVar: string;
+  useChatCompletions: boolean;
 };
 
 // Configuration for commit-related settings
@@ -29,7 +32,11 @@ type CommitConfig = {
   onlyStagedChanges: boolean;
   commitLanguage: CommitLanguage;
   promptForRefs: boolean;
+  maxSubjectLength: number;
+  bodyStyle: "subject-only" | "subject-body" | "subject-body-footer";
 };
+
+export type ProviderReasoning = "off" | "low" | "medium" | "high";
 
 // Supported AI provider types
 export type ProviderType =
@@ -49,6 +56,8 @@ export type ProviderType =
 type ProviderConfig = {
   type: ProviderType;
   model: string;
+  timeoutMs: number;
+  reasoning: ProviderReasoning;
 };
 
 export type CommitLanguage = "english" | "russian" | "chinese" | "japanese";

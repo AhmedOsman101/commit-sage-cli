@@ -99,11 +99,9 @@ class GitService {
     return cmd.isOk() && cmd.ok.stdout.includes("160000");
   }
   static async getDiff(
-    onlyStagedChanges: boolean
+    diffMode: "staged" | "unstaged"
   ): Promise<Result<string, Error>> {
-    logDebug(
-      `[gitService.getDiff] ENTRY onlyStagedChanges=${onlyStagedChanges}`
-    );
+    logDebug(`[gitService.getDiff] ENTRY diffMode=${diffMode}`);
     try {
       const hasStagedChanges = GitService.hasChanges("staged");
 
@@ -111,14 +109,13 @@ class GitService {
 
       const hasUntrackedFiles = GitService.hasChanges("untracked");
 
-      if (!hasStagedChanges && !hasUnstagedChanges && !hasUntrackedFiles) {
-        return Err(new NoChangesDetectedError("No changes detected."));
-      }
       const diffs: string[] = [];
 
-      // Skip submodule changes
-      // If we only want staged changes and there are some, return only those
-      if (onlyStagedChanges && hasStagedChanges) {
+      if (diffMode === "staged") {
+        if (!hasStagedChanges) {
+          return Err(new NoChangesDetectedError("No staged changes detected."));
+        }
+
         const diffResult = GitService.execGit([
           "diff",
           "--cached",
@@ -149,52 +146,8 @@ class GitService {
         return Ok(diffs.join("\n\n").trim());
       }
 
-      // Otherwise, get all changes
-      if (hasStagedChanges) {
-        const diffResult = GitService.execGit([
-          "diff",
-          "--cached",
-          "--name-only",
-        ]);
-
-        if (diffResult.isError()) {
-          return Err(
-            new CommandError(
-              `${diffResult.error.message} hasStagedChanges`,
-              "git diff --cached --name-only"
-            )
-          );
-        }
-
-        const { stdout: stagedFiles } = diffResult.ok;
-        const stagedFilesArray = stagedFiles
-          .split("\n")
-          .filter(file => file.trim());
-
-        for (const file of stagedFilesArray) {
-          if (!GitService.isSubmodule(file)) {
-            const diffCached = GitService.execGit([
-              "diff",
-              "--cached",
-              "--",
-              file,
-            ]);
-
-            if (diffCached.isError()) {
-              return Err(
-                new CommandError(
-                  `${diffCached.error.message} hasStagedChanges ${file} loop`,
-                  `git diff --cached -- ${file}`
-                )
-              );
-            }
-
-            const { stdout: fileDiff } = diffCached.ok;
-            if (fileDiff.trim()) {
-              diffs.push(`# Staged changes:\n${fileDiff}`);
-            }
-          }
-        }
+      if (!hasUnstagedChanges && !hasUntrackedFiles) {
+        return Err(new NoChangesDetectedError("No unstaged changes detected."));
       }
 
       if (hasUnstagedChanges) {
@@ -267,8 +220,10 @@ class GitService {
       return ErrFromUnknown(error);
     }
   }
-  static getChangedFiles(onlyStaged = false): Result<string[], Error> {
-    logDebug(`[gitService.getChangedFiles] ENTRY onlyStaged=${onlyStaged}`);
+  static getChangedFiles(
+    diffMode: "staged" | "unstaged" = "unstaged"
+  ): Result<string[], Error> {
+    logDebug(`[gitService.getChangedFiles] ENTRY diffMode=${diffMode}`);
     try {
       const outputResult = GitService.execGit(["status", "--porcelain"]);
       if (outputResult.isError()) return Err(outputResult.error);
@@ -287,13 +242,11 @@ class GitService {
             return false;
           }
 
-          if (onlyStaged) {
-            // For staged changes, check first character
+          if (diffMode === "staged") {
             return STAGED_STATUS_CODES.includes(line[0] as GitStatusCode);
           }
-          // For all changes, check both staged and unstaged status
-          const [staged, unstaged] = [line[0], line[1]];
-          return staged !== " " || unstaged !== " ";
+
+          return line.startsWith("??") || line[1] !== " ";
         })
         .map(line => {
           const status = line.substring(0, 2);

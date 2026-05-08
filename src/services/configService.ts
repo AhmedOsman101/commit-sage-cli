@@ -19,8 +19,29 @@ import KeyValidationService from "./keyValidationService.ts";
 class ConfigService {
   protected static shell = "";
 
+  protected static migrateSectionDefaults(
+    section: Record<string, unknown>,
+    defaults: Record<string, unknown>
+  ): boolean {
+    let changed = false;
+
+    for (const [key, value] of Object.entries(defaults)) {
+      if (!(key in section)) {
+        section[key] = value;
+        changed = true;
+      }
+    }
+
+    return changed;
+  }
+
   static migrateConfig(config: Record<string, unknown>): Result<boolean> {
     const provider = config.provider as Record<string, unknown> | undefined;
+    let changed = false;
+
+    const general = config.general as Record<string, unknown> | undefined;
+    const openai = config.openai as Record<string, unknown> | undefined;
+    const commit = config.commit as Record<string, unknown> | undefined;
 
     if (!provider) return Ok(true);
 
@@ -52,7 +73,7 @@ class ConfigService {
       provider.type = oldType;
       provider.model = newModel;
 
-      return Ok(true);
+      changed = true;
     }
 
     // Case 2: Has model but no type - cannot safely infer provider
@@ -64,7 +85,29 @@ class ConfigService {
       );
     }
 
-    return Ok(false);
+    if (general) {
+      changed =
+        ConfigService.migrateSectionDefaults(general, DEFAULT_CONFIG.general) ||
+        changed;
+    }
+
+    if (openai) {
+      changed =
+        ConfigService.migrateSectionDefaults(openai, DEFAULT_CONFIG.openai) ||
+        changed;
+    }
+
+    if (commit) {
+      changed =
+        ConfigService.migrateSectionDefaults(commit, DEFAULT_CONFIG.commit) ||
+        changed;
+    }
+
+    changed =
+      ConfigService.migrateSectionDefaults(provider, DEFAULT_CONFIG.provider) ||
+      changed;
+
+    return Ok(changed);
   }
 
   static async createConfigFile(): Promise<Result<boolean>> {

@@ -11,6 +11,11 @@ import ConfigService from "./configService.ts";
 
 export abstract class ModelService {
   protected static readonly maxRetryBackoff = 10_000;
+  protected static readonly reasoningLevels = [
+    "low",
+    "medium",
+    "high",
+  ] as const;
 
   protected static cleanCommitMessage(message: string): string {
     return message.trim();
@@ -63,6 +68,83 @@ export abstract class ModelService {
     return await ConfigService.get("general", "temperature").then(result =>
       result.unwrap()
     );
+  }
+
+  protected static async getGenerationOptions() {
+    const temperature = await ModelService.getTemperature();
+    const timeoutMs = await ConfigService.get("provider", "timeoutMs").then(
+      result => result.unwrap()
+    );
+
+    return {
+      temperature,
+      abortSignal: timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : undefined,
+    };
+  }
+
+  protected static async getReasoningLevel() {
+    const reasoning = await ConfigService.get("provider", "reasoning").then(r =>
+      r.unwrap()
+    );
+
+    if (reasoning === "off") return;
+    return reasoning;
+  }
+
+  protected static async getOpenAIProviderOptions(options?: {
+    forceReasoning?: boolean;
+  }) {
+    const reasoning = await ModelService.getReasoningLevel();
+
+    if (!reasoning) return;
+
+    return {
+      openai: {
+        reasoningEffort: reasoning,
+        ...(options?.forceReasoning ? { forceReasoning: true } : {}),
+      },
+    };
+  }
+
+  protected static async getAnthropicProviderOptions() {
+    const reasoning = await ModelService.getReasoningLevel();
+
+    if (!reasoning) return;
+
+    return {
+      anthropic: {
+        thinking: {
+          type: "adaptive" as const,
+        },
+        effort: reasoning,
+      },
+    };
+  }
+
+  protected static async getGoogleProviderOptions() {
+    const reasoning = await ModelService.getReasoningLevel();
+
+    if (!reasoning) return;
+
+    return {
+      google: {
+        thinkingConfig: {
+          thinkingLevel: reasoning,
+        },
+      },
+    };
+  }
+
+  protected static async getXaiProviderOptions() {
+    const reasoning = await ModelService.getReasoningLevel();
+
+    if (!reasoning) return;
+
+    return {
+      xai: {
+        reasoningEffort: reasoning === "medium" ? "high" : reasoning,
+      },
+    };
   }
 
   protected static async handleGenerationError(

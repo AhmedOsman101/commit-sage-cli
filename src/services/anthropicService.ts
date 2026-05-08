@@ -16,7 +16,8 @@ class AnthropicService extends ModelService {
     try {
       const apiKey = await ConfigService.getApiKey("Anthropic");
       const model = (await ConfigService.get("provider", "model")).unwrap();
-      const temperature = await ModelService.getTemperature();
+      const generationOptions = await ModelService.getGenerationOptions();
+      const providerOptions = await ModelService.getAnthropicProviderOptions();
       const anthropic = createAnthropic({ apiKey });
 
       const wrappedModel = wrapLanguageModel({
@@ -27,7 +28,8 @@ class AnthropicService extends ModelService {
       const { text } = await generateText({
         model: wrappedModel,
         prompt,
-        temperature,
+        ...generationOptions,
+        providerOptions,
       });
 
       return { message: text, model };

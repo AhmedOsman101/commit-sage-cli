@@ -37,6 +37,8 @@ export const DEFAULT_CONFIG: Readonly<Config> = {
     maxRetries: 3,
     initialRetryDelayMs: 1000,
     temperature: 0.7,
+    maxInputChars: 100_000,
+    diffStrategy: "auto",
   },
   ollama: {
     baseUrl: "http://localhost:11434/api",
@@ -47,6 +49,7 @@ export const DEFAULT_CONFIG: Readonly<Config> = {
   openai: {
     baseUrl: "https://api.openai.com/v1",
     apiKeyEnvVar: "OPENAI_API_KEY",
+    useChatCompletions: true,
   },
   commit: {
     autoCommit: false,
@@ -55,10 +58,14 @@ export const DEFAULT_CONFIG: Readonly<Config> = {
     onlyStagedChanges: true,
     commitLanguage: "english",
     promptForRefs: false,
+    maxSubjectLength: 80,
+    bodyStyle: "subject-body",
   },
   provider: {
     type: "gemini",
     model: "gemini-2.5-flash-lite",
+    timeoutMs: 60_000,
+    reasoning: "off",
   },
 };
 

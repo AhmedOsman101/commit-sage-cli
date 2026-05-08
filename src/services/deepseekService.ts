@@ -16,7 +16,7 @@ class DeepseekService extends ModelService {
     try {
       const apiKey = await ConfigService.getApiKey("DeepSeek");
       const model = (await ConfigService.get("provider", "model")).unwrap();
-      const temperature = await ModelService.getTemperature();
+      const generationOptions = await ModelService.getGenerationOptions();
       const deepseek = createDeepSeek({ apiKey });
 
       const wrappedModel = wrapLanguageModel({
@@ -27,7 +27,7 @@ class DeepseekService extends ModelService {
       const { text } = await generateText({
         model: wrappedModel,
         prompt,
-        temperature,
+        ...generationOptions,
       });
 
       return { message: text, model };

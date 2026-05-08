@@ -18,23 +18,32 @@ class OpenAiService extends ModelService {
       const apiKey = await ConfigService.getApiKey("OpenAI");
       const model = (await ConfigService.get("provider", "model")).unwrap();
       const baseURL = (await ConfigService.get("openai", "baseUrl")).unwrap();
-      const temperature = await ModelService.getTemperature();
+      const useChatCompletions = await ConfigService.get(
+        "openai",
+        "useChatCompletions"
+      ).then(result => result.unwrap());
+      const generationOptions = await ModelService.getGenerationOptions();
+      const providerOptions = await ModelService.getOpenAIProviderOptions({
+        forceReasoning: baseURL !== "https://api.openai.com/v1",
+      });
       logDebug("Using OpenAI-compatible provider", {
         baseURL,
         model,
+        useChatCompletions,
       });
 
       const openai = createOpenAI({ apiKey, baseURL });
 
       const wrappedModel = wrapLanguageModel({
-        model: openai.chat(model),
+        model: useChatCompletions ? openai.chat(model) : openai(model),
         middleware: extractReasoningMiddleware({ tagName: "think" }),
       });
 
       const { text } = await generateText({
         model: wrappedModel,
         prompt,
-        temperature,
+        ...generationOptions,
+        providerOptions,
       });
 
       return { message: text, model };
