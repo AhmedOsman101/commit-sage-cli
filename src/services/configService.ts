@@ -19,9 +19,7 @@ import KeyValidationService from "./keyValidationService.ts";
 class ConfigService {
   protected static shell = "";
 
-  static async migrateConfig(
-    config: Record<string, unknown>
-  ): Promise<Result<boolean>> {
+  static migrateConfig(config: Record<string, unknown>): Result<boolean> {
     const provider = config.provider as Record<string, unknown> | undefined;
 
     if (!provider) return Ok(true);
@@ -50,83 +48,23 @@ class ConfigService {
 
       logInfo("Migrating config: adding provider.model...");
       logInfo(`  type="${oldType}", model="${newModel}"`);
-      const updateTypeResult = await ConfigService.set(
-        "provider",
-        "type",
-        oldType as ProviderType
-      );
-      if (updateTypeResult.isError()) return Err(updateTypeResult.error);
-      const updateModelResult = await ConfigService.set(
-        "provider",
-        "model",
-        newModel
-      );
-      if (updateModelResult.isError()) return Err(updateModelResult.error);
+
+      provider.type = oldType;
+      provider.model = newModel;
 
       return Ok(true);
     }
 
-    // Case 2: Has model but no type - try to detect type from model string
+    // Case 2: Has model but no type - cannot safely infer provider
     if (hasModel && !hasType) {
       const model = provider.model as string;
 
-      // Detect provider from model string (e.g., "google/gemini-2.5-flash-lite" -> "gemini")
-      let detectedType: ProviderType = "gemini";
-      if (
-        model.startsWith("gpt-") ||
-        model.startsWith("o1") ||
-        model.startsWith("o3")
-      ) {
-        detectedType = "openai";
-      } else if (model.startsWith("claude-")) {
-        detectedType = "anthropic";
-      } else if (
-        model.startsWith("deepseek-") ||
-        model.startsWith("deepseek-")
-      ) {
-        detectedType = "deepseek";
-      } else if (model.startsWith("mistral-")) {
-        detectedType = "mistral";
-      } else if (model.startsWith("grok-")) {
-        detectedType = "xai";
-      } else if (model.startsWith("kimi-")) {
-        detectedType = "moonshotai";
-      } else if (model.startsWith("glm-")) {
-        detectedType = "zai";
-      } else if (model.startsWith("MiniMax-")) {
-        detectedType = "minimax";
-      } else if (model.includes("/")) {
-        // Handle "google/gemini-2.5-flash-lite" format
-        detectedType = model.split("/")[0] as ProviderType;
-      }
-
-      // Fix common provider names
-      if ((detectedType as string) === "google") detectedType = "gemini";
-
-      const newModel = modelMap[detectedType] || model;
-
-      logInfo("Migrating config: adding provider.type...");
-      logInfo(
-        `  model="${model}", detected type="${detectedType}", using model="${newModel}"`
+      return ErrFromText(
+        `Config migration requires provider.type to be set explicitly for model "${model}"`
       );
-
-      const updateTypeResult = await ConfigService.set(
-        "provider",
-        "type",
-        detectedType as ProviderType
-      );
-      if (updateTypeResult.isError()) return Err(updateTypeResult.error);
-      const updateModelResult = await ConfigService.set(
-        "provider",
-        "model",
-        newModel
-      );
-      if (updateModelResult.isError()) return Err(updateModelResult.error);
-
-      return Ok(true);
     }
 
-    return Ok(true);
+    return Ok(false);
   }
 
   static async createConfigFile(): Promise<Result<boolean>> {
@@ -166,14 +104,20 @@ class ConfigService {
       }
 
       const parsedConfig = JSON.parse(configContents);
-      const migrationResult = await ConfigService.migrateConfig(parsedConfig);
+      const migrationResult = ConfigService.migrateConfig(parsedConfig);
       if (migrationResult.isError()) {
         return Err(migrationResult.error);
       }
 
+      if (migrationResult.ok) {
+        const writeResult = await FileSystemService.writeFile(
+          CONFIG_PATH,
+          JSON.stringify(parsedConfig)
+        );
+        if (writeResult.isError()) return Err(writeResult.error);
+      }
+
       // Convert parsed config to Config type for validation
-      // Note: we use the parsed config directly rather than re-loading,
-      // to avoid infinite migration loop
       const migratedConfig = parsedConfig as unknown as Config;
 
       const validation = ConfigValidationService.validate(migratedConfig);
