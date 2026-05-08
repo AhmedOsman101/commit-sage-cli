@@ -198,7 +198,7 @@ class ConfigService {
         Deno.env.get(envVarName) ??
         (await ConfigService.promptForApiKey(service));
 
-      if (key) await ConfigService.validateApiKey(service, key);
+      if (key) ConfigService.validateApiKey(service, key);
       else {
         throw new ConfigurationError(`${service} API key input was cancelled`);
       }
@@ -287,7 +287,6 @@ After adding the line, restart your terminal or run 'source ${shellConfigFile}' 
       message: `Enter your ${service} API Key:`,
       label: "API Key",
       prefix: "",
-      minLength: 32,
     });
 
     const validation = KeyValidationService.baseValidation(key);
