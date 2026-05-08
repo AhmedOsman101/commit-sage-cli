@@ -1,9 +1,13 @@
 import type { CommitLanguage } from "@/lib/configServiceTypes.d.ts";
+import { logDebug } from "@/lib/logger.ts";
 import { getTemplate } from "@/templates/index.ts";
 import ConfigService from "./configService.ts";
 
 const PromptService = {
   async generatePrompt(diff: string, blameAnalysis: string): Promise<string> {
+    logDebug(
+      `[promptService.generatePrompt] ENTRY diff.length=${diff.length}, blame.length=${blameAnalysis.length}`
+    );
     const format = await ConfigService.get("commit", "commitFormat").then(
       result => result.unwrap()
     );

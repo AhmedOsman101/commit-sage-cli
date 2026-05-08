@@ -15,6 +15,10 @@ const SUPPORTED_PROVIDERS: ProviderType[] = [
   "mistral",
   "xai",
   "ollama",
+  "moonshotai",
+  "zai",
+  "minimax",
+  "openrouter",
 ];
 
 const ConfigSchema = a.object(
@@ -28,10 +32,18 @@ const ConfigSchema = a.object(
         initialRetryDelayMs: a.uint16(),
       })
     ),
-    ollama: a.object({
-      model: a.string(),
-      baseUrl: a.optional(a.string()),
-    }),
+    ollama: a.optional(
+      a.object({
+        model: a.string(),
+        baseUrl: a.optional(a.string()),
+      })
+    ),
+    openrouter: a.optional(
+      a.object({
+        model: a.string(),
+        baseUrl: a.optional(a.string()),
+      })
+    ),
     openai: a.optional(
       a.object({
         baseUrl: a.optional(a.string()),
@@ -132,7 +144,10 @@ const ConfigValidationService = {
     }
     return Ok(true);
   },
-  validateModelUrl(model: object, name: "ollama" | "openai"): Result<boolean> {
+  validateModelUrl(
+    model: object,
+    name: "ollama" | "openrouter" | "openai"
+  ): Result<boolean> {
     if ("baseUrl" in model) {
       const baseUrl = this.validateUrl(model.baseUrl);
       if (baseUrl.isError()) {
@@ -218,6 +233,15 @@ const ConfigValidationService = {
         }
       }
 
+      if ("openrouter" in configContent) {
+        if (
+          typeof configContent.openrouter === "object" &&
+          configContent.openrouter !== null
+        ) {
+          this.validateModelUrl(configContent.openrouter, "openrouter");
+        }
+      }
+      
       if ("openai" in configContent) {
         if (
           typeof configContent.openai === "object" &&

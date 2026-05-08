@@ -41,6 +41,9 @@ export const DEFAULT_CONFIG: Readonly<Config> = {
     model: "llama3.2",
     baseUrl: "http://localhost:11434/api",
   },
+  openrouter: {
+    model: "openai/gpt-4.1-mini",
+    baseUrl: "https://openrouter.ai/api/v1",
   openai: {
     baseUrl: "https://api.openai.com/v1",
     apiKeyEnvVar: "OPENAI_API_KEY",

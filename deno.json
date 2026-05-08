@@ -18,8 +18,10 @@
     "@ai-sdk/deepseek": "npm:@ai-sdk/deepseek@^2.0.20",
     "@ai-sdk/google": "npm:@ai-sdk/google@^3.0.33",
     "@ai-sdk/mistral": "npm:@ai-sdk/mistral@^3.0.20",
+    "@ai-sdk/moonshotai": "npm:@ai-sdk/moonshotai@^2.0.10",
     "@ai-sdk/openai": "npm:@ai-sdk/openai@^3.0.36",
     "@ai-sdk/xai": "npm:@ai-sdk/xai@^3.0.59",
+    "@openrouter/ai-sdk-provider": "npm:@openrouter/ai-sdk-provider@^2.2.5",
     "@arrirpc/schema": "npm:@arrirpc/schema@^0.81.2",
     "@cliffy/prompt": "jsr:@cliffy/prompt@^1.0.0",
     "@std/fmt": "jsr:@std/fmt@1.0.9",
@@ -28,6 +30,7 @@
     "husky": "npm:husky@^9.1.7",
     "lib-result": "npm:lib-result@^3.2.2",
     "ollama-ai-provider-v2": "npm:ollama-ai-provider-v2@^3.3.1",
+    "vercel-minimax-ai-provider": "npm:vercel-minimax-ai-provider@^0.0.2",
     "@/": "./src/"
   },
   "lint": {

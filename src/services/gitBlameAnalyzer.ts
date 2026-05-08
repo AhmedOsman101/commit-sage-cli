@@ -1,6 +1,7 @@
 import * as path from "node:path";
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
 import { ERROR_MESSAGES, REPO_PATH } from "@/lib/constants.ts";
+import { logDebug } from "@/lib/logger.ts";
 import CommandService from "./commandService.ts";
 import FileSystemService from "./fileSystemService.ts";
 import GitService from "./gitService.ts";
@@ -93,6 +94,7 @@ class GitBlameAnalyzer {
   static async analyzeChanges(
     filePath: string
   ): Promise<Result<string, Error>> {
+    logDebug(`[gitBlameAnalyzer.analyzeChanges] ENTRY filePath=${filePath}`);
     const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
 
     // First check if file is deleted or new, as these don't need blame analysis
