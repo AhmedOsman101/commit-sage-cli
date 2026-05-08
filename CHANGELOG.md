@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.8.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.7.0...v1.8.0) (2026-05-08)
+
+
+### Features
+
+* add Moonshot AI, Z.AI, MiniMax, and OpenRouter provider support ([c2f1300](https://github.com/AhmedOsman101/commit-sage-cli/commit/c2f1300e991900e8e066ea053dfc51a904941318))
+* add verbose debug logging with DEBUG=1 env var ([bd5fa5a](https://github.com/AhmedOsman101/commit-sage-cli/commit/bd5fa5adbc1d82327e38050abed751a1c7f24333))
+* **config:** add custom OpenAI API key env var ([f6d9dea](https://github.com/AhmedOsman101/commit-sage-cli/commit/f6d9dea4a0cf1c472e92ab7c43f25584819e0daf))
+* **config:** add openai provider and schema validation ([e9c979a](https://github.com/AhmedOsman101/commit-sage-cli/commit/e9c979af4c1ca121918bc5241d623d48f38a15ed))
+* **git:** support staged changes analysis ([2c45a55](https://github.com/AhmedOsman101/commit-sage-cli/commit/2c45a55af263a58022da6e35354c6c21f364fb10))
+* **openai:** add OpenAI provider config support ([c4d74f7](https://github.com/AhmedOsman101/commit-sage-cli/commit/c4d74f7e96c6b38403faaa765e624895835fc322))
+
+
+### Bug Fixes
+
+* **config:** correct syntax error in constants file ([d896b6b](https://github.com/AhmedOsman101/commit-sage-cli/commit/d896b6b71a23b85703babccec38e32c8d1e4b298)), closes [#456](https://github.com/AhmedOsman101/commit-sage-cli/issues/456)
+* **config:** remove unnecessary await in api key validation ([fbdcd7d](https://github.com/AhmedOsman101/commit-sage-cli/commit/fbdcd7d1ce86e5292daa46d4d25295296e566146))
+* **config:** remove unnecessary await in migrateConfig ([cb84cc1](https://github.com/AhmedOsman101/commit-sage-cli/commit/cb84cc131d671a0b994ef62bb8e08c8e77b08b20))
+* remove openrouter from schema required array ([0adddd9](https://github.com/AhmedOsman101/commit-sage-cli/commit/0adddd9f21f6d9a7e75d43d6ca9b8b264347849c))
+* resolve infinite migration loop in config loading ([efd8d90](https://github.com/AhmedOsman101/commit-sage-cli/commit/efd8d903bc1cef76673b9cfd7037742a8a01511c))
+* use DEFAULT_CONFIG for optional baseUrl, require provider.model ([c057453](https://github.com/AhmedOsman101/commit-sage-cli/commit/c057453e6ba040e8cb4be9d82ce949fce879fd5a))
+
 ## [1.7.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.6.0...v1.7.0) (2026-05-08)
 
 
