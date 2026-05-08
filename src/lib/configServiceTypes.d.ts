@@ -6,13 +6,11 @@ type GeneralConfig = {
 
 // Configuration for the Ollama provider (self-hosted, requires baseUrl)
 type OllamaConfig = {
-  model: string;
   baseUrl?: "http://localhost:11434" | (string & {});
 };
 
 // Configuration for the OpenRouter meta-provider
 type OpenRouterConfig = {
-  model: string;
   baseUrl?: "https://openrouter.ai/api/v1" | (string & {});
 };
 

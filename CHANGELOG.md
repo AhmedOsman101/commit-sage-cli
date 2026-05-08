@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.6.1](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.6.0...v1.6.1) (2026-02-27)
 
 ### Features
 
@@ -34,11 +34,9 @@
 
 ### Configuration
 
-- New `openrouter` config section added to `config.json` (alongside the existing
-  `ollama` section) for OpenRouter-specific settings
+- New `openrouter` config section added to `config.json` (alongside the existing `ollama` section) for OpenRouter-specific settings
 - Default values added to `DEFAULT_CONFIG` for all new providers
-- Config migration (`migrateConfig`) handles automatic model-to-provider
-  detection for Kimi (`kimi-*`), GLM (`glm-*`), and MiniMax (`MiniMax-*`) models
+- Config migration (`migrateConfig`) handles automatic model-to-provider detection for Kimi (`kimi-*`), GLM (`glm-*`), and MiniMax (`MiniMax-*`) models
 
 ### Validation
 

@@ -229,7 +229,7 @@ export function classifyAIError(error: unknown): UnifiedError {
   if (error instanceof ConfigurationError) {
     return {
       message: ERROR_MESSAGES.configError.replace("{0}", error.message),
-      shouldRetry: true,
+      shouldRetry: false,
     };
   }
 

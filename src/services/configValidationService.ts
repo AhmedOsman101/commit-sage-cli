@@ -34,13 +34,11 @@ const ConfigSchema = a.object(
     ),
     ollama: a.optional(
       a.object({
-        model: a.string(),
         baseUrl: a.optional(a.string()),
       })
     ),
     openrouter: a.optional(
       a.object({
-        model: a.string(),
         baseUrl: a.optional(a.string()),
       })
     ),
@@ -96,11 +94,11 @@ const ConfigValidationService = {
     }
   },
   validateInt(n: unknown, min = NINF, max = INF): Result<boolean> {
-    if (typeof n !== "number" && !Number.isInteger(n)) {
+    if (!["bigint", "number"].includes(typeof n) || !Number.isInteger(n)) {
       return ErrFromText("must be an integer.");
     }
 
-    if (typeof n === "number") {
+    if (typeof n === "number" || typeof n === "bigint") {
       if (min !== NINF && n < min) {
         return ErrFromText(`must be at least ${min}.`);
       }
@@ -144,12 +142,12 @@ const ConfigValidationService = {
     }
     return Ok(true);
   },
-  validateModelUrl(
-    model: object,
+  validateProviderUrl(
+    provider: object,
     name: "ollama" | "openrouter" | "openai"
   ): Result<boolean> {
-    if ("baseUrl" in model) {
-      const baseUrl = this.validateUrl(model.baseUrl);
+    if ("baseUrl" in provider) {
+      const baseUrl = this.validateUrl(provider.baseUrl);
       if (baseUrl.isError()) {
         logError(`Error at key ${name}.baseUrl => ${baseUrl.error.message}`);
       }
@@ -229,7 +227,7 @@ const ConfigValidationService = {
           typeof configContent.ollama === "object" &&
           configContent.ollama !== null
         ) {
-          this.validateModelUrl(configContent.ollama, "ollama");
+          this.validateProviderUrl(configContent.ollama, "ollama");
         }
       }
 
@@ -238,7 +236,7 @@ const ConfigValidationService = {
           typeof configContent.openrouter === "object" &&
           configContent.openrouter !== null
         ) {
-          this.validateModelUrl(configContent.openrouter, "openrouter");
+          this.validateProviderUrl(configContent.openrouter, "openrouter");
         }
       }
 
@@ -247,7 +245,7 @@ const ConfigValidationService = {
           typeof configContent.openai === "object" &&
           configContent.openai !== null
         ) {
-          this.validateModelUrl(configContent.openai, "openai");
+          this.validateProviderUrl(configContent.openai, "openai");
           if ("apiKeyEnvVar" in configContent.openai) {
             const validation = this.validateEnvVarName(
               configContent.openai.apiKeyEnvVar

@@ -1,5 +1,4 @@
 import { Err, ErrFromText, ErrFromUnknown, Ok, type Result } from "lib-result";
-import type { ProviderType } from "@/lib/configServiceTypes.d.ts";
 import { ERROR_MESSAGES } from "@/lib/constants.ts";
 import type { CommitMessage } from "@/lib/index.d.ts";
 import { logDebug } from "@/lib/logger.ts";
@@ -45,7 +44,7 @@ const AiService = {
     const providerResult = await ConfigService.get("provider", "type");
     if (providerResult.isError()) return Err(providerResult.error);
 
-    const providerType = providerResult.ok as ProviderType;
+    const providerType = providerResult.ok;
     logDebug(`[aiService.generateCommitMessage] STEP provider=${providerType}`);
 
     try {
