@@ -16,6 +16,7 @@ class GeminiService extends ModelService {
     try {
       const apiKey = await ConfigService.getApiKey("Gemini");
       const model = (await ConfigService.get("provider", "model")).unwrap();
+      const temperature = await ModelService.getTemperature();
       const google = createGoogleGenerativeAI({ apiKey });
 
       const wrappedModel = wrapLanguageModel({
@@ -26,7 +27,7 @@ class GeminiService extends ModelService {
       const { text } = await generateText({
         model: wrappedModel,
         prompt,
-        temperature: 0.7,
+        temperature,
       });
 
       return { message: text, model };

@@ -11,7 +11,7 @@
     "general": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["maxRetries", "initialRetryDelayMs"],
+      "required": ["maxRetries", "initialRetryDelayMs", "temperature"],
       "properties": {
         "maxRetries": {
           "type": "integer",
@@ -20,6 +20,12 @@
         "initialRetryDelayMs": {
           "type": "integer",
           "minimum": 0
+        },
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Global generation temperature used by all providers"
         }
       }
     },

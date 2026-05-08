@@ -28,6 +28,7 @@ class ZaiService extends ModelService {
     try {
       const apiKey = await ConfigService.getApiKey("Zai");
       const model = (await ConfigService.get("provider", "model")).unwrap();
+      const temperature = await ModelService.getTemperature();
       logDebug(
         `[zaiService.generateCommitMessage] CALL API model=${model}, baseURL=${ZAI_BASE_URL}`
       );
@@ -42,7 +43,7 @@ class ZaiService extends ModelService {
       const { text } = await generateText({
         model: wrappedModel,
         prompt,
-        temperature: 0.7,
+        temperature,
       });
 
       logDebug(

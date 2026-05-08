@@ -59,6 +59,12 @@ export abstract class ModelService {
     );
   }
 
+  protected static async getTemperature() {
+    return await ConfigService.get("general", "temperature").then(result =>
+      result.unwrap()
+    );
+  }
+
   protected static async handleGenerationError(
     error: unknown,
     prompt: string,

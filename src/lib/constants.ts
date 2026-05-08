@@ -36,6 +36,7 @@ export const DEFAULT_CONFIG: Readonly<Config> = {
   general: {
     maxRetries: 3,
     initialRetryDelayMs: 1000,
+    temperature: 0.7,
   },
   ollama: {
     baseUrl: "http://localhost:11434/api",

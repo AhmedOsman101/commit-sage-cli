@@ -19,19 +19,37 @@ const PromptService = {
 
     const languagePrompt = PromptService.getLanguagePrompt(commitLanguage);
     const template = getTemplate(format, commitLanguage);
+    const blameSection = blameAnalysis.trim()
+      ? blameAnalysis
+      : "No git blame analysis available.";
 
-    return `${template}
+    return `You generate exactly one git commit message.
 
+Rules:
+- Output exactly one commit message with its body and nothing else.
+- Do not add code fences, labels, explanations, notes, or multiple options.
+- Do not mention that you are an AI.
+- Do not describe the diff before the answer.
+- Do not include surrounding whitespace before or after the commit message.
+- If the diff is unclear, still return the single best commit message based on the strongest visible change.
+
+Commit format requirements:
+${template}
+
+Language requirement:
 ${languagePrompt}
+
+Use the git blame analysis only as supporting context. Base the commit message primarily on the diff itself.
 
 Git diff to analyze:
 ${diff}
 
 Git blame analysis:
-${blameAnalysis}
+${blameSection}
 
-Please provide ONLY the commit message, without any additional text or explanations.`;
+Final instruction: return only the commit message.`;
   },
+
   getLanguagePrompt(language: CommitLanguage): string {
     switch (language) {
       case "russian":

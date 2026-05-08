@@ -30,6 +30,7 @@ const ConfigSchema = a.object(
       a.object({
         maxRetries: a.uint8(),
         initialRetryDelayMs: a.uint16(),
+        temperature: a.float64(),
       })
     ),
     ollama: a.optional(
@@ -138,6 +139,23 @@ const ConfigValidationService = {
         logError(
           `Error at key general.initialRetryDelayMs => ${validation.error.message}`
         );
+      }
+    }
+    if ("temperature" in general) {
+      if (
+        typeof general.temperature !== "number" ||
+        Number.isNaN(general.temperature)
+      ) {
+        logError("Error at key general.temperature => must be a number.");
+      }
+
+      if (typeof general.temperature === "number") {
+        if (general.temperature < 0) {
+          logError("Error at key general.temperature => must be at least 0.");
+        }
+        if (general.temperature > 2) {
+          logError("Error at key general.temperature => must not exceed 2.");
+        }
       }
     }
     return Ok(true);

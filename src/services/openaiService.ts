@@ -18,6 +18,7 @@ class OpenAiService extends ModelService {
       const apiKey = await ConfigService.getApiKey("OpenAI");
       const model = (await ConfigService.get("provider", "model")).unwrap();
       const baseURL = (await ConfigService.get("openai", "baseUrl")).unwrap();
+      const temperature = await ModelService.getTemperature();
       logDebug("Using OpenAI-compatible provider", {
         baseURL,
         model,
@@ -33,7 +34,7 @@ class OpenAiService extends ModelService {
       const { text } = await generateText({
         model: wrappedModel,
         prompt,
-        temperature: 0.7,
+        temperature,
       });
 
       return { message: text, model };

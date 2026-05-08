@@ -2,6 +2,7 @@
 type GeneralConfig = {
   maxRetries: number;
   initialRetryDelayMs: number;
+  temperature: number;
 };
 
 // Configuration for the Ollama provider (self-hosted, requires baseUrl)
