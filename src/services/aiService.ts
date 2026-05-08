@@ -48,7 +48,6 @@ const AiService = {
     logDebug(`[aiService.generateCommitMessage] STEP provider=${providerType}`);
 
     try {
-      // OpenRouter reads from its own config section (not provider.model)
       if (providerType === "openrouter") {
         logDebug("[aiService.generateCommitMessage] CALL OpenRouterService");
         const commitMessage = await OpenRouterService.generateCommitMessage(
@@ -111,7 +110,7 @@ const AiService = {
     );
 
     const analysesPromises = changedFiles.map(file =>
-      GitBlameAnalyzer.analyzeChanges(file)
+      GitBlameAnalyzer.analyzeChanges(file, useStagedChanges)
     );
 
     const blameResults = await Promise.all(analysesPromises);

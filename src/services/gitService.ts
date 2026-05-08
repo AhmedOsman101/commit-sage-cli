@@ -105,22 +105,13 @@ class GitService {
       `[gitService.getDiff] ENTRY onlyStagedChanges=${onlyStagedChanges}`
     );
     try {
-      const hasHead = GitService.hasHead();
-
       const hasStagedChanges = GitService.hasChanges("staged");
 
       const hasUnstagedChanges = GitService.hasChanges("unstaged");
 
       const hasUntrackedFiles = GitService.hasChanges("untracked");
 
-      const hasDeletedFiles = hasHead && GitService.hasChanges("deleted");
-
-      if (
-        !hasStagedChanges &&
-        !hasUnstagedChanges &&
-        !hasUntrackedFiles &&
-        !hasDeletedFiles
-      ) {
+      if (!hasStagedChanges && !hasUnstagedChanges && !hasUntrackedFiles) {
         return Err(new NoChangesDetectedError("No changes detected."));
       }
       const diffs: string[] = [];
@@ -263,34 +254,6 @@ class GitService {
         const validUntrackedDiffs = untrackedDiff.filter(diff => diff.trim());
         if (validUntrackedDiffs.length > 0) {
           diffs.push(`# New files:\n${validUntrackedDiffs.join("\n")}`);
-        }
-      }
-
-      if (hasDeletedFiles) {
-        const deletedResult = GitService.execGit(["ls-files", "--deleted"]);
-        if (deletedResult.isError()) return Err(deletedResult.error);
-
-        const { stdout: deletedFiles } = deletedResult.ok;
-
-        const deletedDiff = deletedFiles
-          .split("\n")
-          .filter(file => file.trim())
-          .map(file => {
-            const oldContentResult = GitService.execGit([
-              "show",
-              `HEAD:${file}`,
-            ]);
-            if (oldContentResult.isError()) {
-              return "";
-            }
-
-            const { stdout: oldContent } = oldContentResult.ok;
-            return `diff --git a/${file} b/${file}\ndeleted file mode 100644\n--- a/${file}\n+++ /dev/null\n@@ -1 +0,0 @@\n-${oldContent.trim()}\n`;
-          });
-
-        const validDeletedDiffs = deletedDiff.filter(diff => diff.trim());
-        if (validDeletedDiffs.length > 0) {
-          diffs.push(`# Deleted files:\n${validDeletedDiffs.join("\n")}`);
         }
       }
 

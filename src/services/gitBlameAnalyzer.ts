@@ -85,14 +85,18 @@ class GitBlameAnalyzer {
     return Ok(cmdResult.ok.stdout);
   }
 
-  static getDiff(filePath: string): Result<string, Error> {
-    const result = GitService.execGit(["diff", "--unified=0", "--", filePath]);
+  static getDiff(filePath: string, onlyStaged = false): Result<string, Error> {
+    const args = onlyStaged
+      ? ["diff", "--cached", "--unified=0", "--", filePath]
+      : ["diff", "--unified=0", "--", filePath];
+    const result = GitService.execGit(args);
 
     if (result.isError()) return Err(result.error);
     return Ok(result.ok.stdout);
   }
   static async analyzeChanges(
-    filePath: string
+    filePath: string,
+    onlyStaged = false
   ): Promise<Result<string, Error>> {
     logDebug(`[gitBlameAnalyzer.analyzeChanges] ENTRY filePath=${filePath}`);
     const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
@@ -111,7 +115,7 @@ class GitBlameAnalyzer {
     const blameResult = await GitBlameAnalyzer.getGitBlame(normalizedPath);
     if (blameResult.isError()) return Err(blameResult.error);
 
-    const diffResult = GitBlameAnalyzer.getDiff(normalizedPath);
+    const diffResult = GitBlameAnalyzer.getDiff(normalizedPath, onlyStaged);
     if (diffResult.isError()) return Err(diffResult.error);
 
     const changedLines = GitBlameAnalyzer.parseChangedLines(diffResult.ok);
