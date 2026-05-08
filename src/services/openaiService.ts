@@ -5,6 +5,7 @@ import {
   wrapLanguageModel,
 } from "ai";
 import type { CommitMessage } from "@/lib/index.d.ts";
+import { logDebug } from "@/lib/logger.ts";
 import ConfigService from "./configService.ts";
 import { ModelService } from "./modelService.ts";
 
@@ -16,12 +17,18 @@ class OpenAiService extends ModelService {
     try {
       const apiKey = await ConfigService.getApiKey("OpenAI");
       const model = (await ConfigService.get("provider", "model")).unwrap();
+      const baseURL = (await ConfigService.get("openai", "baseUrl")).unwrap();
       const maxRetries = await ModelService.getMaxRetries();
 
-      const openai = createOpenAI({ apiKey });
+      logDebug("Using OpenAI-compatible provider", {
+        baseURL,
+        model,
+      });
+
+      const openai = createOpenAI({ apiKey, baseURL });
 
       const wrappedModel = wrapLanguageModel({
-        model: openai(model),
+        model: openai.chat(model),
         middleware: extractReasoningMiddleware({ tagName: "think" }),
       });
 

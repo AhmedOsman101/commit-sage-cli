@@ -10,6 +10,11 @@ type OllamaConfig = {
   baseUrl: "http://localhost:11434" | (string & {});
 };
 
+// Configuration for any OpenAI-compatible provider
+type OpenaiConfig = {
+  baseUrl: "https://api.openai.com/v1" | (string & {});
+};
+
 // Configuration for commit-related settings
 type CommitConfig = {
   autoCommit: boolean;
@@ -43,6 +48,7 @@ export type Config = {
   readonly $schema: "https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/refs/heads/main/config.schema.json";
   general: GeneralConfig;
   ollama: OllamaConfig;
+  openai: OpenaiConfig;
   commit: CommitConfig;
   provider: ProviderConfig;
 };

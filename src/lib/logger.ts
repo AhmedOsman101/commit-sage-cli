@@ -104,6 +104,10 @@ export function logSuccess(...data: unknown[]): void {
 }
 
 export function logDebug(...data: unknown[]): void {
+  if (Deno.env.get("DEBUG") !== "1") {
+    return;
+  }
+
   const message = makeOutput(...data);
   console.log(`${magenta("[DEBUG]")} ${message}`);
   FileLogger.debug(message);

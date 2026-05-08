@@ -41,6 +41,9 @@ export const DEFAULT_CONFIG: Readonly<Config> = {
     model: "llama3.2",
     baseUrl: "http://localhost:11434/api",
   },
+  openai: {
+    baseUrl: "https://api.openai.com/v1",
+  },
   commit: {
     autoCommit: false,
     autoPush: false,

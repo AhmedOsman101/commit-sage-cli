@@ -32,6 +32,11 @@ const ConfigSchema = a.object(
       model: a.string(),
       baseUrl: a.optional(a.string()),
     }),
+    openai: a.optional(
+      a.object({
+        baseUrl: a.optional(a.string()),
+      })
+    ),
     commit: a.object({
       autoCommit: a.optional(a.boolean()),
       autoPush: a.optional(a.boolean()),
@@ -126,7 +131,7 @@ const ConfigValidationService = {
     }
     return Ok(true);
   },
-  validateModelUrl(model: object, name: "ollama"): Result<boolean> {
+  validateModelUrl(model: object, name: "ollama" | "openai"): Result<boolean> {
     if ("baseUrl" in model) {
       const baseUrl = this.validateUrl(model.baseUrl);
       if (baseUrl.isError()) {
@@ -196,6 +201,15 @@ const ConfigValidationService = {
           configContent.ollama !== null
         ) {
           this.validateModelUrl(configContent.ollama, "ollama");
+        }
+      }
+
+      if ("openai" in configContent) {
+        if (
+          typeof configContent.openai === "object" &&
+          configContent.openai !== null
+        ) {
+          this.validateModelUrl(configContent.openai, "openai");
         }
       }
     }

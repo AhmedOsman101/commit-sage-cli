@@ -2,7 +2,6 @@ import { ErrFromText, Ok, type Result } from "lib-result";
 
 const apiValidation = {
   keyFormat: /^[A-Za-z0-9_-]+$/,
-  openaiTestEndpoint: "https://api.openai.com/v1/models",
   errorMessages: {
     emptyKey: "API key cannot be empty",
     invalidChars: "API key contains invalid characters",
@@ -23,22 +22,10 @@ const KeyValidationService = {
     if (!value) {
       return ErrFromText("API key cannot be empty");
     }
-    if (value.length < 32) {
-      return ErrFromText("API key is too short");
-    }
     if (!/^[A-Za-z0-9_-]+$/.test(value)) {
       return ErrFromText("API key contains invalid characters");
     }
     return Ok(value);
-  },
-  validateOpenAIApiKey(key: string): Result<string> {
-    if (!key) {
-      return ErrFromText(apiValidation.errorMessages.emptyKey);
-    }
-    if (!key.startsWith("sk-")) {
-      return ErrFromText(apiValidation.errorMessages.invalidOpenaiKey);
-    }
-    return Ok(key);
   },
   validateGeminiApiKey(key: string): Result<string> {
     if (!key) {

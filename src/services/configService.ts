@@ -197,7 +197,7 @@ class ConfigService {
         Deno.env.get(`${service.toUpperCase()}_API_KEY`) ??
         (await ConfigService.promptForApiKey(service));
 
-      if (key) ConfigService.validateApiKey(service, key);
+      if (key) await ConfigService.validateApiKey(service, key);
       else {
         throw new ConfigurationError(`${service} API key input was cancelled`);
       }
@@ -281,17 +281,18 @@ After adding the line, restart your terminal or run 'source ${shellConfigFile}' 
           }
           break;
         }
-        case "OpenAI": {
-          const { error } = KeyValidationService.validateOpenAIApiKey(key);
-          if (error !== undefined) {
-            throw new AiServiceError(error.message, { cause: error });
-          }
-          break;
-        }
         case "Anthropic":
         case "DeepSeek":
         case "Mistral":
-        case "Xai": {
+        case "Xai":
+        case "OpenAI": {
+          const validation = KeyValidationService.baseValidation(key);
+
+          if (validation.isError()) {
+            throw new AiServiceError(validation.error.message, {
+              cause: validation.error,
+            });
+          }
           break;
         }
       }
