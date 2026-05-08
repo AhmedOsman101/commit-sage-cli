@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+
+{
+  deno audit &&
+    deno audit --socket &&
+    deno install &
+  git add deno.lock &
+} &>/dev/null
+
+yesNo() {
+  local answer prompt="$1"
+  printf '%b' "${prompt} [Y/n] "
+  read -r answer </dev/tty
+
+  [[ ! "${answer}" =~ ^[nN]$ ]]
+}
+
+abort() {
+  printf "\e[31mAborting commit.\e[0m\n"
+  exit 1
+}
+
+gitRoot="$(git rev-parse --show-toplevel)"
+
+cd "${gitRoot}" || exit 1
+
+mapfile -t files < <(git diff --cached --name-only --diff-filter=ACMR)
+
+((${#files[@]})) || exit 0
+
+tmpDir="$(mktemp -d)"
+trap 'rm -rf "$tmpDir"' EXIT
+
+for file in "${files[@]}"; do
+  if [[ -f "${file}" ]]; then
+    git diff -- "${file}" >"${tmpDir}/${file//\//_}.diff"
+  fi
+done
+
+# --- Formats only the staged files --- #
+unset BIOME_BINARY &>/dev/null
+unset BIOME_CONFIG_PATH &>/dev/null
+pnpm dlx @biomejs/biome@2.3.11 check --fix --no-errors-on-unmatched --staged --reporter=summary "${gitRoot}"
+
+formatted_files=()
+for file in "${files[@]}"; do
+  diffFile="${tmpDir}/${file//\//_}.diff"
+  if [[ -f "${diffFile}" ]]; then
+    git diff -- "${file}" >"${diffFile}.new"
+    if ! diff "${diffFile}" "${diffFile}.new" &>/dev/null; then
+      formatted_files+=("${file}")
+    fi
+  fi
+done
+
+if ((${#formatted_files[@]} != 0)); then
+  printf "\e[33m%d file(s) were formatted:\e[0m\n" ${#formatted_files[@]}
+  for f in "${formatted_files[@]}"; do
+    printf "  - %s\n" "${f}"
+  done
+
+  yesNo "\nDo you want to proceed with the commit?" || abort
+fi
+
+# --- Do type checking before any commit --- #
+printf "\e[34mDoing type checks...\e[0m\n"
+if ! deno check; then
+  yesNo "Typechecking failed.\nDo you want to proceed with the commit?" || abort
+fi
