@@ -20,10 +20,8 @@ class MoonshotService extends ModelService {
     try {
       const apiKey = await ConfigService.getApiKey("MoonshotAI");
       const model = (await ConfigService.get("provider", "model")).unwrap();
-      const maxRetries = await ModelService.getMaxRetries();
-
       logDebug(
-        `[moonshotService.generateCommitMessage] CALL API model=${model}, maxRetries=${maxRetries}`
+        `[moonshotService.generateCommitMessage] CALL API model=${model}`
       );
 
       const client = createMoonshotAI({ apiKey });
@@ -37,7 +35,6 @@ class MoonshotService extends ModelService {
         model: wrappedModel,
         prompt,
         temperature: 0.7,
-        maxRetries,
       });
 
       logDebug(

@@ -41,8 +41,6 @@ class OpenRouterService extends ModelService {
         baseURLResult.isOk() && baseURLResult.ok
           ? baseURLResult.ok
           : (DEFAULT_CONFIG.openrouter.baseUrl as string);
-      const maxRetries = await ModelService.getMaxRetries();
-
       logDebug(
         `[openrouterService.generateCommitMessage] CALL API model=${model}, baseURL=${baseURL}`
       );
@@ -65,7 +63,6 @@ class OpenRouterService extends ModelService {
         model: wrappedModel,
         prompt,
         temperature: 0.7,
-        maxRetries,
       });
 
       logDebug(

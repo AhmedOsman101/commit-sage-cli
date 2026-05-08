@@ -18,8 +18,6 @@ class OpenAiService extends ModelService {
       const apiKey = await ConfigService.getApiKey("OpenAI");
       const model = (await ConfigService.get("provider", "model")).unwrap();
       const baseURL = (await ConfigService.get("openai", "baseUrl")).unwrap();
-      const maxRetries = await ModelService.getMaxRetries();
-
       logDebug("Using OpenAI-compatible provider", {
         baseURL,
         model,
@@ -36,7 +34,6 @@ class OpenAiService extends ModelService {
         model: wrappedModel,
         prompt,
         temperature: 0.7,
-        maxRetries,
       });
 
       return { message: text, model };

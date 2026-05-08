@@ -33,8 +33,6 @@ class OllamaService extends ModelService {
     }
     const model = modelResult.ok;
 
-    const maxRetries = await ModelService.getMaxRetries();
-
     logDebug(
       `[ollamaService.generateCommitMessage] CALL API model=${model}, baseURL=${baseURL}`
     );
@@ -51,7 +49,6 @@ class OllamaService extends ModelService {
         model: wrappedModel,
         prompt,
         temperature: 0.7,
-        maxRetries,
       });
 
       return { message: response.text, model };

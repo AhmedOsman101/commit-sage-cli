@@ -20,8 +20,6 @@ class MinimaxService extends ModelService {
     try {
       const apiKey = await ConfigService.getApiKey("MiniMax");
       const model = (await ConfigService.get("provider", "model")).unwrap();
-      const maxRetries = await ModelService.getMaxRetries();
-
       logDebug(
         `[minimaxService.generateCommitMessage] CALL API model=${model}`
       );
@@ -37,7 +35,6 @@ class MinimaxService extends ModelService {
         model: wrappedModel,
         prompt,
         temperature: 0.7,
-        maxRetries,
       });
 
       logDebug(

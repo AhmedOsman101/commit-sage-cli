@@ -16,8 +16,6 @@ class AnthropicService extends ModelService {
     try {
       const apiKey = await ConfigService.getApiKey("Anthropic");
       const model = (await ConfigService.get("provider", "model")).unwrap();
-      const maxRetries = await ModelService.getMaxRetries();
-
       const anthropic = createAnthropic({ apiKey });
 
       const wrappedModel = wrapLanguageModel({
@@ -29,7 +27,6 @@ class AnthropicService extends ModelService {
         model: wrappedModel,
         prompt,
         temperature: 0.7,
-        maxRetries,
       });
 
       return { message: text, model };
