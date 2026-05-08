@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.6.0...v1.7.0) (2026-05-08)
+
+
+### Features
+
+* add CommitFormat type for commit message formatting ([142f53a](https://github.com/AhmedOsman101/commit-sage-cli/commit/142f53a60fb467f885196b63ee6560d878dc0166))
+* **ai:** use extractReasoningMiddleware for thinking tag removal ([fbd2bf0](https://github.com/AhmedOsman101/commit-sage-cli/commit/fbd2bf0fc9983c4c907ffd3413b69274548898ff))
+
 ## [1.6.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.5.0...v1.6.0) (2026-02-26)
 
 ### Features
