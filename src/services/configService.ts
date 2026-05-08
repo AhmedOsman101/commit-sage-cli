@@ -155,7 +155,7 @@ class ConfigService {
       if (migrationResult.ok) {
         const writeResult = await FileSystemService.writeFile(
           CONFIG_PATH,
-          JSON.stringify(parsedConfig)
+          JSON.stringify(parsedConfig, null, 2)
         );
         if (writeResult.isError()) return Err(writeResult.error);
       }
@@ -203,7 +203,7 @@ class ConfigService {
 
     const writeResult = await FileSystemService.writeFile(
       CONFIG_PATH,
-      JSON.stringify(config)
+      JSON.stringify(config, null, 2)
     );
 
     if (writeResult.isError()) return Err(writeResult.error);
