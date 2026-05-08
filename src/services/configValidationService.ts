@@ -241,7 +241,7 @@ const ConfigValidationService = {
           this.validateModelUrl(configContent.openrouter, "openrouter");
         }
       }
-      
+
       if ("openai" in configContent) {
         if (
           typeof configContent.openai === "object" &&
