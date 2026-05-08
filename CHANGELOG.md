@@ -1,5 +1,65 @@
 # Changelog
 
+## [1.8.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.7.0...v1.8.0) (2026-05-08)
+
+
+### Features
+
+- **New AI Providers**: add support for four additional AI providers ([c2f1300](https://github.com/AhmedOsman101/commit-sage-cli/commit/c2f1300e991900e8e066ea053dfc51a904941318))
+  - **Moonshot AI (Kimi models)** via `@ai-sdk/moonshotai` (official SDK)
+    - Set `provider.type = "moonshotai"` and `MOONSHOTAI_API_KEY`
+    - Default model: `kimi-k2.5` (flagship multimodal + reasoning model)
+    - Reasoning mode supported via `<think>` block middleware
+    - Register at <https://platform.moonshot.ai>
+  - **Z.AI (GLM models)** via `@ai-sdk/openai` adapter with custom base URL
+    - Set `provider.type = "zai"` and `ZAI_API_KEY`
+    - Default model: `glm-4.5-flash` (fast GLM model)
+    - Uses the international Z.AI platform (`api.z.ai`) with no extra dependency
+    - Register at <https://z.ai>
+  - **MiniMax** via `vercel-minimax-ai-provider` (provider-maintained SDK)
+    - Set `provider.type = "minimax"` and `MINIMAX_API_KEY`
+    - Default model: `MiniMax-M2.5`
+    - Uses an OpenAI-compatible adapter
+    - Register at <https://platform.minimax.io>
+  - **OpenRouter** via `@openrouter/ai-sdk-provider` (OpenRouter-maintained SDK)
+    - Set `provider.type = "openrouter"` and `OPENROUTER_API_KEY`
+    - Requires a dedicated `openrouter` config section with `model` and optional `baseUrl`
+    - Default model: `openai/gpt-4.1-mini`
+    - Supports provider-prefixed model IDs such as `anthropic/claude-opus-4-5` and `meta-llama/llama-3.1-405b-instruct`
+    - Routes to hundreds of models from a single API key
+    - Register at <https://openrouter.ai>
+
+- **OpenAI provider support**: add dedicated OpenAI provider configuration and validation ([c4d74f7](https://github.com/AhmedOsman101/commit-sage-cli/commit/c4d74f7e96c6b38403faaa765e624895835fc322), [e9c979a](https://github.com/AhmedOsman101/commit-sage-cli/commit/e9c979af4c1ca121918bc5241d623d48f38a15ed))
+- **Custom OpenAI API key env var**: allow overriding the OpenAI API key source in config ([f6d9dea](https://github.com/AhmedOsman101/commit-sage-cli/commit/f6d9dea4a0cf1c472e92ab7c43f25584819e0daf))
+- **Git analysis**: support staged changes analysis ([2c45a55](https://github.com/AhmedOsman101/commit-sage-cli/commit/2c45a55af263a58022da6e35354c6c21f364fb10))
+- **Debugging**: add verbose debug logging via the `DEBUG=1` environment variable ([bd5fa5a](https://github.com/AhmedOsman101/commit-sage-cli/commit/bd5fa5adbc1d82327e38050abed751a1c7f24333))
+- **DeepSeek integration confirmed**: the existing DeepSeek integration introduced in `v1.6.0` was audited and verified across types, provider registry, config migration, and validation touchpoints
+
+### Configuration
+
+- Add a new `openrouter` section to `config.json` for OpenRouter-specific settings
+- Add default values to `DEFAULT_CONFIG` for all new providers
+- Extend config migration to auto-detect provider families from model names:
+  - `kimi-*` for Moonshot AI
+  - `glm-*` for Z.AI
+  - `MiniMax-*` for MiniMax
+
+### Validation
+
+- Validate `OPENROUTER_API_KEY` against the known `sk-or-v1-` prefix format
+- Update `config.schema.json` with new provider types and the `openrouter` section
+- Add schema validation for the OpenAI provider configuration ([e9c979a](https://github.com/AhmedOsman101/commit-sage-cli/commit/e9c979af4c1ca121918bc5241d623d48f38a15ed))
+
+### Bug Fixes
+
+- **config:** correct syntax error in constants file ([d896b6b](https://github.com/AhmedOsman101/commit-sage-cli/commit/d896b6b71a23b85703babccec38e32c8d1e4b298)), closes [#456](https://github.com/AhmedOsman101/commit-sage-cli/issues/456)
+- **config:** remove unnecessary `await` in API key validation ([fbdcd7d](https://github.com/AhmedOsman101/commit-sage-cli/commit/fbdcd7d1ce86e5292daa46d4d25295296e566146))
+- **config:** remove unnecessary `await` in `migrateConfig` ([cb84cc1](https://github.com/AhmedOsman101/commit-sage-cli/commit/cb84cc131d671a0b994ef62bb8e08c8e77b08b20))
+- remove `openrouter` from the schema required array ([0adddd9](https://github.com/AhmedOsman101/commit-sage-cli/commit/0adddd9f21f6d9a7e75d43d6ca9b8b264347849c))
+- resolve an infinite migration loop during config loading ([efd8d90](https://github.com/AhmedOsman101/commit-sage-cli/commit/efd8d903bc1cef76673b9cfd7037742a8a01511c))
+- use `DEFAULT_CONFIG` for optional `baseUrl` and require `provider.model` ([c057453](https://github.com/AhmedOsman101/commit-sage-cli/commit/c057453e6ba040e8cb4be9d82ce949fce879fd5a))
+
+
 ## [1.7.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.6.0...v1.7.0) (2026-05-08)
 
 
