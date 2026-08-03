@@ -68,11 +68,11 @@ class CommandError extends Error {
 }
 
 export {
-  NoRepositoriesFoundError,
-  NoChangesDetectedError,
-  EmptyCommitMessageError,
-  OpenAiError,
-  ConfigurationError,
   AiServiceError,
   CommandError,
+  ConfigurationError,
+  EmptyCommitMessageError,
+  NoChangesDetectedError,
+  NoRepositoriesFoundError,
+  OpenAiError,
 };

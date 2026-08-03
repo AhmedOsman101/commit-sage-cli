@@ -36,7 +36,14 @@ type CommitConfig = {
   bodyStyle: "subject-only" | "subject-body" | "subject-body-footer";
 };
 
-export type ProviderReasoning = "off" | "low" | "medium" | "high";
+export type ProviderReasoning =
+  | "off"
+  | "default"
+  | "low"
+  | "medium"
+  | "high"
+  | "xhigh"
+  | "ultra";
 
 // Supported AI provider types
 export type ProviderType =

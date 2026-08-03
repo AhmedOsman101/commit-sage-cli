@@ -2,13 +2,13 @@ name: Release
 
 on:
   release:
-    types: [published, draft]
+    types: [published, unpublished]
 
 permissions:
   contents: write
 
 env:
-  BIOME_VERSION: 2.3.11
+  BIOME_VERSION: 2.5.6
 
 jobs:
   build-binaries:
@@ -22,6 +22,11 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           deno-version: "latest"
+
+      - name: Setup Mask
+        uses: taiki-e/install-action@v2
+        with:
+          tool: mask
 
       - name: Cache Biome
         id: cache-biome
@@ -38,19 +43,8 @@ jobs:
           chmod +x biome
           sudo mv biome /usr/local/bin/biome
 
-      - name: Build Linux binaries
-        run: |
-          mkdir -p bin
-          deno compile -A -o bin/commit-sage-linux-x64 --target x86_64-unknown-linux-gnu src/main.ts
-          deno compile -A -o bin/commit-sage-linux-arm64 --target aarch64-unknown-linux-gnu src/main.ts
-
-      - name: Build Windows binary
-        run: deno compile -A -o bin/commit-sage-windows-x64.exe --target x86_64-pc-windows-msvc src/main.ts
-
-      - name: Build macOS binaries
-        run: |
-          deno compile -A -o bin/commit-sage-macos-x64 --target x86_64-apple-darwin src/main.ts
-          deno compile -A -o bin/commit-sage-macos-arm64 --target aarch64-apple-darwin src/main.ts
+      - name: Build binaries
+        run: mask release
 
       - name: Upload Binaries
         uses: actions/upload-artifact@v4
@@ -119,6 +113,7 @@ jobs:
             binaries/commit-sage-linux-x64
             binaries/commit-sage-linux-arm64
             binaries/commit-sage-windows-x64.exe
+            binaries/commit-sage-windows-arm64.exe
             binaries/commit-sage-macos-x64
             binaries/commit-sage-macos-arm64
             installer/*.exe
