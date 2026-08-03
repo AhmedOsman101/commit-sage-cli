@@ -17,17 +17,19 @@ cd commit-sage-cli
 >
 > This project requires Deno v2.2 or higher.
 
-3. Run the project locally (I recommend using ollama as your provider when developing):
+3. Install [Mask](https://github.com/jacobdeichert/mask) task runner.
+
+4. Run the project locally (I recommend using ollama as your provider when developing):
 
 ```sh
-deno task dev
+mask run
 ```
 
 ## Making Changes
 
 - Ensure your changes pass all existing logic.
-- Format with `deno task format` before committing any changes.
-  - Requires `pnpm` to run Biome via `pnpm dlx`, since Deno does not currently support `devDependencies`.
+- Format with `mask format` before committing any changes.
+  - Requires any package manager other than `deno` to run Biome, since Deno does not currently support `devDependencies` (all gets included in the final binary).
 - Follow the [Conventional Commits](https://www.conventionalcommits.org/) format.
 
 ## Submitting a PR
