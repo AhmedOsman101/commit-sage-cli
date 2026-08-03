@@ -31,7 +31,7 @@
     "ai": "npm:ai@^6.0.103",
     "axios": "npm:axios@1.13.5",
     "husky": "npm:husky@^9.1.7",
-    "lib-result": "npm:lib-result@^3.2.2",
+    "lib-result": "npm:lib-result@^5.0.0",
     "ollama-ai-provider-v2": "npm:ollama-ai-provider-v2@^3.3.1",
     "vercel-minimax-ai-provider": "npm:vercel-minimax-ai-provider@^0.0.2",
     "@/": "./src/"

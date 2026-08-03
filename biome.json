@@ -1,6 +1,6 @@
 {
   "root": true,
-  "$schema": "https://biomejs.dev/schemas/2.3.11/schema.json/",
+  "$schema": "https://biomejs.dev/schemas/2.5.6/schema.json/",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -23,9 +23,9 @@
   "assist": {
     "enabled": true,
     "actions": {
-      "recommended": true,
+      "preset": "recommended",
       "source": {
-        "recommended": true,
+        "preset": "recommended",
         "organizeImports": "on",
         "useSortedAttributes": "on",
         "useSortedProperties": "on",
@@ -159,7 +159,8 @@
         "useValidForDirection": "info",
         "noNestedComponentDefinitions": "info",
         "useJsonImportAttributes": "warn",
-        "useSingleJsDocAsterisk": "on"
+        "useSingleJsDocAsterisk": "on",
+        "noUnresolvedImports": "on"
       },
       "complexity": {
         "noUselessCatch": "warn",
@@ -181,7 +182,8 @@
         "noUselessTernary": "info",
         "noUselessUndefinedInitialization": "info",
         "useWhile": "info",
-        "useIndexOf": "warn"
+        "useIndexOf": "warn",
+        "noUselessUndefined": "on"
       },
       "suspicious": {
         "noImplicitAnyLet": "warn",
@@ -224,7 +226,9 @@
         "noConstantBinaryExpressions": "info",
         "noTsIgnore": "on",
         "noUselessEscapeInString": "warn",
-        "useStaticResponseMethods": "on"
+        "useStaticResponseMethods": "on",
+        "noImportCycles": "error",
+        "noShadow": "on"
       },
       "nursery": {
         "useSortedClasses": {
@@ -235,10 +239,6 @@
           }
         },
         "noFloatingPromises": "warn",
-        "noImportCycles": "error",
-        "noShadow": "on",
-        "noUnresolvedImports": "off",
-        "noUselessUndefined": "on",
         "useExhaustiveSwitchCases": "on"
       },
       "security": {

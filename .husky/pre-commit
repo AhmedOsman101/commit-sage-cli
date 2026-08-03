@@ -1,12 +1,5 @@
 #!/usr/bin/env bash
 
-{
-  deno audit &&
-    deno audit --socket &&
-    deno install &
-  git add deno.lock &
-} &>/dev/null
-
 yesNo() {
   local answer prompt="$1"
   printf '%b' "${prompt} [Y/n] "
@@ -40,7 +33,7 @@ done
 # --- Formats only the staged files --- #
 unset BIOME_BINARY &>/dev/null
 unset BIOME_CONFIG_PATH &>/dev/null
-pnpm dlx @biomejs/biome@2.3.11 check --fix --no-errors-on-unmatched --staged --reporter=summary "${gitRoot}"
+mask biome "check --fix --no-errors-on-unmatched --staged --reporter=summary ${gitRoot}"
 
 formatted_files=()
 for file in "${files[@]}"; do
