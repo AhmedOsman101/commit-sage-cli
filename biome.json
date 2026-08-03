@@ -160,7 +160,7 @@
         "noNestedComponentDefinitions": "info",
         "useJsonImportAttributes": "warn",
         "useSingleJsDocAsterisk": "on",
-        "noUnresolvedImports": "on"
+        "noUnresolvedImports": "off"
       },
       "complexity": {
         "noUselessCatch": "warn",

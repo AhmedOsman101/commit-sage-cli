@@ -82,7 +82,7 @@ deno run -A src/main.ts
 
 ## compile [path]
 
-> Compiles the project at `~/.local/share/bin/commit-sage` or any given path
+> Compiles the project at `~/.local/bin/commit-sage` or any given path
 
 **OPTIONS**
 
@@ -93,7 +93,7 @@ deno run -A src/main.ts
   - choices: x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu, x86_64-pc-windows-msvc, aarch64-pc-windows-msvc, x86_64-apple-darwin, aarch64-apple-darwin
 
 ```bash
-path="${path:-$HOME/.local/share/bin/commit-sage}"
+path="${path:-$HOME/.local/bin/commit-sage}"
 
 if [[ -z "${target}" ]]; then
   deno compile -A -o "${path}" src/main.ts
