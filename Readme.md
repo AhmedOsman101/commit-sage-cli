@@ -212,6 +212,12 @@ The following are known limitations in the current version of **commit-sage**, w
 > These options can safely remain in your config. They won't cause any errors, but currently have no effect.
 > They are included as placeholders for upcoming features that are under active consideration or development.
 
+## Third-Party Tools
+
+<a href="http://bizbot.zvo.cn" target="_blank" rel="noopener">
+  <img src="https://img.shields.io/badge/Tool-BizBot-blue" alt="BizBot: AI aautomated promotion system">
+</a>
+
 ## Contributing
 
 Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines before submitting a Pull Request.
