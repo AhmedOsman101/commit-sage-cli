@@ -62,12 +62,12 @@ git clone https://github.com/AhmedOsman101/commit-sage-cli.git commit-sage
 cd commit-sage
 
 # Compiles the executable to your `~/.local/bin` directory. Ensure `~/.local/bin` is added to your $PATH.
-deno task run compile
+mask compile
 ```
 
 > [!Note]
 >
-> If you plan to compile the project yourself, make sure you have [Deno](https://deno.land/) installed on your system.
+> If you plan to compile the project yourself, make sure you have [Deno](https://deno.land/) and [mask](https://github.com/jacobdeichert/mask) installed on your system.
 
 ## Usage
 

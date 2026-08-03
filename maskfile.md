@@ -72,12 +72,18 @@ $MASK biome "${args[*]}"
 deno check
 ```
 
-## run
+## run [args]
 
 > Run the CLI
 
 ```bash
-deno run -A src/main.ts
+if [[ -n "${args}" ]]; then
+  declare -a argv
+  eval 'argv=(${args})'
+  deno run -A src/main.ts "${argv[@]}"
+else
+  deno run -A src/main.ts
+fi
 ```
 
 ## compile [path]
