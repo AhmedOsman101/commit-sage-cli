@@ -158,9 +158,8 @@ The following are known limitations in the current version of **commit-sage**, w
 
 ## Third-Party Tools
 
-<a style="display: inline-flex; align-items: center; gap: 1rem" href="http://bizbot.zvo.cn" target="_blank" rel="noopener">
-  <img src="https://img.shields.io/badge/Tool-BizBot-blue" alt="BizBot: AI automated promotion system">
-  <span>BizBot: AI automated promotion system</span>
+<a href="https://bizbot.zvo.cn/index.html" target="_blank" rel="noopener">
+  BizBot: AI automated promotion system
 </a>
 
 ## Contributing
