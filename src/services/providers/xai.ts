@@ -11,11 +11,12 @@ import { ModelService } from "@/services/model.ts";
 class XaiService extends ModelService {
   static override async generateCommitMessage(
     prompt: string,
-    attempt = 1
+    attempt = 1,
+    modelOverride?: string
   ): Promise<CommitMessage> {
     try {
       const apiKey = await ConfigService.getApiKey("Xai");
-      const model = (await ConfigService.get("provider", "model")).unwrap();
+      const model = await ModelService.resolveModel(modelOverride);
       const generationOptions = await ModelService.getGenerationOptions();
       const providerOptions = await ModelService.getXaiProviderOptions();
       const xai = createXai({ apiKey });
@@ -38,7 +39,8 @@ class XaiService extends ModelService {
         error,
         prompt,
         attempt,
-        XaiService.generateCommitMessage.bind(XaiService)
+        (p: string, a: number) =>
+          XaiService.generateCommitMessage(p, a, modelOverride)
       );
     }
   }

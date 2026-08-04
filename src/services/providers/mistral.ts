@@ -11,11 +11,12 @@ import { ModelService } from "@/services/model.ts";
 class MistralService extends ModelService {
   static override async generateCommitMessage(
     prompt: string,
-    attempt = 1
+    attempt = 1,
+    modelOverride?: string
   ): Promise<CommitMessage> {
     try {
       const apiKey = await ConfigService.getApiKey("Mistral");
-      const model = (await ConfigService.get("provider", "model")).unwrap();
+      const model = await ModelService.resolveModel(modelOverride);
       const generationOptions = await ModelService.getGenerationOptions();
       const mistral = createMistral({ apiKey });
 
@@ -36,7 +37,8 @@ class MistralService extends ModelService {
         error,
         prompt,
         attempt,
-        MistralService.generateCommitMessage.bind(MistralService)
+        (p: string, a: number) =>
+          MistralService.generateCommitMessage(p, a, modelOverride)
       );
     }
   }

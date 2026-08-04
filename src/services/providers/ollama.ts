@@ -13,7 +13,8 @@ import { ModelService } from "@/services/model.ts";
 class OllamaService extends ModelService {
   static override async generateCommitMessage(
     prompt: string,
-    attempt = 1
+    attempt = 1,
+    modelOverride?: string
   ): Promise<CommitMessage> {
     logDebug(
       `[ollamaService.generateCommitMessage] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
@@ -25,13 +26,7 @@ class OllamaService extends ModelService {
         ? baseURLResult.ok
         : (DEFAULT_CONFIG.ollama.baseUrl as string);
 
-    const modelResult = await ConfigService.get("provider", "model");
-    if (modelResult.isError()) {
-      throw new Error(
-        "provider.model is required for Ollama. Please set it in your config."
-      );
-    }
-    const model = modelResult.ok;
+    const model = await ModelService.resolveModel(modelOverride);
     const generationOptions = await ModelService.getGenerationOptions();
 
     logDebug(
@@ -58,7 +53,8 @@ class OllamaService extends ModelService {
         error,
         prompt,
         attempt,
-        OllamaService.generateCommitMessage.bind(OllamaService)
+        (p: string, a: number) =>
+          OllamaService.generateCommitMessage(p, a, modelOverride)
       );
     }
   }

@@ -19,7 +19,10 @@ class GitBlameAnalyzer {
   static async getGitBlame(
     filePath: string
   ): Promise<Result<BlameInfo[], Error>> {
-    const absoluteFilePath = path.resolve(GitService.initialize(), filePath);
+    const absoluteFilePath = path.resolve(
+      await GitService.initialize(),
+      filePath
+    );
     const fileExistsResult =
       await FileSystemService.fileExists(absoluteFilePath);
     if (fileExistsResult.isError()) {
@@ -29,18 +32,18 @@ class GitBlameAnalyzer {
       return ErrFromText(`${ERROR_MESSAGES.fileNotFound}: ${absoluteFilePath}`);
     }
 
-    if (!GitService.hasHead()) {
+    if (!(await GitService.hasHead())) {
       return ErrFromText(ERROR_MESSAGES.noCommitsYet);
     }
 
-    if (GitService.isNewFile(filePath)) {
+    if (await GitService.isNewFile(filePath)) {
       return ErrFromText(ERROR_MESSAGES.fileNotCommitted);
     }
 
-    if (GitService.isFileDeleted(filePath)) {
+    if (await GitService.isFileDeleted(filePath)) {
       return ErrFromText(ERROR_MESSAGES.fileDeleted);
     }
-    const blameResult = GitBlameAnalyzer.executeGitBlame(filePath);
+    const blameResult = await GitBlameAnalyzer.executeGitBlame(filePath);
     if (blameResult.isError()) return Err(blameResult.error);
 
     return Ok(GitBlameAnalyzer.parseBlameOutput(blameResult.ok));
@@ -74,22 +77,27 @@ class GitBlameAnalyzer {
 
     return blameInfos;
   }
-  static executeGitBlame(filePath: string): Result<string, Error> {
-    const cmdResult = CommandService.execute(
+  static async executeGitBlame(
+    filePath: string
+  ): Promise<Result<string, Error>> {
+    const cmdResult = await CommandService.execute(
       "git",
       ["blame", "--line-porcelain", filePath.replaceAll('"', "")],
-      GitService.initialize()
+      await GitService.initialize()
     );
 
     if (cmdResult.isError()) return Err(cmdResult.error);
     return Ok(cmdResult.ok.stdout);
   }
 
-  static getDiff(filePath: string, onlyStaged = false): Result<string, Error> {
+  static async getDiff(
+    filePath: string,
+    onlyStaged = false
+  ): Promise<Result<string, Error>> {
     const args = onlyStaged
       ? ["diff", "--cached", "--unified=0", "--", filePath]
       : ["diff", "--unified=0", "--", filePath];
-    const result = GitService.execGit(args);
+    const result = await GitService.execGit(args);
 
     if (result.isError()) return Err(result.error);
     return Ok(result.ok.stdout);
@@ -103,11 +111,11 @@ class GitBlameAnalyzer {
 
     // First check if file is deleted or new, as these don't need blame analysis
     // Use git status to check file state
-    if (GitService.isFileDeleted(filePath)) {
+    if (await GitService.isFileDeleted(filePath)) {
       return Ok(`Deleted file: ${normalizedPath}`);
     }
 
-    if (GitService.isNewFile(filePath)) {
+    if (await GitService.isNewFile(filePath)) {
       return Ok(`New file: ${normalizedPath}`);
     }
 
@@ -115,7 +123,10 @@ class GitBlameAnalyzer {
     const blameResult = await GitBlameAnalyzer.getGitBlame(normalizedPath);
     if (blameResult.isError()) return Err(blameResult.error);
 
-    const diffResult = GitBlameAnalyzer.getDiff(normalizedPath, onlyStaged);
+    const diffResult = await GitBlameAnalyzer.getDiff(
+      normalizedPath,
+      onlyStaged
+    );
     if (diffResult.isError()) return Err(diffResult.error);
 
     const changedLines = GitBlameAnalyzer.parseChangedLines(diffResult.ok);
@@ -184,20 +195,22 @@ class GitBlameAnalyzer {
       )
       .join("\n");
   }
-  static getBlameInfo(filePath: string): Result<BlameInfo[], Error> {
-    if (!GitService.hasHead()) {
+  static async getBlameInfo(
+    filePath: string
+  ): Promise<Result<BlameInfo[], Error>> {
+    if (!(await GitService.hasHead())) {
       return ErrFromText(ERROR_MESSAGES.noCommitsYet);
     }
 
-    if (GitService.isNewFile(filePath)) {
+    if (await GitService.isNewFile(filePath)) {
       return ErrFromText(ERROR_MESSAGES.fileNotCommitted);
     }
 
-    if (GitService.isFileDeleted(filePath)) {
+    if (await GitService.isFileDeleted(filePath)) {
       return ErrFromText(ERROR_MESSAGES.fileDeleted);
     }
 
-    const blameResult = GitBlameAnalyzer.executeGitBlame(filePath);
+    const blameResult = await GitBlameAnalyzer.executeGitBlame(filePath);
     if (blameResult.isError()) return Err(blameResult.error);
 
     return Ok(GitBlameAnalyzer.parseBlameOutput(blameResult.ok));

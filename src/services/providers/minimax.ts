@@ -12,14 +12,15 @@ import { ModelService } from "@/services/model.ts";
 class MinimaxService extends ModelService {
   static override async generateCommitMessage(
     prompt: string,
-    attempt = 1
+    attempt = 1,
+    modelOverride?: string
   ): Promise<CommitMessage> {
     logDebug(
       `[minimaxService.generateCommitMessage] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
     );
     try {
       const apiKey = await ConfigService.getApiKey("MiniMax");
-      const model = (await ConfigService.get("provider", "model")).unwrap();
+      const model = await ModelService.resolveModel(modelOverride);
       const generationOptions = await ModelService.getGenerationOptions();
       logDebug(
         `[minimaxService.generateCommitMessage] CALL API model=${model}`
@@ -48,7 +49,8 @@ class MinimaxService extends ModelService {
         error,
         prompt,
         attempt,
-        MinimaxService.generateCommitMessage.bind(MinimaxService)
+        (p: string, a: number) =>
+          MinimaxService.generateCommitMessage(p, a, modelOverride)
       );
     }
   }

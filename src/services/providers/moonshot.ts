@@ -12,14 +12,15 @@ import { ModelService } from "@/services/model.ts";
 class MoonshotService extends ModelService {
   static override async generateCommitMessage(
     prompt: string,
-    attempt = 1
+    attempt = 1,
+    modelOverride?: string
   ): Promise<CommitMessage> {
     logDebug(
       `[moonshotService.generateCommitMessage] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
     );
     try {
       const apiKey = await ConfigService.getApiKey("MoonshotAI");
-      const model = (await ConfigService.get("provider", "model")).unwrap();
+      const model = await ModelService.resolveModel(modelOverride);
       const generationOptions = await ModelService.getGenerationOptions();
       logDebug(
         `[moonshotService.generateCommitMessage] CALL API model=${model}`
@@ -48,7 +49,8 @@ class MoonshotService extends ModelService {
         error,
         prompt,
         attempt,
-        MoonshotService.generateCommitMessage.bind(MoonshotService)
+        (p: string, a: number) =>
+          MoonshotService.generateCommitMessage(p, a, modelOverride)
       );
     }
   }

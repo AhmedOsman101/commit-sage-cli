@@ -20,14 +20,15 @@ const ZAI_BASE_URL = "https://api.z.ai/api/paas/v4/";
 class ZaiService extends ModelService {
   static override async generateCommitMessage(
     prompt: string,
-    attempt = 1
+    attempt = 1,
+    modelOverride?: string
   ): Promise<CommitMessage> {
     logDebug(
       `[zaiService.generateCommitMessage] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
     );
     try {
       const apiKey = await ConfigService.getApiKey("Zai");
-      const model = (await ConfigService.get("provider", "model")).unwrap();
+      const model = await ModelService.resolveModel(modelOverride);
       const generationOptions = await ModelService.getGenerationOptions();
       const providerOptions = await ModelService.getOpenAIProviderOptions({
         forceReasoning: true,
@@ -60,7 +61,8 @@ class ZaiService extends ModelService {
         error,
         prompt,
         attempt,
-        ZaiService.generateCommitMessage.bind(ZaiService)
+        (p: string, a: number) =>
+          ZaiService.generateCommitMessage(p, a, modelOverride)
       );
     }
   }

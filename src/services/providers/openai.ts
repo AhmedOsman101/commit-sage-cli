@@ -12,11 +12,12 @@ import { ModelService } from "@/services/model.ts";
 class OpenAiService extends ModelService {
   static override async generateCommitMessage(
     prompt: string,
-    attempt = 1
+    attempt = 1,
+    modelOverride?: string
   ): Promise<CommitMessage> {
     try {
       const apiKey = await ConfigService.getApiKey("OpenAI");
-      const model = (await ConfigService.get("provider", "model")).unwrap();
+      const model = await ModelService.resolveModel(modelOverride);
       const baseURL = (await ConfigService.get("openai", "baseUrl")).unwrap();
       const useChatCompletions = await ConfigService.get(
         "openai",
@@ -52,7 +53,8 @@ class OpenAiService extends ModelService {
         error,
         prompt,
         attempt,
-        OpenAiService.generateCommitMessage.bind(OpenAiService)
+        (p: string, a: number) =>
+          OpenAiService.generateCommitMessage(p, a, modelOverride)
       );
     }
   }

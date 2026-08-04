@@ -1,6 +1,7 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: Each child has different incompatible types for the same parameter */
 /** biome-ignore-all lint/correctness/noUnusedFunctionParameters: This is a base class */
 import { setTimeout } from "node:timers/promises";
+import { DEFAULT_CONFIG } from "@/lib/constants.ts";
 import { classifyAIError } from "@/lib/handleAiErrors.ts";
 import type { CommitMessage } from "@/lib/types/commit.ts";
 import type { ApiError, ErrorWithResponse } from "@/lib/types/index.ts";
@@ -18,6 +19,21 @@ export abstract class ModelService {
   }
 
   /**
+   * Resolves the model to use for this run.
+   *
+   * Resolution order (explicit, no shared state):
+   *   1. `modelOverride` — CLI `--model` flag, if present
+   *   2. `provider.model` from the user's config file
+   *   3. `DEFAULT_CONFIG.provider.model`
+   */
+  protected static async resolveModel(modelOverride?: string): Promise<string> {
+    if (modelOverride !== undefined) return modelOverride;
+    const result = await ConfigService.get("provider", "model");
+    if (result.isError()) return DEFAULT_CONFIG.provider.model;
+    return result.ok;
+  }
+
+  /**
    * Handles API errors and returns structured error information.
    * Subclasses must provide their own implementation.
    * Default implementation returns an empty result.
@@ -31,10 +47,14 @@ export abstract class ModelService {
    * Generates a commit message based on a prompt and attempt number.
    * Subclasses must provide their own implementation.
    * Default implementation returns an empty commit message.
+   *
+   * `modelOverride` (optional) is the CLI `--model` flag value. It is
+   * resolved against config + default by `resolveModel`.
    */
   public static generateCommitMessage(
     prompt: string,
-    attempt: number
+    attempt: number,
+    modelOverride?: string
   ): Promise<CommitMessage> {
     // Empty implementation as per requirement
     return Promise.resolve({ message: "", model: "" });

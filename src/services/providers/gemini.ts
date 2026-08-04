@@ -11,11 +11,12 @@ import { ModelService } from "@/services/model.ts";
 class GeminiService extends ModelService {
   static override async generateCommitMessage(
     prompt: string,
-    attempt = 1
+    attempt = 1,
+    modelOverride?: string
   ): Promise<CommitMessage> {
     try {
       const apiKey = await ConfigService.getApiKey("Gemini");
-      const model = (await ConfigService.get("provider", "model")).unwrap();
+      const model = await ModelService.resolveModel(modelOverride);
       const generationOptions = await ModelService.getGenerationOptions();
       const providerOptions = await ModelService.getGoogleProviderOptions();
       const google = createGoogleGenerativeAI({ apiKey });
@@ -38,7 +39,8 @@ class GeminiService extends ModelService {
         error,
         prompt,
         attempt,
-        GeminiService.generateCommitMessage.bind(GeminiService)
+        (p: string, a: number) =>
+          GeminiService.generateCommitMessage(p, a, modelOverride)
       );
     }
   }

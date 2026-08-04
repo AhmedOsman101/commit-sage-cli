@@ -3,11 +3,11 @@ import { CommandError } from "@/lib/errors.ts";
 import type { CommandOutput } from "@/lib/types/index.ts";
 
 const CommandService = {
-  execute(
+  async execute(
     cmd: string,
     args: string[] = [],
     cwd = Deno.cwd()
-  ): Result<CommandOutput, CommandError> {
+  ): Promise<Result<CommandOutput, CommandError>> {
     try {
       const command = new Deno.Command(cmd, {
         args,
@@ -16,7 +16,7 @@ const CommandService = {
         cwd,
       });
 
-      const output = command.outputSync();
+      const output = await command.output();
 
       const decoder = new TextDecoder();
 
@@ -53,6 +53,52 @@ const CommandService = {
       return Err(
         new CommandError(
           `Failed to execute command: ${errorMessage}`,
+          `${cmd} ${args.join(" ")}`
+        )
+      );
+    }
+  },
+
+  /**
+   * Spawn a child process asynchronously, optionally inheriting stdio
+   * (used for interactive editors where the child needs a real TTY).
+   *
+   * Returns the exit code. Does NOT capture stdout/stderr — caller decides
+   * via `inheritStdout`/`inheritStderr`. Non-zero exit code is not an error
+   * for interactive editors (user may quit without saving).
+   */
+  async spawnInteractive(
+    cmd: string,
+    args: string[],
+    options: {
+      cwd?: string;
+      inheritStdout?: boolean;
+      inheritStderr?: boolean;
+      inheritStdin?: boolean;
+    } = {}
+  ): Promise<Result<number, CommandError>> {
+    try {
+      const command = new Deno.Command(cmd, {
+        args,
+        cwd: options.cwd,
+        stdin: options.inheritStdin ? "inherit" : "piped",
+        stdout: options.inheritStdout ? "inherit" : "piped",
+        stderr: options.inheritStderr ? "inherit" : "piped",
+      });
+
+      const output = await command.output();
+      return Ok(output.code);
+    } catch (error) {
+      const message =
+        error instanceof Deno.errors.NotFound
+          ? `Command "${cmd}" not found`
+          : error instanceof Error
+            ? error.message
+            : "An unknown error occurred";
+
+      return Err(
+        new CommandError(
+          `Failed to execute command: ${message}`,
           `${cmd} ${args.join(" ")}`
         )
       );

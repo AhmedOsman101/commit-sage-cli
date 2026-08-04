@@ -1,11 +1,12 @@
 import { Err, ErrFromText, ErrFromUnknown, Ok, type Result } from "lib-result";
+import type { GenerateOptions } from "@/cli/types/generateOptions.ts";
 import { ERROR_MESSAGES } from "@/lib/constants.ts";
 import { logDebug } from "@/lib/logger.ts";
 import type { CommitMessage } from "@/lib/types/commit.ts";
 import ConfigService from "@/services/config.ts";
 import GitService from "@/services/git.ts";
 import GitBlameAnalyzer from "@/services/gitBlameAnalyzer.ts";
-import PromptService from "@/services/prompt.ts";
+import { PromptService } from "@/services/prompt.ts";
 import { getProviderService } from "@/services/providerRegistry.ts";
 
 const AiService = {
@@ -22,7 +23,7 @@ const AiService = {
     );
     if (diffStrategyResult.isError()) return Err(diffStrategyResult.error);
 
-    const hasStagedChanges = GitService.hasChanges("staged");
+    const hasStagedChanges = await GitService.hasChanges("staged");
 
     switch (diffStrategyResult.ok) {
       case "staged":
@@ -43,9 +44,17 @@ const AiService = {
     }
   },
 
+  /**
+   * Generate a commit message from diff + blame context.
+   *
+   * @param diff         — the git diff to analyze
+   * @param blameAnalysis — blame context string
+   * @param runOptions   — per-run CLI flag overrides (CLI → AI → provider)
+   */
   async generateCommitMessage(
     diff: string,
-    blameAnalysis: string
+    blameAnalysis: string,
+    runOptions: GenerateOptions = {}
   ): Promise<Result<CommitMessage, Error>> {
     logDebug(
       `[aiService.generateCommitMessage] ENTRY diff.length=${diff.length}, hasBlame=${!!blameAnalysis}`
@@ -53,35 +62,55 @@ const AiService = {
 
     if (!diff) return ErrFromText(ERROR_MESSAGES.noChanges);
 
+    // ConfigService.get already supplies DEFAULT_CONFIG on missing key.
     const maxInputCharsResult = await ConfigService.get(
       "general",
       "maxInputChars"
     );
     if (maxInputCharsResult.isError()) return Err(maxInputCharsResult.error);
+    const maxInputChars = maxInputCharsResult.ok;
 
-    const truncatedDiff = this.truncateDiff(diff, maxInputCharsResult.ok);
+    const truncatedDiff = this.truncateDiff(diff, maxInputChars);
     logDebug(
       `[aiService.generateCommitMessage] STEP truncated diff, length=${truncatedDiff.length}`
     );
 
-    const prompt = await PromptService.generatePrompt(
+    const promptResult = await PromptService.buildPrompt(
       truncatedDiff,
-      blameAnalysis
+      blameAnalysis,
+      {
+        format: runOptions.format,
+        maxLength: runOptions.maxLength,
+        language: runOptions.language,
+        context: runOptions.context,
+      }
     );
+    if (promptResult.isError()) return Err(promptResult.error);
+    const prompt = promptResult.ok;
     logDebug(
       `[aiService.generateCommitMessage] STEP prompt generated, length=${prompt.length}`
     );
 
-    const providerResult = await ConfigService.get("provider", "type");
-    if (providerResult.isError()) return Err(providerResult.error);
-
-    const providerType = providerResult.ok;
+    // Resolve provider: flag ?? config (config falls back to DEFAULT_CONFIG).
+    const providerTypeResult =
+      runOptions.provider !== undefined
+        ? Ok(runOptions.provider)
+        : await ConfigService.get("provider", "type");
+    if (providerTypeResult.isError()) return Err(providerTypeResult.error);
+    const providerType = providerTypeResult.ok;
     logDebug(`[aiService.generateCommitMessage] STEP provider=${providerType}`);
 
     try {
       const Service = getProviderService(providerType);
       logDebug(`[aiService.generateCommitMessage] CALL ${Service.name}`);
-      const commitMessage = await Service.generateCommitMessage(prompt, 1);
+      // modelOverride is passed to the provider; it resolves via
+      // ModelService.resolveModel(modelOverride) which does
+      // `modelOverride ?? ConfigService.get("provider", "model")`.
+      const commitMessage = await Service.generateCommitMessage(
+        prompt,
+        1,
+        runOptions.model
+      );
 
       logDebug(
         `[aiService.generateCommitMessage] EXIT message="${commitMessage.message.substring(0, 50)}..."`
@@ -92,33 +121,38 @@ const AiService = {
       return ErrFromUnknown(error);
     }
   },
-  async generateAndApplyMessage(): Promise<Result<CommitMessage, Error>> {
-    logDebug("[aiService.generateAndApplyMessage] ENTRY");
 
-    GitService.initialize();
-    logDebug("[aiService.generateAndApplyMessage] STEP git initialized");
+  /**
+   * Full orchestration: initialize git, resolve diff mode, run blame, generate.
+   * Called by the CLI `generate` subcommand action.
+   */
+  async generateMessage(
+    runOptions: GenerateOptions = {}
+  ): Promise<Result<CommitMessage, Error>> {
+    logDebug("[aiService.generateMessage] ENTRY");
+
+    await GitService.initialize();
+    logDebug("[aiService.generateMessage] STEP git initialized");
 
     const diffModeResult = await this.resolveDiffMode();
     if (diffModeResult.isError()) return Err(diffModeResult.error);
 
     const diffMode = diffModeResult.ok;
     const useStagedChanges = diffMode === "staged";
-    logDebug(`[aiService.generateAndApplyMessage] STEP diffMode=${diffMode}`);
+    logDebug(`[aiService.generateMessage] STEP diffMode=${diffMode}`);
 
     const diffResult = await GitService.getDiff(diffMode);
     if (diffResult.isError()) return Err(diffResult.error);
 
     const diff = diffResult.ok;
-    logDebug(
-      `[aiService.generateAndApplyMessage] STEP diff length=${diff.length}`
-    );
+    logDebug(`[aiService.generateMessage] STEP diff length=${diff.length}`);
 
-    const changedFilesResult = GitService.getChangedFiles(diffMode);
+    const changedFilesResult = await GitService.getChangedFiles(diffMode);
     if (changedFilesResult.isError()) return Err(changedFilesResult.error);
 
     const changedFiles = changedFilesResult.ok;
     logDebug(
-      `[aiService.generateAndApplyMessage] STEP changed files=${changedFiles.length}`
+      `[aiService.generateMessage] STEP changed files=${changedFiles.length}`
     );
 
     const analysesPromises = changedFiles.map(file =>
@@ -137,21 +171,22 @@ const AiService = {
     }
 
     logDebug(
-      `[aiService.generateAndApplyMessage] STEP blame analyses=${blameAnalysis.length}`
+      `[aiService.generateMessage] STEP blame analyses=${blameAnalysis.length}`
     );
 
     const result = await this.generateCommitMessage(
       diff,
-      blameAnalysis.join("\n\n")
+      blameAnalysis.join("\n\n"),
+      runOptions
     );
 
     if (result.isOk()) {
       logDebug(
-        `[aiService.generateAndApplyMessage] EXIT success message="${result.ok.message.substring(0, 50)}..."`
+        `[aiService.generateMessage] EXIT success message="${result.ok.message.substring(0, 50)}..."`
       );
     } else {
       logDebug(
-        `[aiService.generateAndApplyMessage] EXIT error=${result.error.message}`
+        `[aiService.generateMessage] EXIT error=${result.error.message}`
       );
     }
 

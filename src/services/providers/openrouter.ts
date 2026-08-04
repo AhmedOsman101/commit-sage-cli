@@ -20,7 +20,8 @@ import { ModelService } from "@/services/model.ts";
 class OpenRouterService extends ModelService {
   static override async generateCommitMessage(
     prompt: string,
-    attempt = 1
+    attempt = 1,
+    modelOverride?: string
   ): Promise<CommitMessage> {
     logDebug(
       `[openrouterService.generateCommitMessage] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
@@ -28,13 +29,7 @@ class OpenRouterService extends ModelService {
     try {
       const apiKey = await ConfigService.getApiKey("OpenRouter");
 
-      const modelResult = await ConfigService.get("provider", "model");
-      if (modelResult.isError()) {
-        throw new Error(
-          "provider.model is required for OpenRouter. Please set it in your config."
-        );
-      }
-      const model = modelResult.ok;
+      const model = await ModelService.resolveModel(modelOverride);
       const generationOptions = await ModelService.getGenerationOptions();
 
       const baseURLResult = await ConfigService.get("openrouter", "baseUrl");
@@ -76,7 +71,8 @@ class OpenRouterService extends ModelService {
         error,
         prompt,
         attempt,
-        OpenRouterService.generateCommitMessage.bind(OpenRouterService)
+        (p: string, a: number) =>
+          OpenRouterService.generateCommitMessage(p, a, modelOverride)
       );
     }
   }

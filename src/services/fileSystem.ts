@@ -1,5 +1,11 @@
 import { dirname } from "node:path";
-import { Err, ErrFromText, Ok, type Result } from "lib-result";
+import {
+  Err,
+  ErrFromText,
+  Ok,
+  type Result,
+  wrapAsyncThrowable,
+} from "lib-result";
 
 const FileSystemService = {
   async fileExists(path: string): Promise<Result<boolean>> {
@@ -94,6 +100,28 @@ const FileSystemService = {
       return ErrFromText(`Error creating directory: '${path}'.`);
     }
   },
+
+  /**
+   * Create a unique temp file with the given prefix and suffix.
+   * Returns the absolute path. Caller is responsible for cleanup.
+   */
+  async createTempFile(
+    prefix = "commit-sage-",
+    suffix = ".txt",
+    options?: Omit<Deno.MakeTempOptions, "prefix" | "suffix">
+  ): Promise<Result<string>> {
+    try {
+      const path = await Deno.makeTempFile({ ...options, prefix, suffix });
+      return Ok(path);
+    } catch {
+      return ErrFromText("Cannot create temporary file.");
+    }
+  },
+
+  /**
+   * Best-effort remove. Swallows errors — used in `finally` cleanup paths.
+   */
+  removeFile: wrapAsyncThrowable(Deno.remove),
 };
 
 export default FileSystemService;

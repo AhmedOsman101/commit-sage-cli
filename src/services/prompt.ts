@@ -1,46 +1,83 @@
+import { Err, Ok, type Result } from "lib-result";
 import { logDebug } from "@/lib/logger.ts";
-import type { CommitLanguage } from "@/lib/types/commit.ts";
+import type { CommitFormat, CommitLanguage } from "@/lib/types/commit.ts";
 import ConfigService from "@/services/config.ts";
 import { getTemplate } from "@/templates/index.ts";
 
-const PromptService = {
-  async generatePrompt(
-    diff: string,
-    blameAnalysis: string,
-    context?: string
-  ): Promise<string> {
-    logDebug(
-      `[promptService.generatePrompt] ENTRY diff.length=${diff.length}, blame.length=${blameAnalysis.length}, context.length=${
-        context?.length ?? 0
-      }`
-    );
-    const format = await ConfigService.get("commit", "commitFormat").then(
-      result => result.unwrap()
-    );
+/**
+ * Options for prompt generation.
+ * Each field: `flag ?? config (ConfigService.get already supplies DEFAULT)`.
+ * Callers propagate `Result` errors upward — no `unwrap()` here.
+ */
+type PromptOptions = {
+  /** Override `commit.commitFormat`. */
+  format?: CommitFormat;
+  /** Override `commit.maxSubjectLength`. */
+  maxLength?: number;
+  /** Override `commit.commitLanguage`. */
+  language?: CommitLanguage;
+  /** AI-only. Injects `## External Context\n<text>` into the prompt. */
+  context?: string;
+};
 
-    const commitLanguage = await ConfigService.get(
-      "commit",
-      "commitLanguage"
-    ).then(result => result.unwrap());
-    const maxSubjectLength = await ConfigService.get(
-      "commit",
-      "maxSubjectLength"
-    ).then(r => r.unwrap());
-    const bodyStyle = await ConfigService.get("commit", "bodyStyle").then(r =>
-      r.unwrap()
-    );
+/**
+ * Build the full prompt that will be sent to the model.
+ *
+ * Resolution chain for each setting:
+ *   `options.X ?? ConfigService.get(...)`
+ * (ConfigService.get already falls back to DEFAULT_CONFIG when the user
+ * never set the key.)
+ */
+async function buildPrompt(
+  diff: string,
+  blameAnalysis: string,
+  options: PromptOptions
+): Promise<Result<string, Error>> {
+  logDebug(
+    `[promptService.buildPrompt] ENTRY diff.length=${diff.length}, blame.length=${blameAnalysis.length}, options=${JSON.stringify(
+      options
+    )}`
+  );
 
-    const languagePrompt = PromptService.getLanguagePrompt(commitLanguage);
-    const template = getTemplate(format, commitLanguage);
-    const blameSection = blameAnalysis.trim()
-      ? blameAnalysis
-      : "No git blame analysis available.";
-    const bodyStylePrompt = PromptService.getBodyStylePrompt(bodyStyle);
-    const contextSection = context?.trim()
-      ? `## Additional Context\n${context.trim()}\n\n`
-      : "";
+  // ConfigService.get already falls back to DEFAULT_CONFIG[section][key].
+  // So no `?? DEFAULT_CONFIG` chain needed — config-or-default in one shot.
+  const formatResult =
+    options.format !== undefined
+      ? Ok(options.format)
+      : await ConfigService.get("commit", "commitFormat");
+  if (formatResult.isError()) return Err(formatResult.error);
 
-    return `You generate exactly one git commit message.
+  const languageResult =
+    options.language !== undefined
+      ? Ok(options.language)
+      : await ConfigService.get("commit", "commitLanguage");
+  if (languageResult.isError()) return Err(languageResult.error);
+
+  const lengthResult =
+    options.maxLength !== undefined
+      ? Ok(options.maxLength)
+      : await ConfigService.get("commit", "maxSubjectLength");
+  if (lengthResult.isError()) return Err(lengthResult.error);
+
+  const bodyStyleResult = await ConfigService.get("commit", "bodyStyle");
+  if (bodyStyleResult.isError()) return Err(bodyStyleResult.error);
+
+  const format = formatResult.ok;
+  const language = languageResult.ok;
+  const maxSubjectLength = lengthResult.ok;
+  const bodyStyle = bodyStyleResult.ok;
+
+  const languagePrompt = PromptService.getLanguagePrompt(language);
+  const template = getTemplate(format, language);
+  const blameSection = blameAnalysis.trim()
+    ? blameAnalysis
+    : "No git blame analysis available.";
+  const bodyStylePrompt = PromptService.getBodyStylePrompt(bodyStyle);
+  const contextSection = options.context?.trim()
+    ? `## Additional Context\n${options.context.trim()}\n\n`
+    : "";
+
+  return Ok(`You generate exactly one git commit message.
 
 Rules:
 - Output exactly one commit message with its body and nothing else.
@@ -68,8 +105,11 @@ ${diff}
 Git blame analysis:
 ${blameSection}
 
-Final instruction: return only the commit message.`;
-  },
+Final instruction: return only the commit message.`);
+}
+
+const PromptService = {
+  buildPrompt,
 
   getBodyStylePrompt(
     bodyStyle: "subject-only" | "subject-body" | "subject-body-footer"
@@ -98,4 +138,5 @@ Final instruction: return only the commit message.`;
   },
 };
 
-export default PromptService;
+export type { PromptOptions };
+export { PromptService };

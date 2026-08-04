@@ -11,11 +11,12 @@ import { ModelService } from "@/services/model.ts";
 class AnthropicService extends ModelService {
   static override async generateCommitMessage(
     prompt: string,
-    attempt = 1
+    attempt = 1,
+    modelOverride?: string
   ): Promise<CommitMessage> {
     try {
       const apiKey = await ConfigService.getApiKey("Anthropic");
-      const model = (await ConfigService.get("provider", "model")).unwrap();
+      const model = await ModelService.resolveModel(modelOverride);
       const generationOptions = await ModelService.getGenerationOptions();
       const providerOptions = await ModelService.getAnthropicProviderOptions();
       const anthropic = createAnthropic({ apiKey });
@@ -38,7 +39,8 @@ class AnthropicService extends ModelService {
         error,
         prompt,
         attempt,
-        AnthropicService.generateCommitMessage.bind(AnthropicService)
+        (p: string, a: number) =>
+          AnthropicService.generateCommitMessage(p, a, modelOverride)
       );
     }
   }

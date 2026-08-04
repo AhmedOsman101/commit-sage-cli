@@ -32,17 +32,19 @@ const STAGED_STATUS_CODES: GitStatusCode[] = [
 class GitService {
   static repoPath = "";
 
-  static initialize(): string {
+  static async initialize(): Promise<string> {
     logDebug("[gitService.initialize] ENTRY");
-    const repoPath = GitService.getRepoPath();
+    const repoPath = await GitService.getRepoPath();
     if (repoPath.isError()) logError(repoPath.error.message);
 
     GitService.setRepoPath(repoPath.ok);
     logDebug(`[gitService.initialize] EXIT repoPath=${repoPath.ok}`);
     return repoPath.ok;
   }
-  static execGit(args: string[]): Result<CommandOutput, CommandError> {
-    const cmd = CommandService.execute("git", args, GitService.repoPath);
+  static async execGit(
+    args: string[]
+  ): Promise<Result<CommandOutput, CommandError>> {
+    const cmd = await CommandService.execute("git", args, GitService.repoPath);
     if (cmd.isError()) return Err(cmd.error);
 
     const { stderr, code } = cmd.ok;
@@ -63,13 +65,13 @@ class GitService {
     const hash = Buffer.from(content).toString("base64");
     return hash.substring(0, 7);
   }
-  static hasHead(): boolean {
-    const cmd = GitService.execGit(["rev-parse", "HEAD"]);
+  static async hasHead(): Promise<boolean> {
+    const cmd = await GitService.execGit(["rev-parse", "HEAD"]);
     return cmd.isOk() && cmd.ok.code === 0;
   }
-  static hasChanges(
+  static async hasChanges(
     type: "staged" | "unstaged" | "untracked" | "deleted"
-  ): boolean {
+  ): Promise<boolean> {
     let command: string[];
     switch (type) {
       case "staged":
@@ -88,13 +90,13 @@ class GitService {
         return false;
     }
 
-    const cmd = GitService.execGit(command);
+    const cmd = await GitService.execGit(command);
     if (cmd.isError()) return false;
 
     return cmd.ok.stdout.trim().length > 0;
   }
-  static isSubmodule(file: string): boolean {
-    const cmd = GitService.execGit(["ls-files", "--stage", "--", file]);
+  static async isSubmodule(file: string): Promise<boolean> {
+    const cmd = await GitService.execGit(["ls-files", "--stage", "--", file]);
 
     return cmd.isOk() && cmd.ok.stdout.includes("160000");
   }
@@ -116,7 +118,7 @@ class GitService {
           return Err(new NoChangesDetectedError("No staged changes detected."));
         }
 
-        const diffResult = GitService.execGit([
+        const diffResult = await GitService.execGit([
           "diff",
           "--cached",
           "--name-only",
@@ -130,8 +132,8 @@ class GitService {
           .filter(file => file.trim());
 
         for (const file of stagedFilesArray) {
-          if (!GitService.isSubmodule(file)) {
-            const fileDiffResult = GitService.execGit([
+          if (!(await GitService.isSubmodule(file))) {
+            const fileDiffResult = await GitService.execGit([
               "diff",
               "--cached",
               "--",
@@ -150,8 +152,11 @@ class GitService {
         return Err(new NoChangesDetectedError("No unstaged changes detected."));
       }
 
-      if (hasUnstagedChanges) {
-        const unstagedResult = GitService.execGit(["diff", "--name-only"]);
+      if (await hasUnstagedChanges) {
+        const unstagedResult = await GitService.execGit([
+          "diff",
+          "--name-only",
+        ]);
         if (unstagedResult.isError()) return Err(unstagedResult.error);
 
         const { stdout: unstagedFiles } = unstagedResult.ok;
@@ -161,8 +166,12 @@ class GitService {
           .filter(file => file.trim());
 
         for (const file of unstagedFilesArray) {
-          if (!GitService.isSubmodule(file)) {
-            const fileDiffResult = GitService.execGit(["diff", "--", file]);
+          if (!(await GitService.isSubmodule(file))) {
+            const fileDiffResult = await GitService.execGit([
+              "diff",
+              "--",
+              file,
+            ]);
             if (fileDiffResult.isError()) return Err(fileDiffResult.error);
 
             const { stdout: fileDiff } = fileDiffResult.ok;
@@ -173,8 +182,8 @@ class GitService {
         }
       }
 
-      if (hasUntrackedFiles) {
-        const untrackedResult = GitService.execGit([
+      if (await hasUntrackedFiles) {
+        const untrackedResult = await GitService.execGit([
           "ls-files",
           "--others",
           "--exclude-standard",
@@ -192,9 +201,7 @@ class GitService {
               const contentResult = await FileSystemService.readFile(
                 path.join(GitService.repoPath, file)
               );
-              if (contentResult.isError()) {
-                return "";
-              }
+              if (contentResult.isError()) return "";
 
               const content = contentResult.ok;
               const lines = content.split("\n");
@@ -220,12 +227,12 @@ class GitService {
       return ErrFromUnknown(error);
     }
   }
-  static getChangedFiles(
+  static async getChangedFiles(
     diffMode: "staged" | "unstaged" = "unstaged"
-  ): Result<string[], Error> {
+  ): Promise<Result<string[], Error>> {
     logDebug(`[gitService.getChangedFiles] ENTRY diffMode=${diffMode}`);
     try {
-      const outputResult = GitService.execGit(["status", "--porcelain"]);
+      const outputResult = await GitService.execGit(["status", "--porcelain"]);
       if (outputResult.isError()) return Err(outputResult.error);
 
       const { stdout } = outputResult.ok;
@@ -266,22 +273,22 @@ class GitService {
       return ErrFromUnknown(error);
     }
   }
-  static isNewFile(filePath: string): boolean {
+  static async isNewFile(filePath: string): Promise<boolean> {
     const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
-    const { stdout } = GitService.execGit([
-      "status",
-      "--porcelain",
-      normalizedPath,
-    ]).unwrap();
+    const { stdout } = (
+      await GitService.execGit(["status", "--porcelain", normalizedPath])
+    ).unwrap();
 
     const status = stdout.slice(0, 2);
     return status.startsWith("??") || status.startsWith("A ");
   }
-  static isFileDeleted(filePath: string): boolean {
+  static async isFileDeleted(filePath: string): Promise<boolean> {
     const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
 
     // TODO: use `git ls-files --deleted` instead of `git status`
-    const { stdout } = GitService.execGit(["status", "--porcelain"]).unwrap();
+    const { stdout } = (
+      await GitService.execGit(["status", "--porcelain"])
+    ).unwrap();
 
     if (!stdout.trim()) return false;
 
@@ -296,8 +303,8 @@ class GitService {
 
     return false;
   }
-  static isGitRepo(): boolean {
-    const cmd = CommandService.execute("git", [
+  static async isGitRepo(): Promise<boolean> {
+    const cmd = await CommandService.execute("git", [
       "rev-parse",
       "--is-inside-work-tree",
     ]);
@@ -307,12 +314,12 @@ class GitService {
     const { stdout, stderr, code } = cmd.ok;
     return code === 0 && !stderr && stdout.startsWith("true");
   }
-  static getRepoPath(): Result<string> {
-    if (!GitService.isGitRepo()) {
+  static async getRepoPath(): Promise<Result<string>> {
+    if (!(await GitService.isGitRepo())) {
       return Err(new NoRepositoriesFoundError());
     }
 
-    const cmd = GitService.execGit(["rev-parse", "--show-toplevel"]);
+    const cmd = await GitService.execGit(["rev-parse", "--show-toplevel"]);
 
     if (cmd.isError() || cmd.ok.stderr || cmd.ok.code !== 0) {
       return ErrFromText(
