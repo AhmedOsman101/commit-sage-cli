@@ -72,6 +72,21 @@ $MASK biome "${args[*]}"
 deno check
 ```
 
+## schema
+
+> Regenerate `config.schema.json` from `src/lib/types/configSchema.ts` (or verify with `--check`)
+
+**OPTIONS**
+
+- check
+  - flags: -c --check
+  - type: boolean
+  - desc: Verify the schema is in sync instead of writing (exits non-zero on drift)
+
+```bash
+deno run -A scripts/build-schema.ts ${check:+--check}
+```
+
 ## run [args]
 
 > Run the CLI

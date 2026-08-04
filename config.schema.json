@@ -158,7 +158,7 @@
         },
         "reasoning": {
           "type": "string",
-          "enum": ["off", "low", "medium", "high"],
+          "enum": ["off", "default", "low", "medium", "high", "xhigh", "ultra"],
           "description": "Reasoning effort level for providers that support it"
         }
       }
