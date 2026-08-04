@@ -3,6 +3,7 @@ import { logWarning } from "@/lib/logger.ts";
 import { angularTemplate } from "./formats/angular.ts";
 import { conventionalTemplate } from "./formats/conventional.ts";
 import { emojiTemplate } from "./formats/emoji.ts";
+import { freeformTemplate } from "./formats/freeform.ts";
 import { karmaTemplate } from "./formats/karma.ts";
 import { semanticTemplate } from "./formats/semantic.ts";
 
@@ -18,7 +19,8 @@ export type CommitFormat =
   | "angular"
   | "karma"
   | "semantic"
-  | "emoji";
+  | "emoji"
+  | "freeform";
 
 const SUPPORTED_LANGUAGES = [
   "english",
@@ -35,6 +37,7 @@ const templates: Record<CommitFormat, CommitTemplate> = {
   karma: karmaTemplate,
   semantic: semanticTemplate,
   emoji: emojiTemplate,
+  freeform: freeformTemplate,
 } as const;
 
 const isValidFormat = (format: string): format is CommitFormat =>

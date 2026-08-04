@@ -28,7 +28,13 @@ type OpenaiConfig = {
 type CommitConfig = {
   autoCommit: boolean;
   autoPush: boolean;
-  commitFormat: "conventional" | "angular" | "karma" | "emoji" | "semantic";
+  commitFormat:
+    | "conventional"
+    | "angular"
+    | "karma"
+    | "emoji"
+    | "semantic"
+    | "freeform";
   onlyStagedChanges: boolean;
   commitLanguage: CommitLanguage;
   promptForRefs: boolean;

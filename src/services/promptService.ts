@@ -4,9 +4,15 @@ import { getTemplate } from "@/templates/index.ts";
 import ConfigService from "./configService.ts";
 
 const PromptService = {
-  async generatePrompt(diff: string, blameAnalysis: string): Promise<string> {
+  async generatePrompt(
+    diff: string,
+    blameAnalysis: string,
+    context?: string
+  ): Promise<string> {
     logDebug(
-      `[promptService.generatePrompt] ENTRY diff.length=${diff.length}, blame.length=${blameAnalysis.length}`
+      `[promptService.generatePrompt] ENTRY diff.length=${diff.length}, blame.length=${blameAnalysis.length}, context.length=${
+        context?.length ?? 0
+      }`
     );
     const format = await ConfigService.get("commit", "commitFormat").then(
       result => result.unwrap()
@@ -30,6 +36,9 @@ const PromptService = {
       ? blameAnalysis
       : "No git blame analysis available.";
     const bodyStylePrompt = PromptService.getBodyStylePrompt(bodyStyle);
+    const contextSection = context?.trim()
+      ? `## Additional Context\n${context.trim()}\n\n`
+      : "";
 
     return `You generate exactly one git commit message.
 
@@ -51,7 +60,7 @@ ${languagePrompt}
 Output structure requirement:
 ${bodyStylePrompt}
 
-Use the git blame analysis only as supporting context. Base the commit message primarily on the diff itself.
+${contextSection}Use the git blame analysis only as supporting context. Base the commit message primarily on the diff itself.
 
 Git diff to analyze:
 ${diff}

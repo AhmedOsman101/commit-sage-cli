@@ -93,7 +93,15 @@
         },
         "commitFormat": {
           "type": "string",
-          "enum": ["conventional", "angular", "karma", "emoji", "semantic"]
+          "enum": [
+            "conventional",
+            "angular",
+            "karma",
+            "emoji",
+            "semantic",
+            "freeform"
+          ],
+          "description": "Commit message style. Applicable in AI mode only."
         },
         "onlyStagedChanges": {
           "type": "boolean"
