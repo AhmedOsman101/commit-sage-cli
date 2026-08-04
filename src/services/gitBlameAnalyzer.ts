@@ -1,6 +1,6 @@
 import * as path from "node:path";
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
-import { ERROR_MESSAGES, REPO_PATH } from "@/lib/constants.ts";
+import { ERROR_MESSAGES } from "@/lib/constants.ts";
 import { logDebug } from "@/lib/logger.ts";
 import CommandService from "@/services/command.ts";
 import FileSystemService from "@/services/fileSystem.ts";
@@ -19,7 +19,7 @@ class GitBlameAnalyzer {
   static async getGitBlame(
     filePath: string
   ): Promise<Result<BlameInfo[], Error>> {
-    const absoluteFilePath = path.resolve(REPO_PATH, filePath);
+    const absoluteFilePath = path.resolve(GitService.initialize(), filePath);
     const fileExistsResult =
       await FileSystemService.fileExists(absoluteFilePath);
     if (fileExistsResult.isError()) {
@@ -78,7 +78,7 @@ class GitBlameAnalyzer {
     const cmdResult = CommandService.execute(
       "git",
       ["blame", "--line-porcelain", filePath.replaceAll('"', "")],
-      REPO_PATH
+      GitService.initialize()
     );
 
     if (cmdResult.isError()) return Err(cmdResult.error);

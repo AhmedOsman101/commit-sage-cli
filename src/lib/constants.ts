@@ -1,7 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type { Config } from "@/lib/types/config.ts";
-import GitService from "@/services/git.ts";
 
 function getConfigPath(): string {
   switch (OS) {
@@ -27,8 +26,6 @@ export const OS: Readonly<string> = Deno.build.os;
 export const HOME_DIR: Readonly<string> = homedir();
 
 export const CONFIG_PATH: Readonly<string> = getConfigPath();
-
-export const REPO_PATH: Readonly<string> = GitService.initialize();
 
 export const DEFAULT_CONFIG: Readonly<Config> = {
   $schema:
