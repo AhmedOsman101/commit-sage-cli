@@ -137,71 +137,15 @@ You can customize any options in the configuration file located at `~/.config/co
 
 The configuration file allows customization of retry behavior, model providers, commit formatting, and default provider usage.
 
-#### Available Configuration Options
-
-##### `general`
-
-| Key                   | Type   | Default | Description                          |
-| --------------------- | ------ | ------- | ------------------------------------ |
-| `maxRetries`          | number | `3`     | Number of retry attempts on failure. |
-| `initialRetryDelayMs` | number | `1000`  | Delay (ms) before the first retry.   |
-
----
-
-##### `gemini`
-
-| Key     | Type   | Default                  | Options                                                                                |
-| ------- | ------ | ------------------------ | -------------------------------------------------------------------------------------- |
-| `model` | string | `"gemini-2.0-flash-exp"` | `"gemini-2.0-flash-exp"`, `"gemini-1.0-pro"`, `"gemini-1.5-pro"`, `"gemini-1.5-flash"` |
-
----
-
-##### `ollama`
-
-| Key       | Type   | Default                    | Description                  |
-| --------- | ------ | -------------------------- | ---------------------------- |
-| `model`   | string | `"llama3.2"`               | Name of the Ollama model.    |
-| `baseUrl` | string | `"http://localhost:11434"` | Base URL for the Ollama API. |
-
----
-
-##### `openai`
-
-| Key       | Type   | Default                       | Description          |
-| --------- | ------ | ----------------------------- | -------------------- |
-| `model`   | string | `"gpt-3.5-turbo"`             | OpenAI model to use. |
-| `baseUrl` | string | `"https://api.openai.com/v1"` | OpenAI API base URL. |
-
----
-
-##### `commit`
-
-| Key                 | Type    | Default          | Options / Description                                             |
-| ------------------- | ------- | ---------------- | ----------------------------------------------------------------- |
-| `onlyStagedChanges` | boolean | `true`           | Limit commit messages to staged changes.                          |
-| `commitLanguage`    | string  | `"english"`      | `"english"`, `"russian"`, `"chinese"`, `"japanese"`               |
-| `autoCommit`        | boolean | `false`          | Automatically commit after generating message.                    |
-| `autoPush`          | boolean | `false`          | Push to remote after committing.                                  |
-| `commitFormat`      | string  | `"conventional"` | `"conventional"`, `"angular"`, `"karma"`, `"emoji"`, `"semantic"` |
-| `promptForRefs`     | boolean | `false`          | Ask for refs (e.g., issue numbers) during commit.                 |
-
----
-
-##### `provider`
-
-| Key    | Type   | Default    | Options                                           |
-| ------ | ------ | ---------- | ------------------------------------------------- |
-| `type` | string | `"gemini"` | `"gemini"`, `"openai"`, `"ollama"` |
-
 ## Limitations / Not Yet Implemented
 
 The following are known limitations in the current version of **commit-sage**, with plans to address them in future updates:
 
 - [x] **Handle files with spaces in their names**
-       Previously, the program may have failed or behaved unexpectedly when processing files with spaces in their names. This has been resolved.
+      Previously, the program may have failed or behaved unexpectedly when processing files with spaces in their names. This has been resolved.
 
 - [ ] **Configuration options not yet implemented**
-       The following options are defined in the schema for forward compatibility, but are currently **non-functional** and will be ignored at runtime:
+      The following options are defined in the schema for forward compatibility, but are currently **non-functional** and will be ignored at runtime:
   - [ ] `commit.autoCommit`
   - [ ] `commit.autoPush`
   - [ ] `commit.onlyStagedChanges`
@@ -214,8 +158,9 @@ The following are known limitations in the current version of **commit-sage**, w
 
 ## Third-Party Tools
 
-<a href="http://bizbot.zvo.cn" target="_blank" rel="noopener">
-  <img src="https://img.shields.io/badge/Tool-BizBot-blue" alt="BizBot: AI aautomated promotion system">
+<a style="display: inline-flex; align-items: center; gap: 1rem" href="http://bizbot.zvo.cn" target="_blank" rel="noopener">
+  <img src="https://img.shields.io/badge/Tool-BizBot-blue" alt="BizBot: AI automated promotion system">
+  <span>BizBot: AI automated promotion system</span>
 </a>
 
 ## Contributing
