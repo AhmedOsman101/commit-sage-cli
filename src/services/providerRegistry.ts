@@ -1,16 +1,16 @@
-import type { ProviderType } from "@/lib/configServiceTypes.d.ts";
-import AnthropicService from "./anthropicService.ts";
-import DeepseekService from "./deepseekService.ts";
-import GeminiService from "./geminiService.ts";
-import MinimaxService from "./minimaxService.ts";
-import MistralService from "./mistralService.ts";
-import type { ModelService } from "./modelService.ts";
-import MoonshotService from "./moonshotService.ts";
-import OllamaService from "./ollamaService.ts";
-import OpenAiService from "./openaiService.ts";
-import OpenRouterService from "./openrouterService.ts";
-import XaiService from "./xaiService.ts";
-import ZaiService from "./zaiService.ts";
+import type { ProviderType } from "@/lib/types/config.ts";
+import type { ModelService } from "@/services/model.ts";
+import AnthropicService from "@/services/providers/anthropic.ts";
+import DeepseekService from "@/services/providers/deepseek.ts";
+import GeminiService from "@/services/providers/gemini.ts";
+import MinimaxService from "@/services/providers/minimax.ts";
+import MistralService from "@/services/providers/mistral.ts";
+import MoonshotService from "@/services/providers/moonshot.ts";
+import OllamaService from "@/services/providers/ollama.ts";
+import OpenAiService from "@/services/providers/openai.ts";
+import OpenRouterService from "@/services/providers/openrouter.ts";
+import XaiService from "@/services/providers/xai.ts";
+import ZaiService from "@/services/providers/zai.ts";
 
 const providers: Record<ProviderType, typeof ModelService> = {
   gemini: GeminiService,

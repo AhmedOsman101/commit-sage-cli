@@ -6,10 +6,10 @@ import {
   NoChangesDetectedError,
   NoRepositoriesFoundError,
 } from "@/lib/errors.ts";
-import type { CommandOutput } from "@/lib/index.d.ts";
 import { logDebug, logError } from "@/lib/logger.ts";
-import CommandService from "./commandService.ts";
-import FileSystemService from "./fileSystemService.ts";
+import type { CommandOutput } from "@/lib/types/index.ts";
+import CommandService from "@/services/command.ts";
+import FileSystemService from "@/services/fileSystem.ts";
 
 const GIT_STATUS_CODES = {
   modified: "M",

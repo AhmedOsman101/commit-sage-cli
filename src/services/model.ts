@@ -2,20 +2,12 @@
 /** biome-ignore-all lint/correctness/noUnusedFunctionParameters: This is a base class */
 import { setTimeout } from "node:timers/promises";
 import { classifyAIError } from "@/lib/handleAiErrors.ts";
-import type {
-  ApiError,
-  CommitMessage,
-  ErrorWithResponse,
-} from "@/lib/index.d.ts";
-import ConfigService from "./configService.ts";
+import type { CommitMessage } from "@/lib/types/commit.ts";
+import type { ApiError, ErrorWithResponse } from "@/lib/types/index.ts";
+import ConfigService from "@/services/config.ts";
 
 export abstract class ModelService {
   protected static readonly maxRetryBackoff = 10_000;
-  protected static readonly reasoningLevels = [
-    "low",
-    "medium",
-    "high",
-  ] as const;
 
   protected static cleanCommitMessage(message: string): string {
     return message.trim();

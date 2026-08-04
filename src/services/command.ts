@@ -1,6 +1,6 @@
 import { Err, Ok, type Result } from "lib-result";
 import { CommandError } from "@/lib/errors.ts";
-import type { CommandOutput } from "@/lib/index.d.ts";
+import type { CommandOutput } from "@/lib/types/index.ts";
 
 const CommandService = {
   execute(

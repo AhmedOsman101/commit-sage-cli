@@ -1,36 +1,18 @@
 import { a, type ValidationException } from "@arrirpc/schema";
 import { ErrFromText, Ok, type Result } from "lib-result";
-import type {
-  Config,
-  ProviderReasoning,
-  ProviderType,
-} from "@/lib/configServiceTypes.d.ts";
 import { CONFIG_PATH } from "@/lib/constants.ts";
 import { logError, logWarning } from "@/lib/logger.ts";
+import { COMMIT_FORMATS, SUPPORTED_LANGUAGES } from "@/lib/types/commit.ts";
+import {
+  BODY_STYLES,
+  type Config,
+  DIFF_STRATEGIES,
+  SUPPORTED_PROVIDERS,
+  SUPPORTED_REASONING_LEVELS,
+} from "@/lib/types/config.ts";
 
 const INF = Number.POSITIVE_INFINITY;
 const NINF = Number.NEGATIVE_INFINITY;
-
-const SUPPORTED_PROVIDERS: ProviderType[] = [
-  "gemini",
-  "openai",
-  "anthropic",
-  "deepseek",
-  "mistral",
-  "xai",
-  "ollama",
-  "moonshotai",
-  "zai",
-  "minimax",
-  "openrouter",
-];
-
-const SUPPORTED_REASONING_LEVELS: ProviderReasoning[] = [
-  "off",
-  "low",
-  "medium",
-  "high",
-];
 
 const ConfigSchema = a.object(
   {
@@ -43,7 +25,7 @@ const ConfigSchema = a.object(
         initialRetryDelayMs: a.uint16(),
         temperature: a.float64(),
         maxInputChars: a.float64(),
-        diffStrategy: a.stringEnum(["staged", "unstaged", "auto"]),
+        diffStrategy: a.stringEnum([...DIFF_STRATEGIES]),
       })
     ),
     ollama: a.optional(
@@ -67,30 +49,17 @@ const ConfigSchema = a.object(
       autoCommit: a.optional(a.boolean()),
       autoPush: a.optional(a.boolean()),
       onlyStagedChanges: a.boolean(),
-      commitFormat: a.stringEnum([
-        "conventional",
-        "angular",
-        "karma",
-        "emoji",
-        "semantic",
-      ]),
-      commitLanguage: a.stringEnum([
-        "english",
-        "russian",
-        "chinese",
-        "japanese",
-      ]),
+      commitFormat: a.stringEnum([...COMMIT_FORMATS]),
+      commitLanguage: a.stringEnum([...SUPPORTED_LANGUAGES]),
       promptForRefs: a.optional(a.boolean()),
       maxSubjectLength: a.optional(a.float64()),
-      bodyStyle: a.optional(
-        a.stringEnum(["subject-only", "subject-body", "subject-body-footer"])
-      ),
+      bodyStyle: a.optional(a.stringEnum([...BODY_STYLES])),
     }),
     provider: a.object({
-      type: a.stringEnum(SUPPORTED_PROVIDERS),
+      type: a.stringEnum([...SUPPORTED_PROVIDERS]),
       model: a.string(),
       timeoutMs: a.optional(a.float64()),
-      reasoning: a.optional(a.stringEnum(SUPPORTED_REASONING_LEVELS)),
+      reasoning: a.optional(a.stringEnum([...SUPPORTED_REASONING_LEVELS])),
     }),
   },
   {

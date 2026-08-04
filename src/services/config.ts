@@ -1,6 +1,9 @@
 import { basename } from "node:path";
 import { Secret } from "@cliffy/prompt/secret";
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
+import { CONFIG_PATH, DEFAULT_CONFIG, OS } from "@/lib/constants.ts";
+import { AiServiceError, ConfigurationError } from "@/lib/errors.ts";
+import { logError, logInfo, logSuccess } from "@/lib/logger.ts";
 import type {
   ApiService,
   Config,
@@ -8,13 +11,10 @@ import type {
   ConfigSection,
   ConfigValue,
   ProviderType,
-} from "@/lib/configServiceTypes.d.ts";
-import { CONFIG_PATH, DEFAULT_CONFIG, OS } from "@/lib/constants.ts";
-import { AiServiceError, ConfigurationError } from "@/lib/errors.ts";
-import { logError, logInfo, logSuccess } from "@/lib/logger.ts";
-import ConfigValidationService from "./configValidationService.ts";
-import FileSystemService from "./fileSystemService.ts";
-import KeyValidationService from "./keyValidationService.ts";
+} from "@/lib/types/config.ts";
+import KeyValidationService from "@/services/apiKeyValidation.ts";
+import ConfigValidationService from "@/services/configValidation.ts";
+import FileSystemService from "@/services/fileSystem.ts";
 
 class ConfigService {
   protected static shell = "";

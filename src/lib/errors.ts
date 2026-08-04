@@ -1,4 +1,4 @@
-import type { CommandOutput } from "@/lib/index.d.ts";
+import type { CommandOutput } from "@/lib/types/index.ts";
 
 class NoRepositoriesFoundError extends Error {
   constructor(options: ErrorOptions = {}) {

@@ -1,12 +1,12 @@
 import { Err, ErrFromText, ErrFromUnknown, Ok, type Result } from "lib-result";
 import { ERROR_MESSAGES } from "@/lib/constants.ts";
-import type { CommitMessage } from "@/lib/index.d.ts";
 import { logDebug } from "@/lib/logger.ts";
-import ConfigService from "./configService.ts";
-import GitBlameAnalyzer from "./gitBlameAnalyzer.ts";
-import GitService from "./gitService.ts";
-import PromptService from "./promptService.ts";
-import { getProviderService } from "./providerRegistry.ts";
+import type { CommitMessage } from "@/lib/types/commit.ts";
+import ConfigService from "@/services/config.ts";
+import GitService from "@/services/git.ts";
+import GitBlameAnalyzer from "@/services/gitBlameAnalyzer.ts";
+import PromptService from "@/services/prompt.ts";
+import { getProviderService } from "@/services/providerRegistry.ts";
 
 const AiService = {
   truncateDiff(diff: string, maxInputChars: number): string {

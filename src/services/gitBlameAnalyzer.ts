@@ -2,9 +2,9 @@ import * as path from "node:path";
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
 import { ERROR_MESSAGES, REPO_PATH } from "@/lib/constants.ts";
 import { logDebug } from "@/lib/logger.ts";
-import CommandService from "./commandService.ts";
-import FileSystemService from "./fileSystemService.ts";
-import GitService from "./gitService.ts";
+import CommandService from "@/services/command.ts";
+import FileSystemService from "@/services/fileSystem.ts";
+import GitService from "@/services/git.ts";
 
 type BlameInfo = {
   commit: string;

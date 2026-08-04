@@ -1,7 +1,7 @@
-import type { CommitLanguage } from "@/lib/configServiceTypes.d.ts";
 import { logDebug } from "@/lib/logger.ts";
+import type { CommitLanguage } from "@/lib/types/commit.ts";
+import ConfigService from "@/services/config.ts";
 import { getTemplate } from "@/templates/index.ts";
-import ConfigService from "./configService.ts";
 
 const PromptService = {
   async generatePrompt(

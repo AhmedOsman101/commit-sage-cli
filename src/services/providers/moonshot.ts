@@ -4,10 +4,10 @@ import {
   generateText,
   wrapLanguageModel,
 } from "ai";
-import type { CommitMessage } from "@/lib/index.d.ts";
 import { logDebug } from "@/lib/logger.ts";
-import ConfigService from "./configService.ts";
-import { ModelService } from "./modelService.ts";
+import type { CommitMessage } from "@/lib/types/commit.ts";
+import ConfigService from "@/services/config.ts";
+import { ModelService } from "@/services/model.ts";
 
 class MoonshotService extends ModelService {
   static override async generateCommitMessage(

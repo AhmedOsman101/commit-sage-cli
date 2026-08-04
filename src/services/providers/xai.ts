@@ -1,27 +1,27 @@
-import { createAnthropic } from "@ai-sdk/anthropic";
+import { createXai } from "@ai-sdk/xai";
 import {
   extractReasoningMiddleware,
   generateText,
   wrapLanguageModel,
 } from "ai";
-import type { CommitMessage } from "@/lib/index.d.ts";
-import ConfigService from "./configService.ts";
-import { ModelService } from "./modelService.ts";
+import type { CommitMessage } from "@/lib/types/commit.ts";
+import ConfigService from "@/services/config.ts";
+import { ModelService } from "@/services/model.ts";
 
-class AnthropicService extends ModelService {
+class XaiService extends ModelService {
   static override async generateCommitMessage(
     prompt: string,
     attempt = 1
   ): Promise<CommitMessage> {
     try {
-      const apiKey = await ConfigService.getApiKey("Anthropic");
+      const apiKey = await ConfigService.getApiKey("Xai");
       const model = (await ConfigService.get("provider", "model")).unwrap();
       const generationOptions = await ModelService.getGenerationOptions();
-      const providerOptions = await ModelService.getAnthropicProviderOptions();
-      const anthropic = createAnthropic({ apiKey });
+      const providerOptions = await ModelService.getXaiProviderOptions();
+      const xai = createXai({ apiKey });
 
       const wrappedModel = wrapLanguageModel({
-        model: anthropic(model),
+        model: xai(model),
         middleware: extractReasoningMiddleware({ tagName: "think" }),
       });
 
@@ -34,14 +34,14 @@ class AnthropicService extends ModelService {
 
       return { message: text, model };
     } catch (error) {
-      return await AnthropicService.handleGenerationError(
+      return await XaiService.handleGenerationError(
         error,
         prompt,
         attempt,
-        AnthropicService.generateCommitMessage.bind(AnthropicService)
+        XaiService.generateCommitMessage.bind(XaiService)
       );
     }
   }
 }
 
-export default AnthropicService;
+export default XaiService;

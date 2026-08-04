@@ -5,10 +5,10 @@ import {
 } from "ai";
 import { createOllama } from "ollama-ai-provider-v2";
 import { DEFAULT_CONFIG } from "@/lib/constants.ts";
-import type { CommitMessage } from "@/lib/index.d.ts";
 import { logDebug } from "@/lib/logger.ts";
-import ConfigService from "./configService.ts";
-import { ModelService } from "./modelService.ts";
+import type { CommitMessage } from "@/lib/types/commit.ts";
+import ConfigService from "@/services/config.ts";
+import { ModelService } from "@/services/model.ts";
 
 class OllamaService extends ModelService {
   static override async generateCommitMessage(
