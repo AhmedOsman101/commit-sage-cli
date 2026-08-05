@@ -6,6 +6,7 @@ import {
   type Result,
   wrapAsyncThrowable,
 } from "lib-result";
+import { Encoder } from "@/lib/utils.ts";
 
 const FileSystemService = {
   async fileExists(path: string): Promise<Result<boolean>> {
@@ -49,8 +50,7 @@ const FileSystemService = {
   ): Promise<Result<boolean>> {
     try {
       if (file !== null) {
-        const encoder = new TextEncoder();
-        const text = encoder.encode(`${content}\n`);
+        const text = Encoder.encode(`${content}\n`);
         file.writeSync(text);
         return Ok(true);
       }

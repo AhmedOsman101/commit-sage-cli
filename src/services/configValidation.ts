@@ -1,7 +1,7 @@
 import { a, type ValidationException } from "@arrirpc/schema";
 import { ErrFromText, Ok, type Result } from "lib-result";
 import { CONFIG_PATH } from "@/lib/constants.ts";
-import { logError, logWarning } from "@/lib/logger.ts";
+import { Log } from "@/lib/logger.ts";
 import { COMMIT_FORMATS, SUPPORTED_LANGUAGES } from "@/lib/types/commit.ts";
 import {
   BODY_STYLES,
@@ -117,17 +117,17 @@ const ConfigValidationService = {
     if ("maxRetries" in general) {
       const maxRetries = this.validateInt(general.maxRetries);
       if (maxRetries.isError()) {
-        logError(
+        throw Log.error(
           `Error at key general.maxRetries => ${maxRetries.error.message}`
-        );
+        ).exit();
       }
     }
     if ("initialRetryDelayMs" in general) {
       const validation = this.validateInt(general.initialRetryDelayMs);
       if (validation.isError()) {
-        logError(
+        throw Log.error(
           `Error at key general.initialRetryDelayMs => ${validation.error.message}`
-        );
+        ).exit();
       }
     }
     if ("temperature" in general) {
@@ -135,24 +135,30 @@ const ConfigValidationService = {
         typeof general.temperature !== "number" ||
         Number.isNaN(general.temperature)
       ) {
-        logError("Error at key general.temperature => must be a number.");
+        throw Log.error(
+          "Error at key general.temperature => must be a number."
+        ).exit();
       }
 
       if (typeof general.temperature === "number") {
         if (general.temperature < 0) {
-          logError("Error at key general.temperature => must be at least 0.");
+          throw Log.error(
+            "Error at key general.temperature => must be at least 0."
+          ).exit();
         }
         if (general.temperature > 2) {
-          logError("Error at key general.temperature => must not exceed 2.");
+          throw Log.error(
+            "Error at key general.temperature => must not exceed 2."
+          ).exit();
         }
       }
     }
     if ("maxInputChars" in general) {
       const validation = this.validateInt(general.maxInputChars, 1);
       if (validation.isError()) {
-        logError(
+        throw Log.error(
           `Error at key general.maxInputChars => ${validation.error.message}`
-        );
+        ).exit();
       }
     }
     return Ok(true);
@@ -161,9 +167,9 @@ const ConfigValidationService = {
     if ("maxSubjectLength" in commit) {
       const validation = this.validateInt(commit.maxSubjectLength, 1);
       if (validation.isError()) {
-        logError(
+        throw Log.error(
           `Error at key commit.maxSubjectLength => ${validation.error.message}`
-        );
+        ).exit();
       }
     }
 
@@ -173,9 +179,9 @@ const ConfigValidationService = {
     if ("timeoutMs" in provider) {
       const validation = this.validateInt(provider.timeoutMs, 0);
       if (validation.isError()) {
-        logError(
+        throw Log.error(
           `Error at key provider.timeoutMs => ${validation.error.message}`
-        );
+        ).exit();
       }
     }
 
@@ -188,7 +194,9 @@ const ConfigValidationService = {
     if ("baseUrl" in provider) {
       const baseUrl = this.validateUrl(provider.baseUrl);
       if (baseUrl.isError()) {
-        logError(`Error at key ${name}.baseUrl => ${baseUrl.error.message}`);
+        throw Log.error(
+          `Error at key ${name}.baseUrl => ${baseUrl.error.message}`
+        ).exit();
       }
     }
     return Ok(true);
@@ -214,28 +222,26 @@ const ConfigValidationService = {
           ? this.$ConfigSchema.parseUnsafe(config)
           : config;
     } catch (e) {
-      logError(
+      throw Log.error(
         this.transformErrorMessage((e as ValidationException).errors[0].message)
-      );
+      ).exit();
     }
 
     if (typeof configContent === "object" && configContent !== null) {
       // check for an empty array
       if (Array.isArray(configContent)) {
-        logWarning("Configuration file's structure is invalid");
-        logWarning(
+        Log.warning("Configuration file's structure is invalid");
+        throw Log.warning(
           `Delete the config file located at ${CONFIG_PATH} to generate a new one`
-        );
-        Deno.exit(1);
+        ).exit(1);
       }
 
       // check for an empty object
       if (Object.keys(configContent).length === 0) {
-        logWarning("Configuration file is Empty");
-        logWarning(
+        Log.warning("Configuration file is Empty");
+        throw Log.warning(
           `Delete the config file located at ${CONFIG_PATH} to generate a new one`
-        );
-        Deno.exit(1);
+        ).exit(1);
       }
 
       if ("$schema" in configContent) {
@@ -245,11 +251,15 @@ const ConfigValidationService = {
         ) {
           const validation = this.validateUrl(configContent.$schema);
           if (validation.isError()) {
-            logError(`Error at key $schema => ${validation.error.message}`);
+            throw Log.error(
+              `Error at key $schema => ${validation.error.message}`
+            ).exit();
           }
         }
       } else {
-        logError("Error at key $schema => Missing a required value.");
+        throw Log.error(
+          "Error at key $schema => Missing a required value."
+        ).exit();
       }
 
       if ("general" in configContent) {
@@ -299,9 +309,9 @@ const ConfigValidationService = {
               configContent.openai.apiKeyEnvVar
             );
             if (validation.isError()) {
-              logError(
+              throw Log.error(
                 `Error at key openai.apiKeyEnvVar => ${validation.error.message}`
-              );
+              ).exit();
             }
           }
         }

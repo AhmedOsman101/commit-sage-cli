@@ -2,7 +2,7 @@
 // Licensed under the GNU General Public License v3.0. See LICENSE for details.
 
 import { Command } from "@cliffy/command";
-import { logError } from "@/lib/logger.ts";
+import { Log } from "@/lib/logger.ts";
 
 export class CommitCommand extends Command {
   constructor() {
@@ -10,7 +10,7 @@ export class CommitCommand extends Command {
     this.description(
       "Interactive commit flow: stage files, generate message, preview, commit."
     ).action(() => {
-      logError("`commit` is not yet implemented.");
+      throw Log.error("`commit` is not yet implemented.").exit();
     });
   }
 }

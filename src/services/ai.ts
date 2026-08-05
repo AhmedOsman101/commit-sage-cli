@@ -1,7 +1,7 @@
 import { Err, ErrFromText, ErrFromUnknown, Ok, type Result } from "lib-result";
 import type { GenerateOptions } from "@/cli/types/generateOptions.ts";
 import { ERROR_MESSAGES } from "@/lib/constants.ts";
-import { logDebug } from "@/lib/logger.ts";
+import { Log } from "@/lib/logger.ts";
 import type { CommitMessage } from "@/lib/types/commit.ts";
 import ConfigService from "@/services/config.ts";
 import GitService from "@/services/git.ts";
@@ -56,7 +56,7 @@ const AiService = {
     blameAnalysis: string,
     runOptions: GenerateOptions = {}
   ): Promise<Result<CommitMessage, Error>> {
-    logDebug(
+    Log.debug(
       `[aiService.generateCommitMessage] ENTRY diff.length=${diff.length}, hasBlame=${!!blameAnalysis}`
     );
 
@@ -71,7 +71,7 @@ const AiService = {
     const maxInputChars = maxInputCharsResult.ok;
 
     const truncatedDiff = this.truncateDiff(diff, maxInputChars);
-    logDebug(
+    Log.debug(
       `[aiService.generateCommitMessage] STEP truncated diff, length=${truncatedDiff.length}`
     );
 
@@ -87,7 +87,7 @@ const AiService = {
     );
     if (promptResult.isError()) return Err(promptResult.error);
     const prompt = promptResult.ok;
-    logDebug(
+    Log.debug(
       `[aiService.generateCommitMessage] STEP prompt generated, length=${prompt.length}`
     );
 
@@ -98,11 +98,13 @@ const AiService = {
         : await ConfigService.get("provider", "type");
     if (providerTypeResult.isError()) return Err(providerTypeResult.error);
     const providerType = providerTypeResult.ok;
-    logDebug(`[aiService.generateCommitMessage] STEP provider=${providerType}`);
+    Log.debug(
+      `[aiService.generateCommitMessage] STEP provider=${providerType}`
+    );
 
     try {
       const Service = getProviderService(providerType);
-      logDebug(`[aiService.generateCommitMessage] CALL ${Service.name}`);
+      Log.debug(`[aiService.generateCommitMessage] CALL ${Service.name}`);
       // modelOverride is passed to the provider; it resolves via
       // ModelService.resolveModel(modelOverride) which does
       // `modelOverride ?? ConfigService.get("provider", "model")`.
@@ -112,12 +114,12 @@ const AiService = {
         runOptions.model
       );
 
-      logDebug(
+      Log.debug(
         `[aiService.generateCommitMessage] EXIT message="${commitMessage.message.substring(0, 50)}..."`
       );
       return Ok(commitMessage);
     } catch (error) {
-      logDebug(`[aiService.generateCommitMessage] ERROR ${error}`);
+      Log.debug(`[aiService.generateCommitMessage] ERROR ${error}`);
       return ErrFromUnknown(error);
     }
   },
@@ -129,29 +131,29 @@ const AiService = {
   async generateMessage(
     runOptions: GenerateOptions = {}
   ): Promise<Result<CommitMessage, Error>> {
-    logDebug("[aiService.generateMessage] ENTRY");
+    Log.debug("[aiService.generateMessage] ENTRY");
 
     await GitService.initialize();
-    logDebug("[aiService.generateMessage] STEP git initialized");
+    Log.debug("[aiService.generateMessage] STEP git initialized");
 
     const diffModeResult = await this.resolveDiffMode();
     if (diffModeResult.isError()) return Err(diffModeResult.error);
 
     const diffMode = diffModeResult.ok;
     const useStagedChanges = diffMode === "staged";
-    logDebug(`[aiService.generateMessage] STEP diffMode=${diffMode}`);
+    Log.debug(`[aiService.generateMessage] STEP diffMode=${diffMode}`);
 
     const diffResult = await GitService.getDiff(diffMode);
     if (diffResult.isError()) return Err(diffResult.error);
 
     const diff = diffResult.ok;
-    logDebug(`[aiService.generateMessage] STEP diff length=${diff.length}`);
+    Log.debug(`[aiService.generateMessage] STEP diff length=${diff.length}`);
 
     const changedFilesResult = await GitService.getChangedFiles(diffMode);
     if (changedFilesResult.isError()) return Err(changedFilesResult.error);
 
     const changedFiles = changedFilesResult.ok;
-    logDebug(
+    Log.debug(
       `[aiService.generateMessage] STEP changed files=${changedFiles.length}`
     );
 
@@ -170,7 +172,7 @@ const AiService = {
       }
     }
 
-    logDebug(
+    Log.debug(
       `[aiService.generateMessage] STEP blame analyses=${blameAnalysis.length}`
     );
 
@@ -181,11 +183,11 @@ const AiService = {
     );
 
     if (result.isOk()) {
-      logDebug(
+      Log.debug(
         `[aiService.generateMessage] EXIT success message="${result.ok.message.substring(0, 50)}..."`
       );
     } else {
-      logDebug(
+      Log.debug(
         `[aiService.generateMessage] EXIT error=${result.error.message}`
       );
     }

@@ -3,7 +3,8 @@
 
 import { ValidationError } from "@cliffy/command";
 import { buildRootCommand } from "@/cli/root.ts";
-import { logError } from "@/lib/logger.ts";
+import { Log } from "@/lib/logger.ts";
+import { Encoder } from "@/lib/utils.ts";
 
 try {
   await buildRootCommand().parse(Deno.args);
@@ -13,7 +14,7 @@ try {
   // we print the message ourselves so the user still sees what went wrong.
   if (error instanceof ValidationError) {
     const message = error.message;
-    Deno.stderr.writeSync(new TextEncoder().encode(`error: ${message}\n`));
+    Deno.stderr.writeSync(Encoder.encode(`error: ${message}\n`));
     Deno.exit(error.exitCode || 2);
   }
   // Exit code 130: user abort (Esc from TUI). Cliffy throws CancelError
@@ -22,5 +23,5 @@ try {
   if (error instanceof Error && error.name === "CancelError") {
     Deno.exit(130);
   }
-  logError(error instanceof Error ? error.message : String(error));
+  throw Log.error(error).exit();
 }

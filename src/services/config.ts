@@ -3,7 +3,7 @@ import { Secret } from "@cliffy/prompt/secret";
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
 import { CONFIG_PATH, DEFAULT_CONFIG, OS } from "@/lib/constants.ts";
 import { AiServiceError, ConfigurationError } from "@/lib/errors.ts";
-import { logError, logInfo, logSuccess } from "@/lib/logger.ts";
+import { Log } from "@/lib/logger.ts";
 import type {
   ApiService,
   Config,
@@ -12,6 +12,7 @@ import type {
   ConfigValue,
   ProviderType,
 } from "@/lib/types/config.ts";
+import { JsonParse, JsonStringify } from "@/lib/utils.ts";
 import KeyValidationService from "@/services/apiKeyValidation.ts";
 import ConfigValidationService from "@/services/configValidation.ts";
 import FileSystemService from "@/services/fileSystem.ts";
@@ -67,8 +68,8 @@ class ConfigService {
       const oldType = provider.type as ProviderType;
       const newModel = modelMap[oldType] || "gemini-2.5-flash-lite";
 
-      logInfo("Migrating config: adding provider.model...");
-      logInfo(`  type="${oldType}", model="${newModel}"`);
+      Log.info("Migrating config: adding provider.model...");
+      Log.info(`  type="${oldType}", model="${newModel}"`);
 
       provider.type = oldType;
       provider.model = newModel;
@@ -146,16 +147,19 @@ class ConfigService {
         return ErrFromText("Config file is empty after successful read");
       }
 
-      const parsedConfig = JSON.parse(configContents);
-      const migrationResult = ConfigService.migrateConfig(parsedConfig);
-      if (migrationResult.isError()) {
-        return Err(migrationResult.error);
-      }
+      const parsedConfig = JsonParse(configContents);
+      if (parsedConfig.isError()) return Err(parsedConfig.error);
+
+      const migrationResult = ConfigService.migrateConfig(parsedConfig.ok);
+      if (migrationResult.isError()) return Err(migrationResult.error);
 
       if (migrationResult.ok) {
+        const stringifyResult = JsonStringify(parsedConfig, null, 2);
+        if (stringifyResult.isError()) return Err(stringifyResult.error);
+
         const writeResult = await FileSystemService.writeFile(
           CONFIG_PATH,
-          JSON.stringify(parsedConfig, null, 2)
+          stringifyResult.ok
         );
         if (writeResult.isError()) return Err(writeResult.error);
       }
@@ -164,8 +168,9 @@ class ConfigService {
       const migratedConfig = parsedConfig as unknown as Config;
 
       const validation = ConfigValidationService.validate(migratedConfig);
-      if (validation.isError()) logError(validation.error.message);
-
+      if (validation.isError()) {
+        throw Log.error(validation.error.message).exit();
+      }
       return Ok(validation.ok);
     }
 
@@ -199,11 +204,16 @@ class ConfigService {
     config[section][key] = value;
 
     const validation = ConfigValidationService.validate(config);
-    if (validation.isError()) logError(validation.error.message);
+    if (validation.isError()) throw Log.error(validation.error.message).exit();
+
+    const stringifyResult = JsonStringify(config, null, 2);
+    if (stringifyResult.isError()) {
+      return Err(stringifyResult.error);
+    }
 
     const writeResult = await FileSystemService.writeFile(
       CONFIG_PATH,
-      JSON.stringify(config, null, 2)
+      stringifyResult.ok
     );
 
     if (writeResult.isError()) return Err(writeResult.error);
@@ -228,10 +238,10 @@ class ConfigService {
 
       return key;
     } catch (error) {
-      logError(
+      throw Log.error(
         new AiServiceError(`Failed to get API key: ${(error as Error).message}`)
           .message
-      );
+      ).exit();
     }
   }
 
@@ -320,8 +330,8 @@ After adding the line, restart your terminal or run 'source ${shellConfigFile}' 
       });
     }
 
-    logSuccess(`${service} API key has been set for this run`);
-    logInfo(await ConfigService.getApiKeyInfoMessage(service));
+    Log.success(`${service} API key has been set for this run`);
+    Log.info(await ConfigService.getApiKeyInfoMessage(service));
 
     return key;
   }
@@ -354,7 +364,10 @@ After adding the line, restart your terminal or run 'source ${shellConfigFile}' 
         }
       }
     } catch (error) {
-      logError("Failed to validate and set API key:", (error as Error).message);
+      throw Log.error(
+        "Failed to validate and set API key:",
+        (error as Error).message
+      ).exit();
     }
   }
 }

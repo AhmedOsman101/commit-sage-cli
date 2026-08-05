@@ -6,7 +6,8 @@ import {
   NoChangesDetectedError,
   NoRepositoriesFoundError,
 } from "@/lib/errors.ts";
-import { logDebug, logError } from "@/lib/logger.ts";
+import { Log } from "@/lib/logger.ts";
+
 import type { CommandOutput } from "@/lib/types/index.ts";
 import CommandService from "@/services/command.ts";
 import FileSystemService from "@/services/fileSystem.ts";
@@ -33,12 +34,12 @@ class GitService {
   static repoPath = "";
 
   static async initialize(): Promise<string> {
-    logDebug("[gitService.initialize] ENTRY");
+    Log.debug("[gitService.initialize] ENTRY");
     const repoPath = await GitService.getRepoPath();
-    if (repoPath.isError()) logError(repoPath.error.message);
+    if (repoPath.isError()) throw Log.error(repoPath.error.message).exit();
 
     GitService.setRepoPath(repoPath.ok);
-    logDebug(`[gitService.initialize] EXIT repoPath=${repoPath.ok}`);
+    Log.debug(`[gitService.initialize] EXIT repoPath=${repoPath.ok}`);
     return repoPath.ok;
   }
   static async execGit(
@@ -103,7 +104,7 @@ class GitService {
   static async getDiff(
     diffMode: "staged" | "unstaged"
   ): Promise<Result<string, Error>> {
-    logDebug(`[gitService.getDiff] ENTRY diffMode=${diffMode}`);
+    Log.debug(`[gitService.getDiff] ENTRY diffMode=${diffMode}`);
     try {
       const hasStagedChanges = GitService.hasChanges("staged");
 
@@ -230,7 +231,7 @@ class GitService {
   static async getChangedFiles(
     diffMode: "staged" | "unstaged" = "unstaged"
   ): Promise<Result<string[], Error>> {
-    logDebug(`[gitService.getChangedFiles] ENTRY diffMode=${diffMode}`);
+    Log.debug(`[gitService.getChangedFiles] ENTRY diffMode=${diffMode}`);
     try {
       const outputResult = await GitService.execGit(["status", "--porcelain"]);
       if (outputResult.isError()) return Err(outputResult.error);

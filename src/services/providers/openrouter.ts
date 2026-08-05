@@ -12,7 +12,7 @@ import {
   wrapLanguageModel,
 } from "ai";
 import { DEFAULT_CONFIG } from "@/lib/constants.ts";
-import { logDebug } from "@/lib/logger.ts";
+import { Log } from "@/lib/logger.ts";
 import type { CommitMessage } from "@/lib/types/commit.ts";
 import ConfigService from "@/services/config.ts";
 import { ModelService } from "@/services/model.ts";
@@ -23,7 +23,7 @@ class OpenRouterService extends ModelService {
     attempt = 1,
     modelOverride?: string
   ): Promise<CommitMessage> {
-    logDebug(
+    Log.debug(
       `[openrouterService.generateCommitMessage] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
     );
     try {
@@ -37,7 +37,7 @@ class OpenRouterService extends ModelService {
         baseURLResult.isOk() && baseURLResult.ok
           ? baseURLResult.ok
           : (DEFAULT_CONFIG.openrouter.baseUrl as string);
-      logDebug(
+      Log.debug(
         `[openrouterService.generateCommitMessage] CALL API model=${model}, baseURL=${baseURL}`
       );
 
@@ -61,12 +61,12 @@ class OpenRouterService extends ModelService {
         ...generationOptions,
       });
 
-      logDebug(
+      Log.debug(
         `[openrouterService.generateCommitMessage] EXIT message="${text.substring(0, 50)}..."`
       );
       return { message: text, model };
     } catch (error) {
-      logDebug(`[openrouterService.generateCommitMessage] ERROR ${error}`);
+      Log.debug(`[openrouterService.generateCommitMessage] ERROR ${error}`);
       return await OpenRouterService.handleGenerationError(
         error,
         prompt,

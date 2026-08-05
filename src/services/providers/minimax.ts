@@ -4,7 +4,7 @@ import {
   wrapLanguageModel,
 } from "ai";
 import { createMinimaxOpenAI } from "vercel-minimax-ai-provider";
-import { logDebug } from "@/lib/logger.ts";
+import { Log } from "@/lib/logger.ts";
 import type { CommitMessage } from "@/lib/types/commit.ts";
 import ConfigService from "@/services/config.ts";
 import { ModelService } from "@/services/model.ts";
@@ -15,14 +15,14 @@ class MinimaxService extends ModelService {
     attempt = 1,
     modelOverride?: string
   ): Promise<CommitMessage> {
-    logDebug(
+    Log.debug(
       `[minimaxService.generateCommitMessage] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
     );
     try {
       const apiKey = await ConfigService.getApiKey("MiniMax");
       const model = await ModelService.resolveModel(modelOverride);
       const generationOptions = await ModelService.getGenerationOptions();
-      logDebug(
+      Log.debug(
         `[minimaxService.generateCommitMessage] CALL API model=${model}`
       );
 
@@ -39,12 +39,12 @@ class MinimaxService extends ModelService {
         ...generationOptions,
       });
 
-      logDebug(
+      Log.debug(
         `[minimaxService.generateCommitMessage] EXIT message="${text.substring(0, 50)}..."`
       );
       return { message: text, model };
     } catch (error) {
-      logDebug(`[minimaxService.generateCommitMessage] ERROR ${error}`);
+      Log.debug(`[minimaxService.generateCommitMessage] ERROR ${error}`);
       return await MinimaxService.handleGenerationError(
         error,
         prompt,

@@ -1,6 +1,7 @@
 import { Err, Ok, type Result } from "lib-result";
 import { CommandError } from "@/lib/errors.ts";
 import type { CommandOutput } from "@/lib/types/index.ts";
+import { Decoder } from "@/lib/utils.ts";
 
 const CommandService = {
   async execute(
@@ -18,10 +19,8 @@ const CommandService = {
 
       const output = await command.output();
 
-      const decoder = new TextDecoder();
-
-      const stdout = decoder.decode(output.stdout).trim();
-      const stderr = decoder.decode(output.stderr).trim();
+      const stdout = Decoder.decode(output.stdout).trim();
+      const stderr = Decoder.decode(output.stderr).trim();
       const code = output.code;
 
       if (code !== 0) {

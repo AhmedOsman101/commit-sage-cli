@@ -5,7 +5,7 @@ import { Command } from "@cliffy/command";
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
 import type { GenerateOptions } from "@/cli/types/generateOptions.ts";
 import { OS } from "@/lib/constants.ts";
-import { logDebug, logError, logSuccess, logWarning } from "@/lib/logger.ts";
+import { Log } from "@/lib/logger.ts";
 import {
   COMMIT_FORMATS,
   type CommitFormat,
@@ -105,10 +105,10 @@ async function guardNonTTY(opts: Record<string, unknown>): Promise<true> {
 
   const envVarName = await resolveProviderEnvVar(providerType);
   if (envVarName && !Deno.env.get(envVarName)) {
-    logError(
+    throw Log.error(
       `No API key found in $${envVarName} and stdin is not a TTY. ` +
         `Export $${envVarName} or use --offline.`
-    );
+    ).exit();
   }
 
   return true;
@@ -164,7 +164,7 @@ async function runEditor(
       }
     );
     if (spawnResult.isError()) {
-      logWarning(`Editor exited with error: ${spawnResult.error.message}`);
+      Log.warning(`Editor exited with error: ${spawnResult.error.message}`);
       return Ok(initialContent.trim());
     }
 
@@ -222,38 +222,42 @@ export class GenerateCommand extends Command {
 
         // Validate flag values
         const validation = validateOptions(runOptions);
-        if (validation.isError()) logError(validation.error.message);
+        if (validation.isError())
+          throw Log.error(validation.error.message).exit();
 
         // Non-TTY + no API key guard
         await guardNonTTY(opts);
 
         // --offline stub (T5)
         if (opts.offline) {
-          logError("--offline is not yet implemented (T5 in progress).");
+          throw Log.error(
+            "--offline is not yet implemented (T5 in progress)."
+          ).exit();
         }
 
         // Must be in a git repository
         if (!GitService.isGitRepo()) {
-          logError("Not in a git repository");
+          throw Log.error("Not in a git repository").exit();
         }
 
-        logDebug(`[generate] runOptions=${JSON.stringify(runOptions)}`);
+        Log.debug(`[generate] runOptions=${JSON.stringify(runOptions)}`);
 
         const result = await AiService.generateMessage(runOptions);
-        if (result.isError()) logError(result.error.message);
+        if (result.isError()) throw Log.error(result.error.message).exit();
 
-        let message = result.ok.message.trim();
-        if (!message) logError("Generated message is empty.");
+        let message = result.ok?.message.trim() as string;
+        if (!message) throw Log.error("Generated message is empty.").exit();
 
         // --edit: open in $EDITOR, re-read, print final
         if (opts.edit) {
           const editResult = await runEditor(message);
-          if (editResult.isError()) logError(editResult.error.message);
-          message = editResult.ok;
+          if (editResult.isError()) {
+            throw Log.error(editResult.error.message).exit();
+          }
+          message = editResult.ok as string;
         }
 
         console.log(message);
-        logSuccess("Message printed to stdout");
       });
   }
 }

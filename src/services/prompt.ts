@@ -1,5 +1,5 @@
 import { Err, Ok, type Result } from "lib-result";
-import { logDebug } from "@/lib/logger.ts";
+import { Log } from "@/lib/logger.ts";
 import type { CommitFormat, CommitLanguage } from "@/lib/types/commit.ts";
 import ConfigService from "@/services/config.ts";
 import { getTemplate } from "@/templates/index.ts";
@@ -33,7 +33,7 @@ async function buildPrompt(
   blameAnalysis: string,
   options: PromptOptions
 ): Promise<Result<string, Error>> {
-  logDebug(
+  Log.debug(
     `[promptService.buildPrompt] ENTRY diff.length=${diff.length}, blame.length=${blameAnalysis.length}, options=${JSON.stringify(
       options
     )}`

@@ -1,5 +1,7 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { wrap } from "lib-result";
+import { JsonStringify } from "@/lib/utils.ts";
 
 function getCacheDir(): string {
   const OS = Deno.build.os;
@@ -35,7 +37,7 @@ function formatTimestamp(date: Date): string {
 }
 
 class FileLogger {
-  private static ensureLogDirSync(): void {
+  private static ensureLogDir(): void {
     try {
       Deno.mkdirSync(CACHE_DIR, { recursive: true });
     } catch (error) {
@@ -45,16 +47,13 @@ class FileLogger {
     }
   }
 
-  private static writeSync(
+  private static write(
     level: string,
     message: string,
     details?: unknown
   ): void {
-    try {
-      FileLogger.ensureLogDirSync();
-    } catch {
-      // Ignore - directory may already exist
-    }
+    // Ignore errors - directory may already exist
+    wrap(FileLogger.ensureLogDir);
 
     const timestamp = formatTimestamp(new Date());
     let logEntry = `${timestamp} [${level}] ${message}`;
@@ -75,11 +74,11 @@ class FileLogger {
           }
         }
       } else {
-        try {
-          logEntry += `\n  Details: ${JSON.stringify(details, null, 2)}`;
-        } catch {
-          logEntry += `\n  Details: ${String(details)}`;
-        }
+        const detailsMsg = JsonStringify(details, null, 2).unwrapOr(
+          String(details)
+        );
+
+        logEntry += `\n  Details: ${detailsMsg}`;
       }
     }
 
@@ -93,15 +92,15 @@ class FileLogger {
   }
 
   static error(message: string, details?: unknown): void {
-    FileLogger.writeSync("ERROR", message, details);
+    FileLogger.write("ERROR", message, details);
   }
 
   static warn(message: string, details?: unknown): void {
-    FileLogger.writeSync("WARN", message, details);
+    FileLogger.write("WARN", message, details);
   }
 
   static info(message: string, _details?: unknown): void {
-    FileLogger.ensureLogDirSync();
+    FileLogger.ensureLogDir();
     const timestamp = formatTimestamp(new Date());
     const logEntry = `${timestamp} [INFO] ${message}\n`;
     try {
@@ -112,7 +111,7 @@ class FileLogger {
   }
 
   static debug(message: string, _details?: unknown): void {
-    FileLogger.ensureLogDirSync();
+    FileLogger.ensureLogDir();
     const timestamp = formatTimestamp(new Date());
     const logEntry = `${timestamp} [DEBUG] ${message}\n`;
     try {

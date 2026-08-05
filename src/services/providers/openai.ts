@@ -4,7 +4,7 @@ import {
   generateText,
   wrapLanguageModel,
 } from "ai";
-import { logDebug } from "@/lib/logger.ts";
+import { Log } from "@/lib/logger.ts";
 import type { CommitMessage } from "@/lib/types/commit.ts";
 import ConfigService from "@/services/config.ts";
 import { ModelService } from "@/services/model.ts";
@@ -27,7 +27,7 @@ class OpenAiService extends ModelService {
       const providerOptions = await ModelService.getOpenAIProviderOptions({
         forceReasoning: baseURL !== "https://api.openai.com/v1",
       });
-      logDebug("Using OpenAI-compatible provider", {
+      Log.debug("Using OpenAI-compatible provider", {
         baseURL,
         model,
         useChatCompletions,

@@ -1,4 +1,4 @@
-import { logWarning } from "@/lib/logger.ts";
+import { Log } from "@/lib/logger.ts";
 import {
   type CommitFormat,
   type CommitLanguage,
@@ -32,12 +32,12 @@ function getTemplate(format: CommitFormat, language: CommitLanguage): string {
   let template: CommitTemplate;
 
   if (!isValidFormat(format)) {
-    logWarning(`Invalid format "${format}", falling back to conventional`);
+    Log.warning(`Invalid format "${format}", falling back to conventional`);
     template = templates.conventional;
   } else template = templates[format];
 
   if (!isValidLanguage(language)) {
-    logWarning(`Invalid language "${language}", falling back to english`);
+    Log.warning(`Invalid language "${language}", falling back to english`);
     return template.english;
   }
 

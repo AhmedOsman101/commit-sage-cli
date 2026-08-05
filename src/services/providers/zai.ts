@@ -4,7 +4,7 @@ import {
   generateText,
   wrapLanguageModel,
 } from "ai";
-import { logDebug } from "@/lib/logger.ts";
+import { Log } from "@/lib/logger.ts";
 import type { CommitMessage } from "@/lib/types/commit.ts";
 import ConfigService from "@/services/config.ts";
 import { ModelService } from "@/services/model.ts";
@@ -23,7 +23,7 @@ class ZaiService extends ModelService {
     attempt = 1,
     modelOverride?: string
   ): Promise<CommitMessage> {
-    logDebug(
+    Log.debug(
       `[zaiService.generateCommitMessage] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
     );
     try {
@@ -33,7 +33,7 @@ class ZaiService extends ModelService {
       const providerOptions = await ModelService.getOpenAIProviderOptions({
         forceReasoning: true,
       });
-      logDebug(
+      Log.debug(
         `[zaiService.generateCommitMessage] CALL API model=${model}, baseURL=${ZAI_BASE_URL}`
       );
 
@@ -51,12 +51,12 @@ class ZaiService extends ModelService {
         providerOptions,
       });
 
-      logDebug(
+      Log.debug(
         `[zaiService.generateCommitMessage] EXIT message="${text.substring(0, 50)}..."`
       );
       return { message: text, model };
     } catch (error) {
-      logDebug(`[zaiService.generateCommitMessage] ERROR ${error}`);
+      Log.debug(`[zaiService.generateCommitMessage] ERROR ${error}`);
       return await ZaiService.handleGenerationError(
         error,
         prompt,
