@@ -4,6 +4,7 @@ import {
   ErrFromText,
   Ok,
   type Result,
+  wrapAsync,
   wrapAsyncThrowable,
 } from "lib-result";
 import { Encoder } from "@/lib/utils.ts";
@@ -34,14 +35,11 @@ const FileSystemService = {
     }
   },
   async readFile(path: string): Promise<Result<string>> {
-    try {
-      const isFile = await this.fileExists(path);
-      if (isFile.isError()) return Err(isFile.error);
-
-      return Ok(await Deno.readTextFile(path));
-    } catch {
-      return ErrFromText(`Cannot read file: '${path}'.`);
-    }
+    const isFile = await this.fileExists(path);
+    if (isFile.isError()) return Err(isFile.error);
+    return (await wrapAsync(async () => await Deno.readTextFile(path))).or(
+      ErrFromText(`Cannot read file: '${path}'.`)
+    );
   },
   async writeFile(
     path: string,
@@ -51,14 +49,14 @@ const FileSystemService = {
     try {
       if (file !== null) {
         const text = Encoder.encode(`${content}\n`);
-        file.writeSync(text);
+        await file.write(text);
         return Ok(true);
       }
 
       const isFile = await this.fileExists(path);
       if (isFile.isError()) return Err(isFile.error);
 
-      Deno.writeTextFileSync(path, content);
+      await Deno.writeTextFile(path, content);
       return Ok(true);
     } catch {
       return ErrFromText(`Cannot write to file: '${path}'.`);

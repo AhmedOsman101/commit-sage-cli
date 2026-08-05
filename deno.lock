@@ -26,7 +26,6 @@
     "npm:@ai-sdk/moonshotai@^2.0.40": "2.0.40_zod@4.4.3",
     "npm:@ai-sdk/openai@^3.0.90": "3.0.90_zod@4.4.3",
     "npm:@ai-sdk/xai@^3.0.113": "3.0.113_zod@4.4.3",
-    "npm:@arrirpc/schema@~0.81.4": "0.81.4",
     "npm:@openrouter/ai-sdk-provider@^2.10.0": "2.10.0_ai@6.0.240__zod@4.4.3_zod@4.4.3",
     "npm:@types/node@*": "22.15.15",
     "npm:ai@^6.0.240": "6.0.240_zod@4.4.3",
@@ -35,7 +34,8 @@
     "npm:lib-result@5": "5.0.0",
     "npm:ollama-ai-provider-v2@^3.6.0": "3.6.0_ai@6.0.240__zod@4.4.3_zod@4.4.3",
     "npm:vercel-minimax-ai-provider@0.0.2": "0.0.2_zod@4.4.3",
-    "npm:vercel-minimax-ai-provider@^0.0.2": "0.0.2_zod@4.4.3"
+    "npm:vercel-minimax-ai-provider@^0.0.2": "0.0.2_zod@4.4.3",
+    "npm:zod@^4.4.3": "4.4.3"
   },
   "jsr": {
     "@cliffy/ansi@1.2.1": {
@@ -247,21 +247,6 @@
         "zod"
       ]
     },
-    "@arrirpc/schema@0.81.4": {
-      "integrity": "sha512-jH+TBOsjxM3QMs4LrABwoTXUQxM7YQFRz89FJurzQ0O4eJ1GZpvpVC9FLeqA+h9GtQBSL5/XUGOHP5e9UXoBhQ==",
-      "dependencies": [
-        "@arrirpc/type-defs",
-        "@standard-schema/spec",
-        "scule",
-        "uncrypto"
-      ]
-    },
-    "@arrirpc/type-defs@0.81.4": {
-      "integrity": "sha512-OZIWDBY2IbUmxFaS30eW5jwipefNEy9cxalGJHuMxH9+NLqiwVJ75lIG76h5IvDOKQJBFPrGLiZFJqDPXoa2qw==",
-      "dependencies": [
-        "scule"
-      ]
-    },
     "@fastify/busboy@2.1.1": {
       "integrity": "sha512-vBZP4NlzfOlerQTnba4aqZoMhE/a9HY7HRqoOPaETQcSQuWEIyZMHGfVu6w9wGtGK5fED5qRs2DteVCjOH60sA=="
     },
@@ -469,12 +454,6 @@
     "proxy-from-env@2.1.0": {
       "integrity": "sha512-cJ+oHTW1VAEa8cJslgmUZrc+sjRKgAKl3Zyse6+PV38hZe/V6Z14TbCuXcan9F9ghlz4QrFr2c92TNF82UkYHA=="
     },
-    "scule@1.3.0": {
-      "integrity": "sha512-6FtHJEvt+pVMIB9IBY+IcCJ6Z5f1iQnytgyfKMhDKgmzYG+TeH/wx1y3l27rshSbLiSanrR9ffZDrEsmjlQF2g=="
-    },
-    "uncrypto@0.1.3": {
-      "integrity": "sha512-Ql87qFHB3s/De2ClA9e0gsnS6zXG27SkTiSJwjCc9MebbfapQfuPzumMIUMi38ezPZVNFcHI9sUIepeQfw8J8Q=="
-    },
     "undici-types@6.21.0": {
       "integrity": "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="
     },
@@ -511,14 +490,14 @@
       "npm:@ai-sdk/moonshotai@^2.0.40",
       "npm:@ai-sdk/openai@^3.0.90",
       "npm:@ai-sdk/xai@^3.0.113",
-      "npm:@arrirpc/schema@~0.81.4",
       "npm:@openrouter/ai-sdk-provider@^2.10.0",
       "npm:ai@^6.0.240",
       "npm:axios@1.19.0",
       "npm:husky@^9.1.7",
       "npm:lib-result@5",
       "npm:ollama-ai-provider-v2@^3.6.0",
-      "npm:vercel-minimax-ai-provider@^0.0.2"
+      "npm:vercel-minimax-ai-provider@^0.0.2",
+      "npm:zod@^4.4.3"
     ]
   }
 }

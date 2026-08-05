@@ -132,16 +132,16 @@ class ConfigService {
   static async load(): Promise<Result<Config>> {
     let checked = false;
     while (true) {
-      const { ok: configContents, error } =
-        await FileSystemService.readFile(CONFIG_PATH);
+      const readResult = await FileSystemService.readFile(CONFIG_PATH);
 
-      if (error !== undefined) {
+      if (readResult.isError()) {
         if (checked) break;
         const createConfigResult = await ConfigService.createConfigFile();
         if (createConfigResult.isError()) return Err(createConfigResult.error);
         checked = true;
         continue;
       }
+      const configContents = readResult.ok;
 
       if (!configContents) {
         return ErrFromText("Config file is empty after successful read");
@@ -164,8 +164,7 @@ class ConfigService {
         if (writeResult.isError()) return Err(writeResult.error);
       }
 
-      // Convert parsed config to Config type for validation
-      const migratedConfig = parsedConfig as unknown as Config;
+      const migratedConfig = parsedConfig.ok;
 
       const validation = ConfigValidationService.validate(migratedConfig);
       if (validation.isError()) {
@@ -198,8 +197,9 @@ class ConfigService {
     key: G,
     value: ConfigValue<T, G>
   ): Promise<Result<boolean>> {
-    const { ok: config, error: configError } = await ConfigService.load();
-    if (configError !== undefined) return Err(configError);
+    const configResult = await ConfigService.load();
+    if (configResult.isError()) return Err(configResult.error);
+    const config = configResult.ok;
 
     config[section][key] = value;
 

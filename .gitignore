@@ -4,3 +4,4 @@ node_modules
 bin
 .worktrees
 .fallow
+.tmp

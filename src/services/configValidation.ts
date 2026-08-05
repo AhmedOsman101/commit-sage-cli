@@ -1,5 +1,5 @@
-import { a, type ValidationException } from "@arrirpc/schema";
-import { ErrFromText, Ok, type Result } from "lib-result";
+import { ErrFromText, Ok, type Result, wrapThrowable } from "lib-result";
+import { z } from "zod";
 import { CONFIG_PATH } from "@/lib/constants.ts";
 import { Log } from "@/lib/logger.ts";
 import { COMMIT_FORMATS, SUPPORTED_LANGUAGES } from "@/lib/types/commit.ts";
@@ -10,67 +10,66 @@ import {
   SUPPORTED_PROVIDERS,
   SUPPORTED_REASONING_LEVELS,
 } from "@/lib/types/config.ts";
+import { JsonParse } from "@/lib/utils.ts";
 
 const INF = Number.POSITIVE_INFINITY;
 const NINF = Number.NEGATIVE_INFINITY;
 
-const ConfigSchema = a.object(
-  {
-    $schema: a.stringEnum([
+const ConfigSchema = z.strictObject({
+  $schema: z
+    .enum([
       "https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/refs/heads/main/config.schema.json",
-    ]),
-    general: a.optional(
-      a.object({
-        maxRetries: a.uint8(),
-        initialRetryDelayMs: a.uint16(),
-        temperature: a.float64(),
-        maxInputChars: a.float64(),
-        diffStrategy: a.stringEnum([...DIFF_STRATEGIES]),
-      })
-    ),
-    ollama: a.optional(
-      a.object({
-        baseUrl: a.optional(a.string()),
-      })
-    ),
-    openrouter: a.optional(
-      a.object({
-        baseUrl: a.optional(a.string()),
-      })
-    ),
-    openai: a.optional(
-      a.object({
-        baseUrl: a.optional(a.string()),
-        apiKeyEnvVar: a.optional(a.string()),
-        useChatCompletions: a.optional(a.boolean()),
-      })
-    ),
-    commit: a.object({
-      autoCommit: a.optional(a.boolean()),
-      autoPush: a.optional(a.boolean()),
-      onlyStagedChanges: a.boolean(),
-      commitFormat: a.stringEnum([...COMMIT_FORMATS]),
-      commitLanguage: a.stringEnum([...SUPPORTED_LANGUAGES]),
-      promptForRefs: a.optional(a.boolean()),
-      maxSubjectLength: a.optional(a.float64()),
-      bodyStyle: a.optional(a.stringEnum([...BODY_STYLES])),
-    }),
-    provider: a.object({
-      type: a.stringEnum([...SUPPORTED_PROVIDERS]),
-      model: a.string(),
-      timeoutMs: a.optional(a.float64()),
-      reasoning: a.optional(a.stringEnum([...SUPPORTED_REASONING_LEVELS])),
-    }),
-  },
-  {
-    isStrict: true,
-  }
-);
+    ])
+    .optional(),
+  general: z
+    .object({
+      maxRetries: z.uint32(),
+      initialRetryDelayMs: z.uint32(),
+      temperature: z.float32().min(0).max(2),
+      maxInputChars: z.uint32().min(1),
+      diffStrategy: z.enum(DIFF_STRATEGIES),
+    })
+    .optional(),
+  ollama: z
+    .object({
+      baseUrl: z.url().optional(),
+    })
+    .optional(),
+  openrouter: z
+    .object({
+      baseUrl: z.url().optional(),
+    })
+    .optional(),
+  openai: z
+    .object({
+      baseUrl: z.url().optional(),
+      apiKeyEnvVar: z.string().optional(),
+      useChatCompletions: z.boolean().optional(),
+    })
+    .optional(),
+  commit: z.object({
+    autoCommit: z.boolean().optional(),
+    autoPush: z.boolean().optional(),
+    onlyStagedChanges: z.boolean(),
+    commitFormat: z.enum(COMMIT_FORMATS),
+    commitLanguage: z.enum(SUPPORTED_LANGUAGES),
+    promptForRefs: z.boolean().optional(),
+    maxSubjectLength: z.uint32().optional(),
+    bodyStyle: z.enum(BODY_STYLES).optional(),
+  }),
+  provider: z.object({
+    type: z.enum(SUPPORTED_PROVIDERS),
+    model: z.string(),
+    timeoutMs: z.uint32().optional(),
+    reasoning: z.enum(SUPPORTED_REASONING_LEVELS).optional(),
+  }),
+});
 
-export type ConfigSchema = a.infer<typeof ConfigSchema>;
+export type ConfigSchema = z.infer<typeof ConfigSchema>;
+
+const safeParse = wrapThrowable(ConfigSchema.parse);
 
 const ConfigValidationService = {
-  $ConfigSchema: a.compile(ConfigSchema),
   validateUrl(url: unknown): Result<boolean> {
     try {
       if (typeof url === "string") {
@@ -97,20 +96,11 @@ const ConfigValidationService = {
     return Ok(true);
   },
   transformErrorMessage(message: string) {
-    const keyErrRegex = /Key '([a-zA-Z0-9_]+)' is not included in the schema\./;
+    const keyErrRegex = /Unrecognized key: "([^"]+)"/;
     const keyErrMatch = keyErrRegex.exec(message);
     if (keyErrMatch !== null) return `Invalid key => ${keyErrMatch[0]}`;
 
-    // Match paths like /state/code. or /status.
-    const pathRegex = /\/[a-zA-Z0-9/$]+\./g;
-    const pathMatch = pathRegex.exec(message);
-    if (pathMatch !== null) {
-      const replace = `key ${pathMatch[0].replace(".", " =>").replace("/", "").replaceAll("/", ".")}`;
-      const result = message
-        .slice(0, pathMatch.index)
-        .concat(replace, message.slice(pathMatch.index + pathMatch[0].length));
-      return result;
-    }
+    // Zod messages don't contain /path. patterns; return as-is
     return message;
   },
   validateGeneral(general: object): Result<boolean> {
@@ -216,15 +206,22 @@ const ConfigValidationService = {
   },
   validate(config: unknown): Result<Config> {
     let configContent: unknown;
-    try {
-      configContent =
-        typeof config === "string"
-          ? this.$ConfigSchema.parseUnsafe(config)
-          : config;
-    } catch (e) {
-      throw Log.error(
-        this.transformErrorMessage((e as ValidationException).errors[0].message)
-      ).exit();
+
+    if (typeof config === "string") {
+      const jsonResult = JsonParse(config);
+      if (jsonResult.isError()) {
+        throw Log.error(jsonResult.error.message).exit();
+      }
+      const parseResult = safeParse(jsonResult.ok);
+      if (parseResult.isError()) {
+        const zodError = parseResult.error as z.ZodError;
+        throw Log.error(
+          this.transformErrorMessage(zodError.issues[0].message)
+        ).exit();
+      }
+      configContent = parseResult.ok;
+    } else {
+      configContent = config;
     }
 
     if (typeof configContent === "object" && configContent !== null) {
