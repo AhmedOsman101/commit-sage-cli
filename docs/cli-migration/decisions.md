@@ -51,10 +51,31 @@ Turn `commit-sage` from a one-shot "print a commit message" tool into a full CLI
 
 ## Offline generator contract
 
-- Always conventional-shape output: `<type>: <description>` (or bare description if no type matches).
-- Inputs: staged git diff (`git -c core.quotePath=false diff-index --name-status --find-renames --find-copies --no-color --cached HEAD`, fallback `--cached` dropped if empty).
-- Heuristics ported from `~/work/forks/auto-commit-msg/docs/opencode/cli-port-guide.md`.
-- Output subject truncated to `--max-length` (default 80).
+Ported from `auto-commit-msg`'s deterministic generator (no AI). The implementation must match this contract byte-for-byte on the verification cases in issue #27.
+
+Source of truth (read these, don't guess):
+- `~/work/forks/auto-commit-msg/src/prepareCommitMsg.ts` — `generateMsg`, `_msgFromChanges`, `_collapse`, `_formatMsg`
+- `src/generate/{action,message,count,convCommit,convCommitConstants,parseExisting}.ts`, `src/git/parseOutput.ts`, `src/lib/{constants,paths}.ts`
+- Distilled port guide: `~/work/forks/auto-commit-msg/docs/opencode/cli-port-guide.md`
+
+Contract:
+- **Input**: raw `git diff-index --name-status` lines parsed to `FileChange[]` — **not** `GitService.getDiff` (that returns per-file content for the AI prompt; the offline generator only needs the status rows).
+- **Git command**: `git -c core.quotePath=false diff-index --name-status --find-renames --find-copies --no-color [--cached] HEAD`. Try `--cached` (staged) first; if empty, drop it (unstaged tracked). No rows at all → `Err(NoChangesDetectedError)`. Untracked files never appear — document "stage first".
+- **Parse** (`parseDiffIndex`): `x = line[0]`, `y = " "`, tab-split `[_, from, to]`; throw if line < 4 chars or `from` missing. Rename rows are `R<score>\t<from>\t<to>` (old → new).
+- **Actions → verbs** (`ACTION` enum): `M→update`, `A→create`, `D→delete`, `R→rename`, `C→copy`.
+- **Type classification** (`getConventionType`, order matters):
+  1. `R`/`D` → `chore` (path ignored).
+  2. Path-based `getType()` order: CI (`CI_DIRS`/`CI_NAMES`) → `ci`; package manifest (`PACKAGE_NAMES` list, **excludes** `package.json`) → `build(deps)`; build file (`BUILD_NAMES`/`BUILD_EXTENSIONS`, **includes** `package.json`) → `build`; license/config (`LICENSE_NAMES`, `CONFIG_NAMES`/`CONFIG_EXTENSIONS`/`.vscode`, `.eslintrc*`/`.prettier*`/`tslint`/`webpack` name matches) → `chore`; docs (`docs/` dir prefix, `.rst`, `DOC_NAMES`) → `docs`; tests (dir segments `test|tests|spec|unit|unit_tests|__mocks__`, `.coveragerc`, `test_*`/`spec_*`/`*.test.*`/`*.spec.*`) → `test`; else unknown.
+  3. `A` with unknown → `feat`.
+  - Copy the constant lists wholesale from `src/generate/convCommitConstants.ts` — don't hand-pick.
+- **Collapse** for >1 file (`_collapse`): all same → that type; any `build(deps)` present → `build(deps)`; else no prefix. (`package.json` → `build` + `package-lock.json` → `build(deps)` collapses to `build(deps)`.)
+- **Description** (`_msgFromChanges`, `AGGREGATE_MIN = 5`):
+  - 1 change → `verb <friendlyFile>`. `friendlyFile` = bare basename, but full path for names starting `readme`/`index`/`__init__`; single-quote values containing spaces. Rename uses the move/rename phrase: `move X to Y` (same name) / `rename X to Y` (same dir) / `move and rename X to Y`.
+  - 2–4 all-same action → `verb a, b and c` (humanList joining, no Oxford comma). Mixed actions → count format. Rename rows here use the **bare** verb (`rename a and b`), not the phrase.
+  - ≥5 → count format per action, ` and `-joined: `create 3 files and delete 2 files`.
+- **Format** (`_formatMsg`): `type ? \`${type}: ${desc}\` : desc` — unknown type → bare description.
+- **Adapter addition (NOT in auto-commit-msg)**: truncate subject to `--max-length` (default 80 = `maxSubjectLength`) at the last word boundary before the limit, append `…`. Source has no truncation.
+- **Not ported**: old-message merge (`parseExisting.ts` `splitMsg`/`_joinOldAndNew`). `generate --offline` always emits a fresh message. Revisit only if `commit --offline` ever needs to preserve a template/prefix.
 
 ## `commit` flow (UX contract)
 

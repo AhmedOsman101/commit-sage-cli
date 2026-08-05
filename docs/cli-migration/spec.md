@@ -99,11 +99,11 @@ The `generate` subcommand is the foundation: pure text-in (diff + flags) → tex
 
 ### Offline generator
 - New `src/services/offlineGenerator.ts`.
-- Heuristics ported verbatim from `~/work/forks/auto-commit-msg/docs/opencode/cli-port-guide.md`.
-- Pure function: `generateOfflineMessage(changes: FileChange[], maxLength: number): string`.
-- Reads staged diff via existing `GitService.getDiff("staged")` + `getChangedFiles("staged")`.
-- Falls back to unstaged if no staged changes (matches existing `resolveDiffMode` behavior for `--offline`).
-- Output: conventional-shape `<type>(<scope>): <description>` or bare `<description>` when type unknown. Subject truncated to `--max-length`.
+- Heuristics ported verbatim from `~/work/forks/auto-commit-msg` — **exact behavior contract lives in [`decisions.md`](./decisions.md) §"Offline generator contract"**. Read that before implementing; match it on the verification cases.
+- Pure function: `generateOfflineMessage(changes: FileChange[], options: { maxLength: number }): string`. No git, no IO, no env.
+- `FileChange` (`{ x, y, from, to }`) copied from the port guide, co-located in the service or `src/lib/types.ts`.
+- Diff source: a new git method that runs `git diff-index --name-status …` and parses lines → `FileChange[]` (via `CommandService`). **Not** `GitService.getDiff("staged")` — that returns per-file content for the AI prompt, not status rows. Reuse `GitService` for repo-root resolution, staged→unstaged fallback, and `NoChangesDetectedError`.
+- Output: conventional-shape `<type>: <description>` or bare `<description>` when type unknown. Subject truncated to `--max-length` (default 80).
 
 ### Markdown preview in terminal
 - `@littletof/charmd` (JSR). Minimal markdown→ANSI renderer, no full `marked` + `marked-terminal` dep tree.
