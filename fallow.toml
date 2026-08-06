@@ -1,7 +1,7 @@
 # fallow.toml - Codebase analysis configuration
 # See https://docs.fallow.tools for documentation
 
-entry = ["src/index.{js,jsx,mjs}", "src/main.{js,jsx,mjs}"]
+entry = ["src/index.{js,jsx,mjs,ts}", "src/main.{js,jsx,mjs,ts}"]
 
 [duplicates]
 # Hide pair-only clones; focus on widespread copy-paste worth refactoring.
