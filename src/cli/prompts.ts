@@ -33,10 +33,21 @@ async function selectFilesToStage(): Promise<string[]> {
     "Tip: space = toggle, a = toggle all, type to filter, enter twice to confirm."
   );
 
-  return await Checkbox.prompt<string>({
+  const selected = await Checkbox.prompt<string>({
     message: "Select files to stage:",
     options: files.map(name => ({ name, value: name, checked: false })),
   });
+
+  // Cliffy joins all selected values on one line — show a clean list instead.
+  if (selected.length > 0) {
+    console.log();
+    for (const file of selected) {
+      console.log(`  ${file}`);
+    }
+    console.log();
+  }
+
+  return selected;
 }
 
 /**
