@@ -19,8 +19,8 @@ const CommandService = {
 
       const output = await command.output();
 
-      const stdout = Decoder.decode(output.stdout).trim();
-      const stderr = Decoder.decode(output.stderr).trim();
+      const stdout = Decoder.decode(output.stdout);
+      const stderr = Decoder.decode(output.stderr);
       const code = output.code;
 
       if (code !== 0) {
@@ -75,7 +75,7 @@ const CommandService = {
       inheritStderr?: boolean;
       inheritStdin?: boolean;
     } = {}
-  ): Promise<Result<number, CommandError>> {
+  ): Promise<Result<CommandOutput, CommandError>> {
     try {
       const command = new Deno.Command(cmd, {
         args,
@@ -86,7 +86,24 @@ const CommandService = {
       });
 
       const output = await command.output();
-      return Ok(output.code);
+
+      const stdout = Decoder.decode(output.stdout);
+      const stderr = Decoder.decode(output.stderr);
+      const code = output.code;
+
+      if (code !== 0) {
+        // Combine stderr and stdout for better error context if stderr is empty
+        const errorOutput = stderr || stdout || "No output";
+        return Err(
+          new CommandError(
+            `Command failed with code ${code}: ${errorOutput}`,
+            `${cmd} ${args.join(" ")}`,
+            { stdout, stderr, code }
+          )
+        );
+      }
+
+      return Ok({ stdout, stderr, code });
     } catch (error) {
       const message =
         error instanceof Deno.errors.NotFound

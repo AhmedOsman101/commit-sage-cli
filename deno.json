@@ -4,6 +4,7 @@
     "prepare": "husky || true"
   },
   "imports": {
+    "@littletof/charmd": "jsr:@littletof/charmd@^0.1.2",
     "ai": "npm:ai@^6.0.240",
     "@ai-sdk/anthropic": "npm:@ai-sdk/anthropic@^3.0.104",
     "@ai-sdk/deepseek": "npm:@ai-sdk/deepseek@^2.0.51",

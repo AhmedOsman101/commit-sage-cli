@@ -96,6 +96,60 @@ class GitService {
 
     return cmd.ok.stdout.trim().length > 0;
   }
+  /**
+   * Resolve current branch name. Returns `null` if HEAD is unborn (no commits).
+   */
+  static async currentBranch(): Promise<string | null> {
+    const result = await GitService.execGit([
+      "rev-parse",
+      "--abbrev-ref",
+      "HEAD",
+    ]);
+    if (result.isError()) return null;
+    const branch = result.ok.stdout.trim();
+    // git returns "HEAD" when there are no commits yet
+    if (!branch || branch === "HEAD") return null;
+    return branch;
+  }
+  /**
+   * Whether any git remote is configured.
+   */
+  static async hasAnyRemote(): Promise<boolean> {
+    const result = await GitService.execGit(["remote"]);
+    return result.isOk() && result.ok.stdout.trim().length > 0;
+  }
+  /**
+   * Whether an `origin` remote exists. The URL from `git remote get-url
+   * origin` is treated as opaque: both HTTPS (https://host/org/repo.git) and
+   * SSH (git@host:org/repo.git) origins resolve — only a missing origin fails.
+   */
+  static async hasOriginRemote(): Promise<boolean> {
+    const result = await GitService.execGit(["remote", "get-url", "origin"]);
+    return result.isOk() && result.ok.stdout.trim().length > 0;
+  }
+  /**
+   * Whether the branch already tracks an upstream (`@{u}` resolves).
+   */
+  static async hasUpstream(branch: string): Promise<boolean> {
+    const result = await GitService.execGit([
+      "rev-parse",
+      "--abbrev-ref",
+      `${branch}@{u}`,
+    ]);
+    return result.isOk();
+  }
+  /**
+   * Push the branch to `origin`, optionally setting the upstream (`-u`).
+   */
+  static async push(
+    branch: string,
+    options: { setUpstream: boolean }
+  ): Promise<Result<CommandOutput, CommandError>> {
+    const args = ["push"];
+    if (options.setUpstream) args.push("-u");
+    args.push("origin", branch);
+    return await GitService.execGit(args);
+  }
   static async isSubmodule(file: string): Promise<boolean> {
     const cmd = await GitService.execGit(["ls-files", "--stage", "--", file]);
 
@@ -328,7 +382,7 @@ class GitService {
       );
     }
 
-    return Ok(cmd.ok.stdout);
+    return Ok(cmd.ok.stdout.trim());
   }
   static setRepoPath(value: string) {
     GitService.repoPath = value;

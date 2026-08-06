@@ -10,8 +10,10 @@
     "jsr:@cliffy/prompt@^1.2.1": "1.2.1",
     "jsr:@cliffy/table@1.2.1": "1.2.1",
     "jsr:@cliffy/table@^1.2.1": "1.2.1",
+    "jsr:@littletof/charmd@~0.1.2": "0.1.2",
     "jsr:@std/assert@^1.0.19": "1.0.19",
     "jsr:@std/encoding@^1.0.10": "1.0.11",
+    "jsr:@std/fmt@0.223.0": "0.223.0",
     "jsr:@std/fmt@1.0.10": "1.0.10",
     "jsr:@std/fmt@^1.0.10": "1.0.10",
     "jsr:@std/internal@^1.0.14": "1.0.14",
@@ -89,11 +91,20 @@
         "jsr:@std/fmt@^1.0.10"
       ]
     },
+    "@littletof/charmd@0.1.2": {
+      "integrity": "1d349b5a4acb3d9fe054e5c856ee8a5c0f18bbdccf1f0d733b6e73d518514928",
+      "dependencies": [
+        "jsr:@std/fmt@0.223.0"
+      ]
+    },
     "@std/assert@1.0.19": {
       "integrity": "eaada96ee120cb980bc47e040f82814d786fe8162ecc53c91d8df60b8755991e"
     },
     "@std/encoding@1.0.11": {
       "integrity": "e7cef2f0b3153bccc17431e7c864a1de03a4b6d9647389c43e08aaa775d37385"
+    },
+    "@std/fmt@0.223.0": {
+      "integrity": "6deb37794127dfc7d7bded2586b9fc6f5d50e62a8134846608baf71ffc1a5208"
     },
     "@std/fmt@1.0.10": {
       "integrity": "90dfba288802ac6de82fb31d0917eb9e4450b9925b954d5e51fc29ac07419db5"
@@ -482,6 +493,7 @@
       "jsr:@cliffy/flags@^1.2.1",
       "jsr:@cliffy/prompt@^1.2.1",
       "jsr:@cliffy/table@^1.2.1",
+      "jsr:@littletof/charmd@~0.1.2",
       "jsr:@std/fmt@1.0.10",
       "npm:@ai-sdk/anthropic@^3.0.104",
       "npm:@ai-sdk/deepseek@^2.0.51",

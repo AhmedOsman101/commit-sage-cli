@@ -1,76 +1,17 @@
-// Copyright (C) 2025 Ahmad Osman
+// Copyright (C) 2025 Ahmad Othman
 // Licensed under the GNU General Public License v3.0. See LICENSE for details.
 
 import { Command } from "@cliffy/command";
-import { ErrFromText, Ok, type Result } from "lib-result";
+import { resolveOptions, validateOptions } from "@/cli/flags.ts";
 import { runEditor } from "@/cli/handlers/editor.ts";
 import { runOffline } from "@/cli/handlers/offline.ts";
-import type { GenerateOptions } from "@/cli/types/generateOptions.ts";
+import { selectFilesToStage } from "@/cli/prompts.ts";
 import { Log } from "@/lib/logger.ts";
-import {
-  COMMIT_FORMATS,
-  type CommitFormat,
-  type CommitLanguage,
-  SUPPORTED_LANGUAGES,
-} from "@/lib/types/commit.ts";
-import { type ProviderType, SUPPORTED_PROVIDERS } from "@/lib/types/config.ts";
+import { COMMIT_FORMATS, SUPPORTED_LANGUAGES } from "@/lib/types/commit.ts";
+import type { ProviderType } from "@/lib/types/config.ts";
 import AiService from "@/services/ai.ts";
 import ConfigService from "@/services/config.ts";
 import GitService from "@/services/git.ts";
-
-// ─── Option parsing helpers ────────────────────────────────────────────────
-
-/** Resolve GenerateOptions from CLI flags. Each value: `flag ?? undefined`. */
-function resolveOptions(opts: Record<string, unknown>): GenerateOptions {
-  return {
-    provider: opts.provider as ProviderType | undefined,
-    model: opts.model as string | undefined,
-    format: opts.format as CommitFormat | undefined,
-    maxLength: opts.maxLength as number | undefined,
-    language: opts.lang as CommitLanguage | undefined,
-    context: opts.context as string | undefined,
-    offline: opts.offline as boolean | undefined,
-    edit: opts.edit as boolean | undefined,
-  };
-}
-
-/** Validate resolved GenerateOptions. Returns `Err` with a user-facing message on invalid input. */
-function validateOptions(runOptions: GenerateOptions): Result<true, Error> {
-  if (runOptions.format) {
-    const valid = COMMIT_FORMATS.includes(runOptions.format);
-    if (!valid) {
-      return ErrFromText(
-        `Invalid format "${runOptions.format}". Valid: ${COMMIT_FORMATS.join(", ")}`
-      );
-    }
-  }
-
-  if (runOptions.provider) {
-    const valid = SUPPORTED_PROVIDERS.includes(runOptions.provider);
-    if (!valid) {
-      return ErrFromText(
-        `Invalid provider "${runOptions.provider}". Valid: ${SUPPORTED_PROVIDERS.join(", ")}`
-      );
-    }
-  }
-
-  if (runOptions.language) {
-    const valid = SUPPORTED_LANGUAGES.includes(runOptions.language);
-    if (!valid) {
-      return ErrFromText(
-        `Invalid language "${runOptions.language}". Valid: ${SUPPORTED_LANGUAGES.join(", ")}`
-      );
-    }
-  }
-
-  if (runOptions.maxLength !== undefined) {
-    if (runOptions.maxLength <= 0 || !Number.isInteger(runOptions.maxLength)) {
-      return ErrFromText("--max-length must be a positive integer");
-    }
-  }
-
-  return Ok(true);
-}
 
 /**
  * Resolve the env var name for the active provider.
@@ -165,10 +106,24 @@ class GenerateCommand extends Command {
         if (!GitService.isGitRepo()) {
           throw Log.error("Not in a git repository").exit();
         }
+        await GitService.initialize();
+
+        // Nothing staged yet? Offer the same staging picker as `commit`.
+        const hasStaged = await GitService.hasChanges("staged");
+        if (!hasStaged) {
+          const picked = await selectFilesToStage();
+          for (const file of picked) {
+            const add = await GitService.execGit(["add", "--", file]);
+            if (add.isError()) {
+              throw Log.error(
+                `Failed to stage ${file}: ${add.error.message}`
+              ).exit();
+            }
+          }
+        }
 
         // --offline: static-analysis path (delegates to offline handler)
         if (opts.offline) {
-          await GitService.initialize();
           const offlineResult = await runOffline({
             maxLength: opts.maxLength as number | undefined,
             edit: opts.edit as boolean | undefined,
