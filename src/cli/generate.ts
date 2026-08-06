@@ -1,10 +1,11 @@
-// Copyright (C) 2025 Ahmad Othman
+// Copyright (C) 2025 Ahmad Osman
 // Licensed under the GNU General Public License v3.0. See LICENSE for details.
 
 import { Command } from "@cliffy/command";
-import { Err, ErrFromText, Ok, type Result } from "lib-result";
+import { ErrFromText, Ok, type Result } from "lib-result";
+import { runEditor } from "@/cli/handlers/editor.ts";
+import { runOffline } from "@/cli/handlers/offline.ts";
 import type { GenerateOptions } from "@/cli/types/generateOptions.ts";
-import { OS } from "@/lib/constants.ts";
 import { Log } from "@/lib/logger.ts";
 import {
   COMMIT_FORMATS,
@@ -14,9 +15,7 @@ import {
 } from "@/lib/types/commit.ts";
 import { type ProviderType, SUPPORTED_PROVIDERS } from "@/lib/types/config.ts";
 import AiService from "@/services/ai.ts";
-import CommandService from "@/services/command.ts";
 import ConfigService from "@/services/config.ts";
-import FileSystemService from "@/services/fileSystem.ts";
 import GitService from "@/services/git.ts";
 
 // ─── Option parsing helpers ────────────────────────────────────────────────
@@ -114,72 +113,6 @@ async function guardNonTTY(opts: Record<string, unknown>): Promise<true> {
   return true;
 }
 
-// ─── --edit tempfile flow ───────────────────────────────────────────────────
-
-/**
- * Open an editor with `initialContent`, return the final text.
- *
- * 1. Create temp file via FileSystemService
- * 2. Write initial content
- * 3. Spawn editor via CommandService.spawnInteractive (inherits stdio)
- * 4. Read back edited content
- * 5. Cleanup temp file
- */
-async function runEditor(
-  initialContent: string
-): Promise<Result<string, Error>> {
-  // Create temp file
-  const tmpFileResult = await FileSystemService.createTempFile(
-    "commit-sage-",
-    ".txt"
-  );
-  if (tmpFileResult.isError()) return Err(tmpFileResult.error);
-  const tmpFile = tmpFileResult.ok;
-
-  try {
-    // Write initial content
-    const writeResult = await FileSystemService.writeFile(
-      tmpFile,
-      initialContent
-    );
-    if (writeResult.isError()) return Err(writeResult.error);
-
-    // Determine editor
-    const editor =
-      Deno.env.get("VISUAL") ??
-      Deno.env.get("EDITOR") ??
-      (OS === "windows" ? "notepad" : "vi");
-
-    // Handle "code --wait" style strings: split on first space
-    const [editorBin, ...editorArgs] = editor.split(/\s+/);
-
-    // Spawn editor with inherited stdio (interactive)
-    const spawnResult = await CommandService.spawnInteractive(
-      editorBin,
-      [...editorArgs, tmpFile],
-      {
-        inheritStdin: true,
-        inheritStdout: true,
-        inheritStderr: true,
-      }
-    );
-    if (spawnResult.isError()) {
-      Log.warning(`Editor exited with error: ${spawnResult.error.message}`);
-      return Ok(initialContent.trim());
-    }
-
-    // Read back edited content
-    const readResult = await FileSystemService.readFile(tmpFile);
-    if (readResult.isError()) return Err(readResult.error);
-
-    const edited = readResult.ok.trim();
-    return Ok(edited || initialContent.trim());
-  } finally {
-    // Best-effort cleanup
-    await FileSystemService.removeFile(tmpFile);
-  }
-}
-
 // ─── The generate subcommand ────────────────────────────────────────────────
 
 export class GenerateCommand extends Command {
@@ -190,7 +123,7 @@ export class GenerateCommand extends Command {
     )
       .option(
         "--offline",
-        "Use static-analysis generator (no API). Always conventional-shape output. [T5 stub]"
+        "Use static-analysis generator (no API). Always conventional-shape output. Ignores --format."
       )
       .option(
         "--context <text:string>",
@@ -203,7 +136,7 @@ export class GenerateCommand extends Command {
       .option("--model <name:string>", "Override provider.model for this run.")
       .option(
         "--format <name:string>",
-        `Commit format. One of: ${COMMIT_FORMATS.join(", ")}.`
+        `Commit format. One of: ${COMMIT_FORMATS.join(", ")}. Ignored when --offline is set.`
       )
       .option(
         "--lang <name:string>",
@@ -228,16 +161,23 @@ export class GenerateCommand extends Command {
         // Non-TTY + no API key guard
         await guardNonTTY(opts);
 
-        // --offline stub (T5)
-        if (opts.offline) {
-          throw Log.error(
-            "--offline is not yet implemented (T5 in progress)."
-          ).exit();
-        }
-
-        // Must be in a git repository
+        // Must be in a git repository (offline needs GitService for diff-index)
         if (!GitService.isGitRepo()) {
           throw Log.error("Not in a git repository").exit();
+        }
+
+        // --offline: static-analysis path (delegates to offline handler)
+        if (opts.offline) {
+          await GitService.initialize();
+          const offlineResult = await runOffline({
+            maxLength: opts.maxLength as number | undefined,
+            edit: opts.edit as boolean | undefined,
+          });
+          if (offlineResult.isError()) {
+            throw Log.error(offlineResult.error.message).exit();
+          }
+          console.log(offlineResult.ok);
+          return;
         }
 
         Log.debug(`[generate] runOptions=${JSON.stringify(runOptions)}`);
