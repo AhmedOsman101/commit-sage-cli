@@ -1,4 +1,4 @@
-export const freeformTemplate = {
+const freeformTemplate = {
   english: `Generate a freeform commit message in natural language.
 
 - No type prefix, scope, or specific structure required.
@@ -35,3 +35,5 @@ export const freeformTemplate = {
 - 冗長なテンプレ文言や末尾の詰めは避けてください。
 `,
 };
+
+export { freeformTemplate };

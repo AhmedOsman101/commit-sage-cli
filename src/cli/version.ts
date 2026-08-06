@@ -3,4 +3,6 @@
 
 import denoConfig from "../../deno.json" with { type: "json" };
 
-export const VERSION: string = denoConfig.version as string;
+const VERSION: string = denoConfig.version as string;
+
+export { VERSION };

@@ -87,7 +87,7 @@ async function resolveMaxLength(
   return DEFAULT_CONFIG.commit.maxSubjectLength;
 }
 
-export interface OfflineRunOptions {
+interface OfflineRunOptions {
   maxLength: number | undefined;
   edit: boolean | undefined;
 }
@@ -96,7 +96,7 @@ export interface OfflineRunOptions {
  * Handle the `--offline` path end-to-end. Returns the generated message or
  * `Result.isError()` for any failure.
  */
-export async function runOffline(
+async function runOffline(
   opts: OfflineRunOptions
 ): Promise<Result<string, Error>> {
   // Resolve staged vs unstaged via the same code path the AI uses, so the
@@ -124,3 +124,6 @@ export async function runOffline(
 
   return Ok(final);
 }
+
+export type { OfflineRunOptions };
+export { runOffline };

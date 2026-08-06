@@ -1,4 +1,4 @@
-export const karmaTemplate = {
+const karmaTemplate = {
   english: `Generate a commit message following the Karma format:
 <type>(<scope>): <message>
 
@@ -59,3 +59,5 @@ chore(ci): 更新部署脚本至 Node 16`,
 例：
 chore(ci): デプロイスクリプトをNode 16に更新`,
 };
+
+export { karmaTemplate };

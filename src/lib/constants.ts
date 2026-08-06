@@ -21,13 +21,13 @@ function getConfigPath(): string {
   }
 }
 
-export const OS: Readonly<string> = Deno.build.os;
+const OS: Readonly<string> = Deno.build.os;
 
-export const HOME_DIR: Readonly<string> = homedir();
+const HOME_DIR: Readonly<string> = homedir();
 
-export const CONFIG_PATH: Readonly<string> = getConfigPath();
+const CONFIG_PATH: Readonly<string> = getConfigPath();
 
-export const DEFAULT_CONFIG: Readonly<Config> = {
+const DEFAULT_CONFIG: Readonly<Config> = {
   $schema:
     "https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/refs/heads/main/config.schema.json",
   general: {
@@ -66,7 +66,7 @@ export const DEFAULT_CONFIG: Readonly<Config> = {
   },
 };
 
-export const ERROR_MESSAGES = {
+const ERROR_MESSAGES = {
   commandExecution: "Error in command execution:",
   generateCommitMessage: "Failed to generate commit message",
   apiError: "API Error: {0}",
@@ -92,3 +92,5 @@ export const ERROR_MESSAGES = {
   fileNotCommitted: "File has not been committed yet",
   fileDeleted: "File has been deleted",
 } as const;
+
+export { CONFIG_PATH, DEFAULT_CONFIG, ERROR_MESSAGES, HOME_DIR, OS };

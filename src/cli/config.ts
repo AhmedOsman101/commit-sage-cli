@@ -4,7 +4,7 @@
 import { Command } from "@cliffy/command";
 import { Log } from "@/lib/logger.ts";
 
-export class ConfigCommand extends Command {
+class ConfigCommand extends Command {
   constructor() {
     super();
     this.description("Inspect or modify the commit-sage configuration.").action(
@@ -14,3 +14,5 @@ export class ConfigCommand extends Command {
     );
   }
 }
+
+export { ConfigCommand };

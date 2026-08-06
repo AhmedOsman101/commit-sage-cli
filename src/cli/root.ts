@@ -8,7 +8,7 @@ import { ConfigCommand } from "@/cli/config.ts";
 import { GenerateCommand } from "@/cli/generate.ts";
 import { VERSION } from "@/cli/version.ts";
 
-export function buildRootCommand(): Command {
+function buildRootCommand(): Command {
   const root = new Command()
     .name("commit-sage")
     .version(VERSION)
@@ -23,3 +23,5 @@ export function buildRootCommand(): Command {
 
   return root;
 }
+
+export { buildRootCommand };

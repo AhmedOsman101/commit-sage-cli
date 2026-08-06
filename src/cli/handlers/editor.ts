@@ -16,7 +16,7 @@ import FileSystemService from "@/services/fileSystem.ts";
  * 4. Read back edited content
  * 5. Cleanup temp file
  */
-export async function runEditor(
+async function runEditor(
   initialContent: string
 ): Promise<Result<string, Error>> {
   // Create temp file
@@ -70,3 +70,5 @@ export async function runEditor(
     await FileSystemService.removeFile(tmpFile);
   }
 }
+
+export { runEditor };

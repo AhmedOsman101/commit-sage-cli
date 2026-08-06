@@ -1,4 +1,4 @@
-export const emojiTemplate = {
+const emojiTemplate = {
   english: `Generate a commit message following the Emoji format:
 :emoji: commit message
 
@@ -71,3 +71,5 @@ Example:
 ✨ リアルタイムコラボレーション機能を追加
 🐛 認証トークンの有効期限の問題を修正`,
 };
+
+export { emojiTemplate };

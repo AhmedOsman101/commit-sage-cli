@@ -26,6 +26,8 @@ const providers: Record<ProviderType, typeof ModelService> = {
   openrouter: OpenRouterService,
 };
 
-export function getProviderService(type: ProviderType): typeof ModelService {
+function getProviderService(type: ProviderType): typeof ModelService {
   return providers[type];
 }
+
+export { getProviderService };

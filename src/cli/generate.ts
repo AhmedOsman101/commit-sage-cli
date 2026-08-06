@@ -115,7 +115,7 @@ async function guardNonTTY(opts: Record<string, unknown>): Promise<true> {
 
 // ─── The generate subcommand ────────────────────────────────────────────────
 
-export class GenerateCommand extends Command {
+class GenerateCommand extends Command {
   constructor() {
     super();
     this.description(
@@ -201,3 +201,5 @@ export class GenerateCommand extends Command {
       });
   }
 }
+
+export { GenerateCommand };

@@ -7,7 +7,7 @@ import type { CommitMessage } from "@/lib/types/commit.ts";
 import type { ApiError, ErrorWithResponse } from "@/lib/types/index.ts";
 import ConfigService from "@/services/config.ts";
 
-export abstract class ModelService {
+abstract class ModelService {
   protected static readonly maxRetryBackoff = 10_000;
 
   protected static cleanCommitMessage(message: string): string {
@@ -178,3 +178,5 @@ export abstract class ModelService {
     throw new Error(`Failed to generate commit message: ${classified.message}`);
   }
 }
+
+export { ModelService };

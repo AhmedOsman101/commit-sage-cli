@@ -65,7 +65,7 @@ const ConfigSchema = z.strictObject({
   }),
 });
 
-export type ConfigSchema = z.infer<typeof ConfigSchema>;
+type ConfigSchema = z.infer<typeof ConfigSchema>;
 
 const safeParse = wrapThrowable(ConfigSchema.parse);
 
@@ -329,3 +329,4 @@ const ConfigValidationService = {
 };
 
 export default ConfigValidationService;
+export type { ConfigSchema };

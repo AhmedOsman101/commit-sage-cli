@@ -4,7 +4,7 @@
 import { Command } from "@cliffy/command";
 import { Log } from "@/lib/logger.ts";
 
-export class CommitCommand extends Command {
+class CommitCommand extends Command {
   constructor() {
     super();
     this.description(
@@ -14,3 +14,5 @@ export class CommitCommand extends Command {
     });
   }
 }
+
+export { CommitCommand };
