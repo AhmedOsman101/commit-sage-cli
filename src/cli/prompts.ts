@@ -21,6 +21,9 @@ function guardTTY(): void {
 /**
  * Run the interactive staging picker (Cliffy Checkbox) over unstaged tracked
  * + untracked files. Returns the list of paths the user chose to stage.
+ *
+ * Overrides Checkbox.format via prototype patch to show "N files selected"
+ * instead of joining every value on one line (Cliffy's default).
  */
 async function selectFilesToStage(): Promise<string[]> {
   const result = await GitService.getChangedFiles("unstaged");
@@ -33,10 +36,22 @@ async function selectFilesToStage(): Promise<string[]> {
     "Tip: space = toggle, a = toggle all, type to filter, enter twice to confirm."
   );
 
-  return await Checkbox.prompt<string>({
-    message: "Select files to stage:",
-    options: files.map(name => ({ name, value: name, checked: false })),
-  });
+  // Ponytail: patch Checkbox.format to show count instead of full list.
+  // Restored immediately after prompt resolves — single-threaded CLI, safe.
+  const proto = Checkbox.prototype as unknown as Record<string, unknown>;
+  const orig = proto.format;
+  proto.format = (value: string[]) => {
+    const n = value.length;
+    return n === 0 ? "none" : `${n} file${n === 1 ? "" : "s"} selected`;
+  };
+  try {
+    return await Checkbox.prompt<string>({
+      message: "Select files to stage:",
+      options: files.map(name => ({ name, value: name, checked: false })),
+    });
+  } finally {
+    proto.format = orig;
+  }
 }
 
 /**
