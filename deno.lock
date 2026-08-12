@@ -33,7 +33,7 @@
     "npm:ai@^6.0.240": "6.0.240_zod@4.4.3",
     "npm:axios@1.19.0": "1.19.0",
     "npm:husky@^9.1.7": "9.1.7",
-    "npm:lib-result@5": "5.0.0",
+    "npm:lib-result@6": "6.0.0",
     "npm:ollama-ai-provider-v2@^3.6.0": "3.6.0_ai@6.0.240__zod@4.4.3_zod@4.4.3",
     "npm:vercel-minimax-ai-provider@0.0.2": "0.0.2_zod@4.4.3",
     "npm:vercel-minimax-ai-provider@^0.0.2": "0.0.2_zod@4.4.3",
@@ -435,8 +435,8 @@
     "json-schema@0.4.0": {
       "integrity": "sha512-es94M3nTIfsEPisRafak+HDLfHXnKBhV3vU5eqPcS3flIWqcxJWgXHXiey3YrpaNsanY5ei1VoYEbOzijuq9BA=="
     },
-    "lib-result@5.0.0": {
-      "integrity": "sha512-2boVKy421+YZ2hEO9mSlfHKzsbeQQhsdZLcnrwLSHFsfjQuXRmEIA9oCDDTgAJm9FkVl9/KMDra1J69ZY122Dg=="
+    "lib-result@6.0.0": {
+      "integrity": "sha512-EfEMMIhxEJB9V8PT5BU8YZRe4avQWVg8hvWa5wwYqKhk5x/gqLMJmnjOvYGPMic9Ifqb1WB6Z0oMtXmEaVoqsA=="
     },
     "math-intrinsics@1.1.0": {
       "integrity": "sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g=="
@@ -506,7 +506,7 @@
       "npm:ai@^6.0.240",
       "npm:axios@1.19.0",
       "npm:husky@^9.1.7",
-      "npm:lib-result@5",
+      "npm:lib-result@6",
       "npm:ollama-ai-provider-v2@^3.6.0",
       "npm:vercel-minimax-ai-provider@^0.0.2",
       "npm:zod@^4.4.3"
