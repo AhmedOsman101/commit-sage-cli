@@ -206,7 +206,9 @@ class CommitCommand extends Command {
         }
         if (opts.edit) commitArgs.push("-e");
 
-        const commitResult = await GitService.execGit(commitArgs);
+        // Streams live: commit summary + pre-commit hook output go straight
+        // to the terminal instead of being captured.
+        const commitResult = await GitService.runStreaming(commitArgs);
         if (commitResult.isError()) {
           throw Log.error(commitResult.error.message).exit();
         }

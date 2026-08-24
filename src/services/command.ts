@@ -87,16 +87,19 @@ const CommandService = {
 
       const output = await command.output();
 
-      const stdout = Decoder.decode(output.stdout);
-      const stderr = Decoder.decode(output.stderr);
+      // Inherited streams have no captured buffer — decoding them throws.
+      const stdout = options.inheritStdout ? "" : Decoder.decode(output.stdout);
+      const stderr = options.inheritStderr ? "" : Decoder.decode(output.stderr);
       const code = output.code;
 
       if (code !== 0) {
-        // Combine stderr and stdout for better error context if stderr is empty
-        const errorOutput = stderr || stdout || "No output";
+        // Combine stderr and stdout for better error context if stderr is empty.
+        // With inherited streams both are empty — output already went to the
+        // terminal live, so don't append a misleading "No output".
+        const errorOutput = stderr || stdout;
         return Err(
           new CommandError(
-            `Command failed with code ${code}: ${errorOutput}`,
+            `Command failed with code ${code}${errorOutput ? `: ${errorOutput}` : ""}`,
             `${cmd} ${args.join(" ")}`,
             { stdout, stderr, code }
           )

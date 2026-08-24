@@ -139,7 +139,23 @@ class GitService {
     return result.isOk();
   }
   /**
+   * Run git with inherited stdio so its output streams live to the terminal
+   * (commit summaries, pre-commit hook messages, push progress). stdin is
+   * inherited too so hooks and `-e` editor sessions keep their TTY.
+   */
+  static async runStreaming(
+    args: string[]
+  ): Promise<Result<CommandOutput, CommandError>> {
+    return await CommandService.spawnInteractive("git", args, {
+      cwd: GitService.repoPath,
+      inheritStdin: true,
+      inheritStdout: true,
+      inheritStderr: true,
+    });
+  }
+  /**
    * Push the branch to `origin`, optionally setting the upstream (`-u`).
+   * Streams output live (progress, rejected-ref reasons).
    */
   static async push(
     branch: string,
@@ -148,7 +164,7 @@ class GitService {
     const args = ["push"];
     if (options.setUpstream) args.push("-u");
     args.push("origin", branch);
-    return await GitService.execGit(args);
+    return await GitService.runStreaming(args);
   }
   static async isSubmodule(file: string): Promise<boolean> {
     const cmd = await GitService.execGit(["ls-files", "--stage", "--", file]);
