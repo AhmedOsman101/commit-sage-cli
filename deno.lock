@@ -2,6 +2,7 @@
   "version": "5",
   "specifiers": {
     "jsr:@cliffy/ansi@1.2.1": "1.2.1",
+    "jsr:@cliffy/command@1": "1.2.1",
     "jsr:@cliffy/command@^1.2.1": "1.2.1",
     "jsr:@cliffy/flags@1.2.1": "1.2.1",
     "jsr:@cliffy/flags@^1.2.1": "1.2.1",
