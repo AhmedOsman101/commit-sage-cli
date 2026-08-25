@@ -1,12 +1,13 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Interactive installer for Commit Sage (Linux & macOS)
-# Usage: curl -fsSL https://get.commitsage.dev | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/main/installer/unix.sh | bash
 
 set -euo pipefail
 
 VERSION="${VERSION:-1.0.0}"
 INSTALL_DIR="${INSTALL_DIR:-${HOME}/.local/bin}"
-ADD_TO_PATH="${ADD_TO_PATH:-yes}"
+ADD_TO_PATH="${ADD_TO_PATH:-true}"
+REPO_URL="https://github.com/AhmedOsman101/commit-sage-cli"
 
 # Colors
 RED='\033[0;31m'
@@ -42,35 +43,50 @@ detect_os() {
   esac
 }
 
-# Detect shell
+# Detect shell (respects SHELL, then live version vars)
 detect_shell() {
-  if [[ -n "${ZSH_VERSION:-}" ]]; then
-    echo "zsh"
-  elif [[ -n "${BASH_VERSION:-}" ]]; then
-    echo "bash"
-  else
-    echo "bash"
-  fi
+  local shell_name
+  shell_name="$(basename "${SHELL:-}")"
+  case "${shell_name}" in
+  zsh) echo "zsh" ;;
+  bash) echo "bash" ;;
+  fish) echo "bash" ;; # fish uses bash-compatible PATH line fallback
+  *)
+    [[ -n "${ZSH_VERSION:-}" ]] && echo "zsh" && return 0
+    [[ -n "${BASH_VERSION:-}" ]] && echo "bash" && return 0
+    ;;
+  esac
+  echo "bash"
+}
+
+parse_tag() {
+  curl -fsSL https://api.github.com/repos/AhmedOsman101/commit-sage-cli/releases/latest 2>/dev/null |
+    grep '"tag_name"' | sed -E 's/.*"v?([0-9]+\.[0-9]+\.[0-9]+).*/\1/' || true
 }
 
 # Get latest version from GitHub
 get_latest_version() {
-  curl -s https://api.github.com/repos/AhmedOsman101/commit-sage-cli/releases/latest |
-    grep '"tag_name"' | sed 's/.*v\([0-9.]*\).*/\1/'
+  local tag
+  tag="$(parse_tag)"
+  if [[ -n "${tag}" ]]; then
+    echo "${tag}"
+    return 0
+  fi
+  return 1
 }
 
 # Download binary
 download_binary() {
-  local arch=$1
-  local os=$2
-  local url="https://github.com/AhmedOsman101/commit-sage-cli/releases/download/v${VERSION}/commit-sage-${os}-x64"
+  local arch="$1"
+  local os="$2"
+  local url="${REPO_URL}/releases/download/v${VERSION}/commit-sage-${os}-x64"
 
   if [[ "${arch}" == "arm64" ]]; then
-    url="https://github.com/AhmedOsman101/commit-sage-cli/releases/download/v${VERSION}/commit-sage-${os}-arm64"
+    url="${REPO_URL}/releases/download/v${VERSION}/commit-sage-${os}-arm64"
   fi
 
   log_info "Downloading Commit Sage v${VERSION} for ${os}-${arch}..."
-  curl -fsSL "${url}" -o "${INSTALL_DIR}/commit-sage" || {
+  curl -fSL "${url}" -o "${INSTALL_DIR}/commit-sage" || {
     log_error "Failed to download binary. Please check the version."
     exit 1
   }
@@ -91,11 +107,13 @@ add_to_path() {
       shell_config="${HOME}/.bashrc"
     fi
     ;;
+  *) log_warn "Shell not supported" ;;
   esac
 
-  local path_line="export PATH=\"\$HOME/.local/bin:\$PATH\""
+  # ponytail: minimal dedup — exact INSTALL_DIR string only; PATH export uses INSTALL_DIR
+  local path_line="export PATH=\"${INSTALL_DIR}:\$PATH\""
 
-  if grep -q "${INSTALL_DIR}" "${shell_config}" 2>/dev/null; then
+  if grep -Fq "${INSTALL_DIR}" "${shell_config}" 2>/dev/null; then
     log_info "PATH already configured in ${shell_config}"
     return 0
   fi
@@ -111,22 +129,30 @@ main() {
   echo -e "${GREEN}Commit Sage Installer${NC}"
   echo "=========================="
 
-  # Get version if not set
+  # Get version if not set (fallback to version.txt if offline/API fails)
   if [[ "${VERSION}" == "1.0.0" ]]; then
     log_info "Fetching latest version..."
-    VERSION="$(get_latest_version)" || true
+    fetched="$(get_latest_version || true)"
+    if [[ -n "${fetched}" ]]; then
+      VERSION="${fetched}"
+    else
+      log_warn "Could not fetch latest version from GitHub API; using ${VERSION}"
+    fi
   fi
 
   log_info "Version: ${VERSION}"
   log_info "Architecture: $(detect_arch)"
 
-  # Ask for installation directory
-  if [[ "${INSTALL_DIR}" == "${HOME}/.local/bin" ]]; then
+  # Ask for installation directory (skip prompt when piped via curl | bash)
+  if [[ "${INSTALL_DIR}" == "${HOME}/.local/bin" ]] && [[ -t 0 ]]; then
     echo -n "Installation directory [${INSTALL_DIR}]: "
-    read -r input_dir
-    if [[ -n "${input_dir}" ]]; then
-      INSTALL_DIR="${input_dir}"
+    if read -r input_dir 2>/dev/null; then
+      if [[ -n "${input_dir}" ]]; then
+        INSTALL_DIR="${input_dir}"
+      fi
     fi
+  elif [[ ! -t 0 ]]; then
+    log_info "Non-interactive install — using ${INSTALL_DIR}"
   fi
 
   # Create install directory
@@ -135,31 +161,40 @@ main() {
   # Download binary
   download_binary "$(detect_arch)" "$(detect_os)"
 
-  # Ask about PATH
-  if [[ "${ADD_TO_PATH}" != "yes" ]]; then
+  # Ask about PATH (skip when non-interactive or forced ADD_TO_PATH=true)
+  if ! "${ADD_TO_PATH}" && [[ -t 0 ]]; then
     echo -n "Add to PATH? [Y/n]: "
-    read -r add_path
-    if [[ "${add_path}" =~ ^[Nn] ]]; then
-      ADD_TO_PATH="no"
-    fi
-  fi
-
-  if [[ "${ADD_TO_PATH}" == "yes" ]]; then
-    add_to_path "$(detect_shell)"
-  fi
-
-  # Verify installation
-  if [[ "${INSTALL_DIR}" == "${HOME}/.local/bin" ]] || [[ ":${PATH}:" == *":${INSTALL_DIR}:"* ]]; then
-    if command -v commit-sage &>/dev/null; then
-      log_info "Installation successful!"
-      commit-sage --version || true
+    if read -r add_path 2>/dev/null; then
+      if [[ "${add_path}" =~ ^[Nn] ]]; then
+        ADD_TO_PATH="false"
+      else
+        ADD_TO_PATH="true"
+      fi
     else
-      log_warn "Installation complete but 'commit-sage' not found in PATH"
-      log_info "Try: ${INSTALL_DIR}/commit-sage"
+      log_info "Non-interactive — leaving ADD_TO_PATH=${ADD_TO_PATH}"
+    fi
+  elif ! "${ADD_TO_PATH}" != "yes" && [[ ! -t 0 ]]; then
+    log_info "Non-interactive — leaving ADD_TO_PATH=${ADD_TO_PATH}"
+  fi
+
+  "${ADD_TO_PATH}" && add_to_path "$(detect_shell)"
+
+  # Verify installation — prefer direct path, fall back to PATH binary
+  local verify_bin="${INSTALL_DIR}/commit-sage"
+  if [[ -x "${verify_bin}" ]]; then
+    if "${verify_bin}" --version >/dev/null 2>&1; then
+      log_info "Installation successful! $("${verify_bin}" --version 2>&1 | head -n 1)"
+    else
+      log_error "Installed binary failed: ${verify_bin} --version exited non-zero"
+      exit 1
+    fi
+    if ! command -v commit-sage >/dev/null 2>&1; then
+      log_warn "'commit-sage' not yet on PATH — try: ${verify_bin}"
+      log_warn "Restart your shell or run: source ~/.bashrc (or ~/.zshrc)"
     fi
   else
-    log_info "Installation complete!"
-    log_info "Binary location: ${INSTALL_DIR}/commit-sage"
+    log_error "Binary not found at ${verify_bin}"
+    exit 1
   fi
 }
 

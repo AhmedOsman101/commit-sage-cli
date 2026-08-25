@@ -1,3 +1,14 @@
+# ADR 001: CLI Migration — Cliffy + generate/commit/config + offline generator
+
+**Status:** Accepted  
+**Date:** 2026-08-03  
+**Deciders:** Ahmad Othman  
+**Scope:** `commit-sage` CLI surface, `src/cli/*`, `src/services/offlineGenerator.ts`, `src/lib/constants.ts` decoupling
+
+> Original decisions captured in `docs/cli-migration/decisions.md` during the planning `/grilling` session that produced wayfinder map #22. This ADR is the numbered archival copy (migrated 2026-08-25 for T8).
+
+---
+
 # CLI Migration — Grilling Decisions
 
 Captured during the planning `/grilling` session that produced this migration map. Read this before working any ticket in the migration.
@@ -130,3 +141,7 @@ These come from the `explore` agent's findings; future sessions should know:
 8. **Installer (`installer/unix.sh:155`) currently runs `commit-sage --version`** expecting a version flag — must be wired up by `T3` (parser) or `T11` (installer fix).
 9. **Format collapse nuance**: angular/karma/semantic are NOT byte-identical to conventional; each has its own type list (8/7/7 vs conventional's 11). "Keep them all" is a real decision, not a no-op.
 10. **Stale README**: documents old per-provider config sections + `deno task run compile` (no such task). Must be updated as part of `T11`.
+
+## Decision
+
+Adopt Cliffy for subcommand/flag/TUI, `@littletof/charmd` for preview, static-analysis `--offline` port from `auto-commit-msg`, and unified `provider.{type,model}` config shape. Config stays JSON; TOML rejected. Resolved via `/grilling` 2026-08-03; implementation tracked on wayfinder map #22 (T1–T8).

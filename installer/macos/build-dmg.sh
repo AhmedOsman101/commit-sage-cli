@@ -14,10 +14,10 @@ if ! command -v create-dmg &>/dev/null; then
   brew install create-dmg
 fi
 
-# Verify binary exists
-if [[ ! -f "bin/commit-sage-macos-arm64" ]]; then
-  echo "Error: Binary not found at bin/commit-sage-macos-arm64"
-  echo "Run release.sh first to build binaries."
+# Verify binaries exist (either arch is ok — mask release builds both)
+if [[ ! -f "bin/commit-sage-macos-arm64" ]] && [[ ! -f "bin/commit-sage-macos-x64" ]]; then
+  echo "Error: No macOS binary found in bin/ (expected bin/commit-sage-macos-{arm64,x64})"
+  echo "Run: mask release"
   exit 1
 fi
 

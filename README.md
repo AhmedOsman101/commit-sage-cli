@@ -1,180 +1,333 @@
 # Commit Sage
 
-A powerful CLI tool that helps you generate meaningful commit messages with AI by analyzing your Git changes.
+Generate meaningful git commit messages with AI — or offline static analysis
+— right from your terminal.
+
+> **CLI-first since v1.8.0.** `commit-sage` is now a self-contained, cross-platform
+> CLI (`generate`, `commit`, `config`) with flag overrides, an interactive staging
+> flow, and `--offline` fallback.
 
 ## Overview
 
-Commit Sage analyzes the changes in your Git repository and uses AI to generate contextually relevant commit messages. It saves you time and helps maintain a consistent commit history with descriptive messages.
+Commit Sage turns your `git diff` into a commit message. Two paths, one surface:
 
-## Features
+- **AI path** — diff + context → provider (OpenAI, Gemini, Ollama, … 11
+  total) → structured message (`conventional` / `angular` / `emoji` / `semantic` /
+  `freeform`).
+- **Offline path** — `git diff-index --name-status` → deterministic conventional
+  message (auto-commit-msg port, no API, no network). Ideal for CI or no-key setups.
 
-- Analyzes staged and unstaged changes in your Git repository
-- Generates commit messages based on the actual code changes
-- Supports different types of changes (staged, unstaged, untracked, deleted)
-- Skips submodule changes automatically
-- Works with any Git repository
+Pick the surface that fits the moment: `generate` prints a message to stdout
+(pipe-able, hook-callable), `commit` runs the full stage → preview → commit
+→ push loop, `config` inspects or edits the JSON config.
 
 ## Requirements
 
-- Git installed and accessible in your PATH
-- Internet connection for AI service communication (unless using [Ollama](https://github.com/ollama/ollama))
-- Deno 2.x or higher (if compiling from source)
-
-## How It Works
-
-1. Commit Sage detects if you're in a Git repository
-2. It analyzes the changes in your repository (staged, unstaged, etc.)
-3. The changes are processed and sent to an AI service
-4. The AI generates a contextually relevant commit message
-5. The suggested commit message is displayed for you to use
-
-### Error Handling
-
-Commit Sage provides clear error messages for common issues:
-
-- When no changes are detected
-- When the API key is not set
-- When Git is not installed or the directory is not a Git repository
+- Git in `$PATH`.
+- Internet for AI providers (skip with `--offline` or `ollama` locally).
+- Deno 2.x only if compiling from source (`mask compile`).
 
 ## Installation
 
-### Option 1: Download Prebuilt Binary
+Three ways — all install the same `commit-sage` binary.
 
-You can download the prebuilt binary for your platform from the [Releases page](https://github.com/AhmedOsman101/commit-sage-cli/releases) on GitHub. Follow these steps:
+### Prebuilt binary (Releases)
 
-1. Visit the [Releases page](https://github.com/AhmedOsman101/commit-sage-cli/releases).
-2. Download the appropriate binary for your operating system (e.g., `commit-sage-linux`, `commit-sage-macos`, or `commit-sage-windows.exe`).
-3. Rename the binary to `commit-sage` and place it in a directory included in your `$PATH` (e.g., `~/.local/bin` for Linux/macOS or any directory for Windows).
-4. Ensure the binary is executable (on Linux/macOS, run `chmod u+x commit-sage`).
-5. Run `commit-sage` from your terminal to use the tool.
+Download the asset for your platform from [Releases](https://github.com/AhmedOsman101/commit-sage-cli/releases).
 
----
+```shell
+# example: Linux x64 — pick the asset that matches `uname -s` / `uname -m`
+curl -L -o commit-sage https://github.com/AhmedOsman101/commit-sage-cli/releases/latest/download/commit-sage-linux-x64
+chmod +x commit-sage
+mv commit-sage ~/.local/bin/commit-sage   # ensure ~/.local/bin is on $PATH
+commit-sage --version
+```
 
-### Option 2: Compile from Source
+Assets produced by `mask release` → `bin/`:
 
-Alternatively, you can build from source.
+- `commit-sage-linux-x64`
+- `commit-sage-linux-arm64`
+- `commit-sage-macos-x64`
+- `commit-sage-macos-arm64`
+- `commit-sage-windows-x64.exe`
+- `commit-sage-windows-arm64.exe`
 
-Clone the repository and compile the executable:
+macOS DMG and Windows NSIS installers are also published — see below.
+
+### Quick Install (Linux & macOS)
+
+```shell
+curl -fsSL https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/main/installer/unix.sh | bash
+```
+
+This runs [`installer/unix.sh`](installer/unix.sh): detects `linux`/`macos` +
+`x86_64`/`arm64`, fetches the latest `vX.Y.Z` from the GitHub API, installs
+to `~/.local/bin/commit-sage` (override with `INSTALL_DIR`), optionally
+appends `~/.local/bin` to your shell config, and verifies with `commit-sage --version`.
+
+Customize:
+
+```shell
+INSTALL_DIR=~/bin VERSION=1.8.0 bash <(curl -fsSL https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/main/installer/unix.sh)
+```
+
+See [`installer/README.md`](installer/README.md) for manual curl + PATH setup.
+
+### Windows
+
+- **Installer (recommended):** download `commit-sage-setup.exe` from
+  Releases and run the wizard. Installs to `C:\Program Files\commitSage`,
+  adds to `PATH`, creates Start Menu + Desktop shortcuts. Built with
+  [`installer/windows/commit-sage.nsi`](installer/windows/commit-sage.nsi); see
+  `installer/windows/build-installer.ps1`.
+- **Portable:** download `commit-sage-windows-x64.exe`, rename to `commit-sage.exe`,
+  place anywhere on `PATH`.
+- **macOS DMG:** `CommitSage-<version>-macos-{x64,arm64}.dmg` via
+  `installer/macos/build-dmg.sh` (requires `create-dmg`).
+
+### Compile from source
+
+Requires [Deno](https://deno.land/) and [mask](https://github.com/jacobdeichert/mask).
 
 ```shell
 git clone https://github.com/AhmedOsman101/commit-sage-cli.git commit-sage
-
 cd commit-sage
-
-# Compiles the executable to your `~/.local/bin` directory. Ensure `~/.local/bin` is added to your $PATH.
-mask compile
+mask compile              # → ~/.local/bin/commit-sage
+mask release              # cross-compile all 6 targets → bin/
 ```
-
-> [!Note]
->
-> If you plan to compile the project yourself, make sure you have [Deno](https://deno.land/) and [mask](https://github.com/jacobdeichert/mask) installed on your system.
 
 ## Usage
 
-### Basic Usage
+`commit-sage` bare prints help (git/npm convention) — it never silently generates. Subcommands:
 
-Navigate to your Git repository and run `commit-sage` to generate a commit message based on your changes:
+```
+commit-sage [flags]
+  generate        Generate a commit message from the staged diff, print to stdout
+  commit          Interactive flow: stage files → generate → preview → commit → optional push
+  config          Inspect or modify configuration (get/set/list/path/default/open/edit)
+  help [sub]      Show help for a subcommand
+  --help, -h      Show help
+  --version, -V   Show version (1.8.0)
+```
 
-![](docs/demos/commitSage.gif)
+Exit codes:
 
----
+- `0` success (including `--push` warn-and-skip when no remote).
+- `1` CLI/IO/config error.
+- `2` usage (unknown flag / missing arg).
+- `130` abort (Esc in TUI, SIGINT).
 
-### Advanced Usage with git-commit Wrapper
+### `commit-sage generate [flags]`
 
-For enhanced functionality, consider using the `git-commit` wrapper script from [AhmedOsman101/shellScripts](https://github.com/AhmedOsman101/shellScripts).
+Pure text-in/text-out.
 
-This wrapper script extends `commit-sage` with:
+Interactive flow:
 
-- Conventional commit message support
-- AI-powered commit messages using `commit-sage`
-- Additional Git integration features
+- If nothing staged → TUI multiselect over unstaged tracked + untracked (Cliffy
+  Checkbox, searchable, select-all) → `git add`.
+- Re-check staged; if still empty and `commit.onlyStagedChanges=true` → exit 1;
+  else honor `general.diffStrategy`.
+- Generate message (AI or `--offline`).
+- Markdown preview via `@littletof/charmd` (subject as bold + body).
 
-![](docs/demos/gitCommit.gif)
+Prints the result. Exits without commit, useful for piping and integrating with other tools.
 
-![](docs/demos/gitCommitStaged.gif)
+> [!Important]
+> Needs a TTY for the picker/confirm. See [Non-TTY](#non-tty) below.
 
-To use the wrapper script:
+### `commit-sage commit [flags]`
 
-1. Install it from [AhmedOsman101/shellScripts](https://github.com/ahmedOsman101/shellscripts#installation)
-2. Run `git-commit --ai` in your repository instead of `commit-sage`
+Same interactive flow as `commit-sage generate` plus:
 
-The wrapper script provides a seamless integration between conventional commit formats and AI-generated messages.
+- Confirm (`commit.autoCommit` or `-y/--yes` skips).
+- `git commit -m "<subject>" -m "<body>"` (`-e` if `--edit`).
+- Optional `git push` (see `--push` below; `-u` on first push, warn-and-skip if no `origin`).
+
+### `commit-sage config <subcommand>`
+
+7 subcommands, no git repo required:
+
+| Subcommand                    | What it does                                                                                                                      |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `get <section>.<key>`         | Print one merged value; warns `not set — using default fallback: …` if not user-set                                               |
+| `set <section>.<key> <value>` | Coerce (boolean/number/string per `TYPE_MAP`) + `validateOrError` + persist to `CONFIG_PATH`                                      |
+| `list` / `print`              | Dump merged config (defaults + overrides) as JSON                                                                                 |
+| `path`                        | Print `CONFIG_PATH`                                                                                                               |
+| `default`                     | Print `DEFAULT_CONFIG` as JSON                                                                                                    |
+| `open`                        | Open `CONFIG_PATH` in OS handler (`open`/`xdg-open`/`cmd /c start`), fallback to `$EDITOR`                                        |
+| `edit`                        | Open in `$EDITOR`/`$VISUAL`/fallback (`vi`/`notepad`), re-read, JSON-parse, `validateOrError` — invalid restores in-memory backup |
+
+Keys are `<section>.<key>` with section being a valid config section.
+Unknown section/key or bad type → exit 1 with clear message.
+
+## Examples
+
+All assume you're inside a git repo and `commit-sage` is on `$PATH`.
+
+```shell
+# 1 — basic generate: staged diff → AI message on stdout (pipe-able)
+commit-sage generate
+
+# 2 — offline (no API, no TTY needed): deterministic conventional message from status rows
+commit-sage generate --offline
+
+# 3 — interactive commit flow: pick files → preview → confirm → git commit
+commit-sage commit
+
+# 4 — commit + push current branch (warn-and-skip if no origin, exit 0)
+commit-sage commit --push
+
+# 5 — switch provider/model without opening a file (unified provider.{type,model} shape)
+commit-sage config set provider.type openai && commit-sage config set provider.model gpt-5
+
+# 6 — inspect merged config
+commit-sage config print
+
+# bonus — commit offline, and generate with extra AI context + custom max length
+commit-sage commit --offline
+commit-sage generate --context "fixes #123, retry on 5xx" --max-length 72
+commit-sage generate --provider ollama --model gpt-oss-120b --format emoji --lang russian
+commit-sage config get provider.model
+commit-sage config path
+```
+
+<!-- TODO: Add actual demos
+More in `docs/demos/` (gifs):  -->
+
+## Flags Reference
+
+### Shared `generate` / `commit` flags
+
+One table — both subcommands accept the same 8 flags (commit adds 3 more below).
+
+| Flag                | Description                                                                                                                                                    | Notes                                                                                                                                     |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `--offline`         | Use static-analysis generator (no API). Always conventional-shape `<type>: <desc>` or bare `<desc>`; truncates at `--max-length` word boundary.                | Ignores `--format`; still respects `--max-length`; needs `git diff-index` status rows — untracked files won't appear until staged.        |
+| `--context <text>`  | Inject `## External Context\n<text>` before the diff in the AI prompt.                                                                                         | **AI-only** — ignored with `--offline`.                                                                                                   |
+| `--provider <name>` | Override `provider.type` for this run (`gemini`, `openai`, `anthropic`, `deepseek`, `mistral`, `xai`, `ollama`, `moonshotai`, `zai`, `minimax`, `openrouter`). | Per-run override of `provider.type`; maps to `DEFAULT_CONFIG.provider.type`.                                                              |
+| `--model <name>`    | Override `provider.model` for this run.                                                                                                                        | Per-run override of `provider.model`; any string accepted — provider validates at call time. `commit` help lists `SUPPORTED_PROVIDERS`.   |
+| `--format <name>`   | Commit template: `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform`.                                                                          | **AI-only** — ignored with `--offline` (offline always conventional). Default `conventional` (see `commit.commitFormat`).                 |
+| `--lang <name>`     | Commit language: `english`, `russian`, `chinese`, `japanese`.                                                                                                  | Per-run override of `commit.commitLanguage`.                                                                                              |
+| `--max-length <n>`  | Override `commit.maxSubjectLength` for this message.                                                                                                           | Applies to **both** AI and `--offline` (offline truncation uses word boundary + `…`).                                                     |
+| `--edit`            | Open before saving.                                                                                                                                            | `generate`: tempfile + `$EDITOR`/`$VISUAL` → print final to stdout. `commit`: passes `-e` to `git commit` → editor on the staged message. |
+
+Commit-only flags:
+
+| Flag              | Applies to | Description                                                                                                  | Notes                                                                                                                              |
+| ----------------- | ---------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `--push [branch]` | `commit`   | Push after a successful commit. Bare `--push` pushes the current branch; `--push <name>` pushes that branch. | Warn-and-skip (not fail) if no remote / no `origin`; auto `-u` (set upstream) on first push to a branch. Exit 0 even when skipped. |
+| `--no-push`       | `commit`   | Don't push, even if `commit.autoPush=true` or `--push` was earlier.                                          | Overrides `--push` and `commit.autoPush`.                                                                                          |
+| `-y, --yes`       | `commit`   | Skip confirm dialogs (commit + push confirm) regardless of `commit.autoCommit` / `commit.autoPush`.          | Also read as `commit.autoCommit`/`commit.autoPush` in config.                                                                      |
+
+### `config` subcommands
+
+| Subcommand                    | Description                                                                                                                                                             |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get <section>.<key>`         | Print one value; warns if key not user-set and falls back to `DEFAULT_CONFIG` display.                                                                                  |
+| `set <section>.<key> <value>` | Coerce + validate + persist (no `--write` flag needed). Boolean: `true`/`false` (case-insensitive). Number: finite. String: raw.                                        |
+| `list` / `print`              | Merged config as JSON (defaults + user overrides). Alias: `print`.                                                                                                      |
+| `path`                        | Resolved `CONFIG_PATH`.                                                                                                                                                 |
+| `default`                     | `DEFAULT_CONFIG` as JSON.                                                                                                                                               |
+| `open`                        | OS handler → `$EDITOR` fallback.                                                                                                                                        |
+| `edit`                        | `$EDITOR`/`$VISUAL`/fallback (`vi`/`notepad`) + in-memory backup restore on invalid JSON or `validateOrError` failure; prints `Config saved and validated.` on success. |
+
+## Non-TTY
+
+- `generate` → requires `$PROVIDER_API_KEY` (e.g. `OPENAI_API_KEY`,
+  `GEMINI_API_KEY`; `ollama` needs none) when stdin is not a TTY. Otherwise
+  it hard-fails with `No API key found in $... and stdin is not a TTY...`. All
+  interactive prompts would hang — so we fail fast.
+- `commit` → hard-fails without a TTY (staging picker + confirm are
+  interactive). Use `--offline` with `--yes` still needs a TTY for the flow; for CI,
+  prefer `generate --offline | git commit -F -`.
+- `--offline` (both subcommands) → always non-interactive, no key, no TTY.
 
 ## Configuration
 
-The app requires an API key for the AI service it uses. You can set it up in two ways:
+Config lives at `~/.config/commitSage/config.json` on
+Linux/macOS, `%APPDATA%\commitSage\config.json` on Windows (see
+`src/lib/constants.ts:CONFIG_PATH`), plus an in-process `DEFAULT_CONFIG`.
 
-### Environment Variables
+Inspect with `commit-sage config list` (merged) or `commit-sage config default` (defaults).
 
-Add the following to your shell configuration file (e.g., `~/.bashrc`, `~/.zshrc`):
+Resolve the path with `commit-sage config path`.
+
+Set with `commit-sage config set <section>.<key> <value>` or edit with `commit-sage config edit` / `commit-sage config open`.
+
+Every `set`/`edit` validates against `config.schema.json` (generated from
+`src/lib/types/configSchema.ts` — run `mask schema build` / `mask schema check`
+— don't hand-edit the schema).
+
+### Unified `provider.{type,model}` (since CLI migration)
+
+Old top-level `gemini`/`ollama`/`openai` provider sections for `type`/`model`
+are gone — replaced by one `provider` section:
+
+| Key                  | Type            | Default                   | Description                                                                                                           |
+| -------------------- | --------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `provider.type`      | `string` (enum) | `"gemini"`                | `gemini`, `openai`, `anthropic`, `deepseek`, `mistral`, `xai`, `ollama`, `moonshotai`, `zai`, `minimax`, `openrouter` |
+| `provider.model`     | `string`        | `"gemini-2.5-flash-lite"` | Opaque — validated by the selected provider at call time                                                              |
+| `provider.timeoutMs` | `number`        | `60000`                   | Request timeout                                                                                                       |
+| `provider.reasoning` | `string`        | `"off"`                   | `off`, `default`, `low`, `medium`, `high`, `xhigh`, `ultra`                                                           |
+
+Per-provider transport stays under its own section (e.g. `ollama.baseUrl`,
+`openrouter.baseUrl`, `openai.baseUrl` + `openai.apiKeyEnvVar` +
+`openai.useChatCompletions`).
+
+Don't confuse those with the unified
+`provider.type`/`provider.model` overrides (`--provider`/`--model`).
+
+### All sections at a glance
+
+| Section      | Key                   | Type      | Default                          | Notes                                                                                                                      |
+| ------------ | --------------------- | --------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `general`    | `maxRetries`          | `number`  | `3`                              | Retry on API call                                                                                                          |
+| `general`    | `initialRetryDelayMs` | `number`  | `1000`                           | First retry backoff                                                                                                        |
+| `general`    | `temperature`         | `number`  | `0.7`                            | Model temperature                                                                                                          |
+| `general`    | `maxInputChars`       | `number`  | `100000`                         | Diff chars sent to AI                                                                                                      |
+| `general`    | `diffStrategy`        | `string`  | `"auto"`                         | `staged` / `unstaged` / `auto`                                                                                             |
+| `ollama`     | `baseUrl`             | `string`  | `"http://localhost:11434/api"`   | Self-hosted Ollama                                                                                                         |
+| `openrouter` | `baseUrl`             | `string`  | `"https://openrouter.ai/api/v1"` | OpenRouter meta-provider                                                                                                   |
+| `openai`     | `baseUrl`             | `string`  | `"https://api.openai.com/v1"`    | OpenAI-compatible base                                                                                                     |
+| `openai`     | `apiKeyEnvVar`        | `string`  | `"OPENAI_API_KEY"`               | Env var that holds the key (other providers use `${TYPE}_API_KEY`)                                                         |
+| `openai`     | `useChatCompletions`  | `boolean` | `true`                           | Chat completions vs responses API                                                                                          |
+| `commit`     | `autoCommit`          | `boolean` | `false`                          | Skip `Commit changes?` confirm (or use `-y/--yes`)                                                                         |
+| `commit`     | `autoPush`            | `boolean` | `false`                          | Skip `Push to <branch>?` confirm (or use `-y/--yes`)                                                                       |
+| `commit`     | `commitFormat`        | `string`  | `"conventional"`                 | `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform` (`freeform` AI-only)                                   |
+| `commit`     | `onlyStagedChanges`   | `boolean` | `true`                           | When true and nothing staged after picker, `commit` exits 0 with `No staged changes`; else falls through to `diffStrategy` |
+| `commit`     | `commitLanguage`      | `string`  | `"english"`                      | `english`, `russian`, `chinese`, `japanese` (`--lang` overrides)                                                           |
+| `commit`     | `promptForRefs`       | `boolean` | `false`                          | Reserved (wired for future refs prompt)                                                                                    |
+| `commit`     | `maxSubjectLength`    | `number`  | `80`                             | Subject truncation limit; `--max-length` per-run                                                                           |
+| `commit`     | `bodyStyle`           | `string`  | `"subject-body"`                 | `subject-only`, `subject-body`, `subject-body-footer`                                                                      |
+
+Environment variables remain an alternative for the key: set `GEMINI_API_KEY`,
+`OPENAI_API_KEY`, etc. before running. Single-run:
 
 ```shell
-export SERVICE_API_KEY='your_api_key'
+OPENAI_API_KEY='sk-...' commit-sage generate --provider openai --model gpt-5
 ```
 
-Replace `SERVICE` with the appropriate service name and `your_api_key` with your actual API key.
-
-After adding these lines, restart your terminal or run `source ~/.bashrc` to apply the changes.
-
-**Export before running**
-
-This method sets the API key for a single run.
-
-```shell
-SERVICE_API_KEY='your_api_key' commit-sage
-```
-
-> [!NOTE]
->
-> If you're using `ollama` as your provider, you can skip all API key and environment variable setup.
-> Ollama runs locally and requires no authentication or network access.
-
----
-
-### Configuration File
-
-You can customize any options in the configuration file located at `~/.config/commitSage/config.json`.
-
-The configuration file allows customization of retry behavior, model providers, commit formatting, and default provider usage.
-
-## Limitations / Not Yet Implemented
-
-The following are known limitations in the current version of **commit-sage**, with plans to address them in future updates:
-
-- [x] **Handle files with spaces in their names**
-      Previously, the program may have failed or behaved unexpectedly when processing files with spaces in their names. This has been resolved.
-
-- [ ] **Configuration options not yet implemented**
-      The following options are defined in the schema for forward compatibility, but are currently **non-functional** and will be ignored at runtime:
-  - [ ] `commit.autoCommit`
-  - [ ] `commit.autoPush`
-  - [ ] `commit.onlyStagedChanges`
-  - [ ] `commit.promptForRefs`
-
-> [!NOTE]
->
-> These options can safely remain in your config. They won't cause any errors, but currently have no effect.
-> They are included as placeholders for upcoming features that are under active consideration or development.
-
-## Third-Party Tools
-
-<a href="https://bizbot.zvo.cn/index.html" target="_blank" rel="noopener">
-  BizBot: AI automated promotion system
-</a>
+Ollama needs no key. Keys stored in the JSON file follow the same `provider.type` routing.
 
 ## Contributing
 
-Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines before submitting a Pull Request.
-By contributing to `commit-sage-cli`, you agree to license your contributions under the GNU General Public License v3.0.
+Contributions welcome — open an issue or PR.
+Read [`CONTRIBUTING.md`](CONTRIBUTING.md) first.
+Format before committing.
+Follow Conventional Commits for messages.
+
+## Third-Party Tools
+
+<a href="https://bizbot.zvo.cn/index.html" target="_blank" rel="noopener">BizBot: AI automated promotion system</a>
 
 ## Acknowledgment
 
-`commit-sage-cli` was inspired by the [CommitSage VS Code extension](https://marketplace.visualstudio.com/items?itemName=VizzleTF.geminicommit) by Ivan K. ([GitHub](https://github.com/VizzleTF/CommitSage)), licensed under the MIT License. His project motivated me to create a Deno CLI tool, adapting its approach to commit generation for CLI use. Thank you, Ivan, for your open-source contribution.
+Inspired by the [CommitSage VS Code extension](https://marketplace.visualstudio.com/items?itemName=VizzleTF.geminicommit) by Ivan K. ([GitHub](https://github.com/VizzleTF/CommitSage)) (MIT). It motivated the Deno CLI port — thank you, Ivan.
 
 ## License
 
-`commit-sage-cli` is licensed under the [GNU General Public License v3.0](LICENSE). The full text of the GPLv3 is available in the [LICENSE](LICENSE) file.
+GPLv3 — see [`LICENSE`](LICENSE).
 
 ## Contact
 
-For questions or feedback about `commit-sage-cli`, please contact me via [GitHub](https://github.com/AhmedOsman101) or email at [ahmad.ali.othman@outlook.com](mailto:ahmad.ali.othman@outlook.com).
+[GitHub](https://github.com/AhmedOsman101) · [ahmad.ali.othman@outlook.com](mailto:ahmad.ali.othman@outlook.com)

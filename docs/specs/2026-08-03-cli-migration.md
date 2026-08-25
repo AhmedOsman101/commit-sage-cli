@@ -1,8 +1,13 @@
 # CLI Migration Spec
 
-> **Status:** ready-for-agent — produced by `/to-spec` from the planning `/grilling` session.
-> **Grilling decisions:** see [`./decisions.md`](./decisions.md). Read both before starting work.
-> **Tracker map:** see GitHub issue "CLI migration — wayfinder map".
+> **Status:** Done — implemented T1–T8 (2026-08-03 → 2026-08-25), wayfinder map #22.  
+> **Date:** 2026-08-03  
+> **ADR:** [`docs/adr/001-cli-migration.md`](../adr/001-cli-migration.md) — grilling decisions.  
+> **Tracker map:** GitHub issue #22 `wayfinder:map` — `ready-for-agent` tickets `wayfinder:task`.
+
+Original spec produced by `/to-spec` from the planning `/grilling` session. Archived from `docs/cli-migration/spec.md` (2026-08-25 docs reorg, T8). Content below is verbatim; header updated to Done + dated prefix per `docs/` conventions.
+
+---
 
 ## Problem Statement
 
@@ -99,7 +104,7 @@ The `generate` subcommand is the foundation: pure text-in (diff + flags) → tex
 
 ### Offline generator
 - New `src/services/offlineGenerator.ts`.
-- Heuristics ported verbatim from `~/work/forks/auto-commit-msg` — **exact behavior contract lives in [`decisions.md`](./decisions.md) §"Offline generator contract"**. Read that before implementing; match it on the verification cases.
+- Heuristics ported verbatim from `~/work/forks/auto-commit-msg` — **exact behavior contract lives in [`decisions.md`](../adr/001-cli-migration.md) §"Offline generator contract"**. Read that before implementing; match it on the verification cases.
 - Pure function: `generateOfflineMessage(changes: FileChange[], options: { maxLength: number }): string`. No git, no IO, no env.
 - `FileChange` (`{ x, y, from, to }`) copied from the port guide, co-located in the service or `src/lib/types.ts`.
 - Diff source: a new git method that runs `git diff-index --name-status …` and parses lines → `FileChange[]` (via `CommandService`). **Not** `GitService.getDiff("staged")` — that returns per-file content for the AI prompt, not status rows. Reuse `GitService` for repo-root resolution, staged→unstaged fallback, and `NoChangesDetectedError`.
@@ -139,7 +144,7 @@ The `generate` subcommand is the foundation: pure text-in (diff + flags) → tex
 ### README / docs
 - README documents new subcommands + flags table.
 - Document non-TTY behavior + `--offline` use case.
-- Drop the "Not Yet Implemented" section (stale).
+- Drop the stale `Limitations` placeholder section (formerly titled “Not-Yet-Implemented”).
 - Update the `mask run compile` mention to `mask compile`.
 
 ## Testing Decisions
@@ -168,3 +173,14 @@ Future sessions may add tests; the offline generator's pure-function shape leave
 - All tickets cut every layer they touch (per `to-tickets` principle): schema → service → CLI → docs in one vertical slice.
 - The `decisions.md` file is the source of truth for anything ambiguous. If a ticket needs a finer decision, open a `wayfinder:grilling` child ticket rather than guess.
 - Cliffy's `Command` class generates `--help` matching the mask help format the user pasted — no need to hand-write help text.
+
+## Implementation Outcome (2026-08-25, T8)
+
+All tickets T1–T7 merged; T8 closed docs gap. Surface now:
+
+- `src/cli/root.ts` → `commit-sage` help on no-args, `generate`/`commit`/`config` + `help [sub]`, `--version` exits 0, exit codes 0/1/2/130.
+- `src/cli/generate.ts` + `commit.ts` → shared 8 flags (`--offline/--context/--provider/--model/--format/--lang/--max-length/--edit`) + commit extras `--push/--no-push/--yes`.
+- `src/services/offlineGenerator.ts` → `runOffline` via `git diff-index --name-status` status rows (not `getDiff` content).
+- `src/cli/config.ts` → 7 subcommands `get/set/list/print/path/default/open/edit` with TYPE_MAP coerce + `validateOrError` restore.
+- `src/lib/constants.ts` → `CONFIG_PATH`/`DEFAULT_CONFIG` unified `provider.{type,model}`; `config schema` updated; no module-load repo coupling.
+- Verified: `mask lint` + `mask typecheck` clean; `commit-sage --help/--version/commit --help/config --help` smokes pass; `grep -rn "deno task"` zero hits.
