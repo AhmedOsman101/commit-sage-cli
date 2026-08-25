@@ -1,4 +1,4 @@
-import { ErrFromText, Ok, type Result, wrapThrowable } from "lib-result";
+import { Err, ErrFromText, Ok, type Result, wrapThrowable } from "lib-result";
 import { z } from "zod";
 import { CONFIG_PATH } from "@/lib/constants.ts";
 import { Log } from "@/lib/logger.ts";
@@ -221,7 +221,14 @@ const ConfigValidationService = {
       }
       configContent = parseResult.ok;
     } else {
-      configContent = config;
+      const parseResult = safeParse(config);
+      if (parseResult.isError()) {
+        const zodError = parseResult.error as z.ZodError;
+        throw Log.error(
+          this.transformErrorMessage(zodError.issues[0].message)
+        ).exit();
+      }
+      configContent = parseResult.ok ?? config;
     }
 
     if (typeof configContent === "object" && configContent !== null) {
@@ -320,6 +327,211 @@ const ConfigValidationService = {
           configContent.provider !== null
         ) {
           this.validateProvider(configContent.provider);
+        }
+      }
+    }
+
+    return Ok(configContent as Config);
+  },
+  validateOrError(config: unknown): Result<Config, Error> {
+    let configContent: unknown;
+
+    if (typeof config === "string") {
+      const jsonResult = JsonParse(config);
+      if (jsonResult.isError()) return Err(jsonResult.error);
+      const parseResult = safeParse(jsonResult.ok);
+      if (parseResult.isError()) {
+        const zodError = parseResult.error as z.ZodError;
+        return ErrFromText(
+          this.transformErrorMessage(zodError.issues[0].message)
+        );
+      }
+      configContent = parseResult.ok;
+    } else {
+      // Non-string: run through Zod directly to catch schema violations,
+      // then continue with field-level checks below.
+      const parseResult = safeParse(config);
+      if (parseResult.isError()) {
+        const zodError = parseResult.error as z.ZodError;
+        return ErrFromText(
+          this.transformErrorMessage(zodError.issues[0].message)
+        );
+      }
+      configContent = parseResult.ok ?? config;
+    }
+
+    if (typeof configContent === "object" && configContent !== null) {
+      if (Array.isArray(configContent)) {
+        return ErrFromText(
+          `Configuration file's structure is invalid — delete ${CONFIG_PATH} to regenerate`
+        );
+      }
+
+      if (Object.keys(configContent).length === 0) {
+        return ErrFromText(
+          `Configuration file is empty — delete ${CONFIG_PATH} to regenerate`
+        );
+      }
+
+      if ("$schema" in configContent) {
+        if (
+          typeof configContent.$schema === "object" &&
+          configContent.$schema !== null
+        ) {
+          const validation = this.validateUrl(configContent.$schema);
+          if (validation.isError()) {
+            return ErrFromText(
+              `Error at key $schema => ${validation.error.message}`
+            );
+          }
+        }
+      } else {
+        return ErrFromText("Error at key $schema => Missing a required value.");
+      }
+
+      if ("general" in configContent) {
+        if (
+          typeof configContent.general === "object" &&
+          configContent.general !== null
+        ) {
+          const g = configContent.general as Record<string, unknown>;
+          if ("maxRetries" in g) {
+            const r = this.validateInt(g.maxRetries);
+            if (r.isError()) {
+              return ErrFromText(
+                `Error at key general.maxRetries => ${r.error.message}`
+              );
+            }
+          }
+          if ("initialRetryDelayMs" in g) {
+            const r = this.validateInt(g.initialRetryDelayMs);
+            if (r.isError()) {
+              return ErrFromText(
+                `Error at key general.initialRetryDelayMs => ${r.error.message}`
+              );
+            }
+          }
+          if ("temperature" in g) {
+            if (
+              typeof g.temperature !== "number" ||
+              Number.isNaN(g.temperature)
+            ) {
+              return ErrFromText(
+                "Error at key general.temperature => must be a number."
+              );
+            }
+            if (g.temperature < 0) {
+              return ErrFromText(
+                "Error at key general.temperature => must be at least 0."
+              );
+            }
+            if (g.temperature > 2) {
+              return ErrFromText(
+                "Error at key general.temperature => must not exceed 2."
+              );
+            }
+          }
+          if ("maxInputChars" in g) {
+            const r = this.validateInt(g.maxInputChars, 1);
+            if (r.isError()) {
+              return ErrFromText(
+                `Error at key general.maxInputChars => ${r.error.message}`
+              );
+            }
+          }
+        }
+      }
+
+      if ("commit" in configContent) {
+        if (
+          typeof configContent.commit === "object" &&
+          configContent.commit !== null
+        ) {
+          const c = configContent.commit as Record<string, unknown>;
+          if ("maxSubjectLength" in c) {
+            const r = this.validateInt(c.maxSubjectLength, 1);
+            if (r.isError()) {
+              return ErrFromText(
+                `Error at key commit.maxSubjectLength => ${r.error.message}`
+              );
+            }
+          }
+        }
+      }
+
+      if ("ollama" in configContent) {
+        if (
+          typeof configContent.ollama === "object" &&
+          configContent.ollama !== null
+        ) {
+          const o = configContent.ollama as Record<string, unknown>;
+          if ("baseUrl" in o) {
+            const r = this.validateUrl(o.baseUrl);
+            if (r.isError()) {
+              return ErrFromText(
+                `Error at key ollama.baseUrl => ${r.error.message}`
+              );
+            }
+          }
+        }
+      }
+
+      if ("openrouter" in configContent) {
+        if (
+          typeof configContent.openrouter === "object" &&
+          configContent.openrouter !== null
+        ) {
+          const o = configContent.openrouter as Record<string, unknown>;
+          if ("baseUrl" in o) {
+            const r = this.validateUrl(o.baseUrl);
+            if (r.isError()) {
+              return ErrFromText(
+                `Error at key openrouter.baseUrl => ${r.error.message}`
+              );
+            }
+          }
+        }
+      }
+
+      if ("openai" in configContent) {
+        if (
+          typeof configContent.openai === "object" &&
+          configContent.openai !== null
+        ) {
+          const o = configContent.openai as Record<string, unknown>;
+          if ("baseUrl" in o) {
+            const r = this.validateUrl(o.baseUrl);
+            if (r.isError()) {
+              return ErrFromText(
+                `Error at key openai.baseUrl => ${r.error.message}`
+              );
+            }
+          }
+          if ("apiKeyEnvVar" in o) {
+            const r = this.validateEnvVarName(o.apiKeyEnvVar);
+            if (r.isError()) {
+              return ErrFromText(
+                `Error at key openai.apiKeyEnvVar => ${r.error.message}`
+              );
+            }
+          }
+        }
+      }
+
+      if ("provider" in configContent) {
+        if (
+          typeof configContent.provider === "object" &&
+          configContent.provider !== null
+        ) {
+          const p = configContent.provider as Record<string, unknown>;
+          if ("timeoutMs" in p) {
+            const r = this.validateInt(p.timeoutMs, 0);
+            if (r.isError()) {
+              return ErrFromText(
+                `Error at key provider.timeoutMs => ${r.error.message}`
+              );
+            }
+          }
         }
       }
     }
