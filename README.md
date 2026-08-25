@@ -75,7 +75,7 @@ mask compile
 
 Navigate to your Git repository and run `commit-sage` to generate a commit message based on your changes:
 
-![](docs/commitSage.gif)
+![](docs/demos/commitSage.gif)
 
 ---
 
@@ -89,9 +89,9 @@ This wrapper script extends `commit-sage` with:
 - AI-powered commit messages using `commit-sage`
 - Additional Git integration features
 
-![](docs/gitCommit.gif)
+![](docs/demos/gitCommit.gif)
 
-![](docs/gitCommitStaged.gif)
+![](docs/demos/gitCommitStaged.gif)
 
 To use the wrapper script:
 

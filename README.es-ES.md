@@ -1,5 +1,3 @@
-
-
 # Commit Sage
 
 Una potente herramienta de CLI que te ayuda a generar mensajes de commit significativos con IA analizando tus cambios de Git.
@@ -77,7 +75,7 @@ deno task run compile
 
 Navega a tu repositorio de Git y ejecuta `commit-sage` para generar un mensaje de commit basado en tus cambios:
 
-![](docs/commitSage.gif)
+![](docs/demos/commitSage.gif)
 
 ---
 
@@ -91,9 +89,9 @@ Este script envoltorio extiende `commit-sage` con:
 - Mensajes de commit potenciados por IA usando `commit-sage`
 - Características adicionales de integración con Git
 
-![](docs/gitCommit.gif)
+![](docs/demos/gitCommit.gif)
 
-![](docs/gitCommitStaged.gif)
+![](docs/demos/gitCommitStaged.gif)
 
 Para usar el script envoltorio:
 
