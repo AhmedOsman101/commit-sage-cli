@@ -1,10 +1,10 @@
-// Generate `config.schema.json` from `src/lib/types/configSchema.ts`.
-//
-// Usage:
-//   deno run -A scripts/build-schema.ts           # write to config.schema.json
-//   deno run -A scripts/build-schema.ts --check   # verify in sync; exit 1 on drift
-//
-// Run via `mask schema` (write) or `mask schema-check` (verify).
+/*
+Generate `config.schema.json` from `src/lib/types/configSchema.ts`.
+
+Usage:
+  mask schema build   # write to config.schema.json
+  mask schema check   # verify in sync; exit 1 on drift
+*/
 
 import { ROOT_SCHEMA } from "@/lib/types/configSchema.ts";
 
