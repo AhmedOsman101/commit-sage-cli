@@ -265,7 +265,8 @@ class ConfigCommand extends Command {
     this.command(
       "list",
       new Command()
-        .description("Print the merged config as JSON")
+        .description("Print the current configuration as JSON")
+        .alias("print")
         .action(async () => {
           const loaded = await ConfigService.load();
           if (loaded.isError()) throw Log.error(loaded.error.message).exit();
