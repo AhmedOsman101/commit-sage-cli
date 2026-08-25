@@ -57,9 +57,12 @@ async function selectFilesToStage(): Promise<string[]> {
 /**
  * Yes/no confirmation. TTY-guarded so callers don't need to check manually.
  */
-async function confirmPrompt(message: string): Promise<boolean> {
+async function confirmPrompt(
+  message: string,
+  defaultValue = true
+): Promise<boolean> {
   guardTTY();
-  return await Confirm.prompt(message);
+  return await Confirm.prompt({ message, default: defaultValue });
 }
 
 export { confirmPrompt, guardTTY, selectFilesToStage };

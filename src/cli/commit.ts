@@ -100,6 +100,10 @@ class CommitCommand extends Command {
         "Push after commit. Bare --push pushes the current branch; --push <name> pushes the named branch."
       )
       .option(
+        "--no-push",
+        "Don't push, even if a remote exists (overrides --push and autoPush)."
+      )
+      .option(
         "-y, --yes",
         "Skip the confirm dialog (and the push confirm) regardless of commit.autoCommit / commit.autoPush."
       )
@@ -127,7 +131,7 @@ class CommitCommand extends Command {
         const autoPush = autoPushResult.ok;
 
         const yes = Boolean(opts.yes);
-        const pushValue = opts.push as string | true | undefined;
+        const pushValue = opts.push as string | boolean | undefined;
 
         // ── Git repository check ──────────────────────────────────────────
         if (!GitService.isGitRepo()) {
@@ -192,7 +196,7 @@ class CommitCommand extends Command {
 
         // ── Confirm dialog ───────────────────────────────────────────────
         if (!autoCommit && !yes) {
-          const confirmed = await confirmPrompt("Commit changes?");
+          const confirmed = await confirmPrompt("Commit changes?", true);
           if (!confirmed) throw Log.info("Aborted.").exit(0);
         }
 
@@ -212,9 +216,13 @@ class CommitCommand extends Command {
         if (commitResult.isError()) {
           throw Log.error(commitResult.error.message).exit();
         }
-        // ── git push (only when --push was passed) ───────────────────────
-        if (pushValue !== undefined) {
+        // ── git push ───────────────────────────────────────────────────────
+        if (pushValue === false) {
+          // --no-push: explicitly keep local, even if remote exists
+        } else if (pushValue !== undefined) {
           await push(pushValue, yes || autoPush);
+        } else if (await GitService.hasOriginRemote()) {
+          await push(true, yes || autoPush);
         }
       });
   }
@@ -254,7 +262,7 @@ async function push(
 
   // Confirm dialog (skipped when --yes or commit.autoPush is set)
   if (!skipConfirm) {
-    const confirmed = await confirmPrompt(`Push to ${branch}?`);
+    const confirmed = await confirmPrompt(`Push to ${branch}?`, true);
     if (!confirmed) throw Log.error("Push aborted.").exit();
   }
 
