@@ -18,7 +18,7 @@ type GenerateOptions = {
   model?: string;
   /** Override `commit.commitFormat` for this run (from `--format` flag). */
   format?: CommitFormat;
-  /** Override `commit.maxSubjectLength` for this run (from `--max-length` flag). */
+  /** Override `commit.maxLength` for this run (from `--max-length` flag). */
   maxLength?: number;
   /** Override `commit.commitLanguage` for this run (from `--lang` flag). */
   language?: CommitLanguage;

@@ -23,14 +23,15 @@ abstract class ModelService {
    *
    * Resolution order (explicit, no shared state):
    *   1. `modelOverride` — CLI `--model` flag, if present
-   *   2. `provider.model` from the user's config file
-   *   3. `DEFAULT_CONFIG.provider.model`
+   *   2. `model` from the user's config file (provider/model string)
+   *   3. `DEFAULT_CONFIG.model`
    */
   protected static async resolveModel(modelOverride?: string): Promise<string> {
     if (modelOverride !== undefined) return modelOverride;
-    const result = await ConfigService.get("provider", "model");
-    if (result.isError()) return DEFAULT_CONFIG.provider.model;
-    return result.ok;
+    const result = await ConfigService.get("model");
+    if (result.isError()) return DEFAULT_CONFIG.model as string;
+    const val = result.ok as unknown as string | undefined;
+    return val ?? (DEFAULT_CONFIG.model as string);
   }
 
   /**
@@ -70,37 +71,95 @@ abstract class ModelService {
     return "";
   }
 
-  protected static async getMaxRetries() {
-    return await ConfigService.get("general", "maxRetries").then(result =>
-      result.unwrap()
+  protected static async getMaxRetries(): Promise<number> {
+    const result = await ConfigService.get("generation", "maxRetries");
+    if (result.isError())
+      return (DEFAULT_CONFIG.generation as unknown as Record<string, number>)
+        .maxRetries;
+    return (
+      (result.ok as unknown as number) ??
+      (DEFAULT_CONFIG.generation as unknown as Record<string, number>)
+        .maxRetries
     );
   }
 
-  protected static async getTemperature() {
-    return await ConfigService.get("general", "temperature").then(result =>
-      result.unwrap()
+  protected static async getTemperature(): Promise<number> {
+    const result = await ConfigService.get("generation", "temperature");
+    if (result.isError())
+      return (DEFAULT_CONFIG.generation as unknown as Record<string, number>)
+        .temperature;
+    return (
+      (result.ok as unknown as number) ??
+      (DEFAULT_CONFIG.generation as unknown as Record<string, number>)
+        .temperature
     );
   }
 
-  protected static async getGenerationOptions() {
+  protected static async getGenerationOptions(): Promise<{
+    temperature: number;
+    abortSignal: AbortSignal | undefined;
+  }> {
     const temperature = await ModelService.getTemperature();
-    const timeoutMs = await ConfigService.get("provider", "timeoutMs").then(
-      result => result.unwrap()
-    );
+    const timeoutResult = await ConfigService.get("providers", "defaults");
+    let timeoutMs: number = (
+      DEFAULT_CONFIG.providers as unknown as Record<
+        string,
+        Record<string, number>
+      >
+    ).defaults.timeoutMs;
+    if (timeoutResult.isOk()) {
+      const defaults = timeoutResult.ok as unknown as
+        | Record<string, number>
+        | undefined;
+      if (defaults && typeof defaults.timeoutMs === "number")
+        timeoutMs = defaults.timeoutMs;
+    } else {
+      // fallback via direct load for robustness
+      const cfg = await ConfigService.load();
+      if (cfg.isOk()) {
+        const prov = (cfg.ok as unknown as Record<string, unknown>).providers as
+          | Record<string, unknown>
+          | undefined;
+        const d = prov?.defaults as Record<string, unknown> | undefined;
+        if (d && typeof d.timeoutMs === "number")
+          timeoutMs = d.timeoutMs as number;
+      }
+    }
 
     return {
-      temperature,
+      temperature: temperature as number,
       abortSignal: timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : undefined,
     };
   }
 
-  protected static async getReasoningLevel() {
-    const reasoning = await ConfigService.get("provider", "reasoning").then(r =>
-      r.unwrap()
-    );
+  protected static async getReasoningLevel(): Promise<
+    string | boolean | undefined
+  > {
+    const result = await ConfigService.get("providers", "defaults");
+    let reasoning: unknown = (
+      DEFAULT_CONFIG.providers as unknown as Record<
+        string,
+        Record<string, unknown>
+      >
+    ).defaults.reasoning;
+    if (result.isOk()) {
+      const defaults = result.ok as unknown as
+        | Record<string, unknown>
+        | undefined;
+      if (defaults && "reasoning" in defaults) reasoning = defaults.reasoning;
+    } else {
+      const cfg = await ConfigService.load();
+      if (cfg.isOk()) {
+        const prov = (cfg.ok as unknown as Record<string, unknown>).providers as
+          | Record<string, unknown>
+          | undefined;
+        const d = prov?.defaults as Record<string, unknown> | undefined;
+        if (d && "reasoning" in d) reasoning = d.reasoning;
+      }
+    }
 
-    if (reasoning === "off") return;
-    return reasoning;
+    if (reasoning === false || reasoning === "off") return;
+    return reasoning as string | boolean;
   }
 
   protected static async getOpenAIProviderOptions(options?: {
@@ -169,7 +228,7 @@ abstract class ModelService {
 
     const maxRetries = await ModelService.getMaxRetries();
 
-    if (classified.shouldRetry && attempt < maxRetries) {
+    if (classified.shouldRetry && attempt < (maxRetries as number)) {
       const delay = ModelService.calculateRetryDelay(attempt);
       await setTimeout(delay);
       return retryFn(prompt, attempt + 1);

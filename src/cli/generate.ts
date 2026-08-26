@@ -7,6 +7,7 @@ import { runEditor } from "@/cli/handlers/editor.ts";
 import { runOffline } from "@/cli/handlers/offline.ts";
 import { selectFilesToStage } from "@/cli/prompts.ts";
 import { Log } from "@/lib/logger.ts";
+import { splitProviderModel } from "@/lib/modelString.ts";
 import { COMMIT_FORMATS, SUPPORTED_LANGUAGES } from "@/lib/types/commit.ts";
 import type { ProviderType } from "@/lib/types/config.ts";
 import AiService from "@/services/ai.ts";
@@ -24,10 +25,11 @@ async function resolveProviderEnvVar(
 
   if (providerType === "openai") {
     const result = await ConfigService.get("openai", "apiKeyEnvVar");
-    return result.isOk() && result.ok ? result.ok : "OPENAI_API_KEY";
+    const val = result.isOk() ? (result.ok as unknown as string) : undefined;
+    return val ? val : "OPENAI_API_KEY";
   }
 
-  return `${providerType.toUpperCase()}_API_KEY`;
+  return `${(providerType as string).toUpperCase()}_API_KEY`;
 }
 
 /**
@@ -40,8 +42,21 @@ async function guardNonTTY(opts: Record<string, unknown>): Promise<true> {
 
   // Determine the active provider
   const providerOverride = opts.provider as ProviderType | undefined;
-  const providerType: ProviderType =
-    providerOverride ?? (await ConfigService.get("provider", "type")).unwrap();
+  let providerType: ProviderType;
+  if (providerOverride) {
+    providerType = providerOverride;
+  } else {
+    const modelResult = await ConfigService.get("model");
+    const modelStr = (
+      modelResult.isOk()
+        ? (modelResult.ok as unknown as string)
+        : "openai/gpt-5-nano"
+    ) as string;
+    const split = splitProviderModel(modelStr);
+    providerType = (
+      split.isOk() ? split.ok.provider : "openai"
+    ) as ProviderType;
+  }
 
   const envVarName = await resolveProviderEnvVar(providerType);
   if (envVarName && !Deno.env.get(envVarName)) {
@@ -85,7 +100,7 @@ class GenerateCommand extends Command {
       )
       .option(
         "--max-length <n:number>",
-        "Override maxSubjectLength. Applies to --offline too."
+        "Override maxLength. Applies to --offline too."
       )
       .option(
         "--edit",

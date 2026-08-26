@@ -33,10 +33,16 @@ class OpenRouterService extends ModelService {
       const generationOptions = await ModelService.getGenerationOptions();
 
       const baseURLResult = await ConfigService.get("openrouter", "baseUrl");
-      const baseURL =
+      const baseURL = (
         baseURLResult.isOk() && baseURLResult.ok
-          ? baseURLResult.ok
-          : (DEFAULT_CONFIG.openrouter.baseUrl as string);
+          ? (baseURLResult.ok as unknown as string)
+          : ((
+              DEFAULT_CONFIG.providers as unknown as Record<
+                string,
+                Record<string, string>
+              >
+            ).openrouter?.baseUrl as string)
+      ) as string;
       Log.debug(
         `[openrouterService.generateCommitMessage] CALL API model=${model}, baseURL=${baseURL}`
       );

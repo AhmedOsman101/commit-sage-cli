@@ -76,15 +76,15 @@ function parseDiffIndexLines(stdout: string): FileChange[] {
 }
 
 /**
- * Resolve `maxLength`: flag → `commit.maxSubjectLength` config → 80 default.
+ * Resolve `maxLength`: flag → `commit.maxLength` config → 80 default.
  */
 async function resolveMaxLength(
   flagValue: number | undefined
 ): Promise<number> {
   if (flagValue !== undefined) return flagValue;
-  const cfg = await ConfigService.get("commit", "maxSubjectLength");
-  if (cfg.isOk() && cfg.ok) return cfg.ok;
-  return DEFAULT_CONFIG.commit.maxSubjectLength;
+  const cfg = await ConfigService.get("commit", "maxLength");
+  if (cfg.isOk() && cfg.ok) return cfg.ok as unknown as number;
+  return (DEFAULT_CONFIG.commit as unknown as Record<string, number>).maxLength;
 }
 
 interface OfflineRunOptions {

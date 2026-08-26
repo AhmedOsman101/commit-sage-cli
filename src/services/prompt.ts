@@ -12,7 +12,7 @@ import { getTemplate } from "@/templates/index.ts";
 type PromptOptions = {
   /** Override `commit.commitFormat`. */
   format?: CommitFormat;
-  /** Override `commit.maxSubjectLength`. */
+  /** Override `commit.maxLength`. */
   maxLength?: number;
   /** Override `commit.commitLanguage`. */
   language?: CommitLanguage;
@@ -56,16 +56,19 @@ async function buildPrompt(
   const lengthResult =
     options.maxLength !== undefined
       ? Ok(options.maxLength)
-      : await ConfigService.get("commit", "maxSubjectLength");
+      : await ConfigService.get("commit", "maxLength");
   if (lengthResult.isError()) return Err(lengthResult.error);
 
   const bodyStyleResult = await ConfigService.get("commit", "bodyStyle");
   if (bodyStyleResult.isError()) return Err(bodyStyleResult.error);
 
-  const format = formatResult.ok;
-  const language = languageResult.ok;
-  const maxSubjectLength = lengthResult.ok;
-  const bodyStyle = bodyStyleResult.ok;
+  const format = formatResult.ok as unknown as CommitFormat;
+  const language = languageResult.ok as unknown as CommitLanguage;
+  const maxLength = lengthResult.ok as unknown as number;
+  const bodyStyle = bodyStyleResult.ok as unknown as
+    | "subject-only"
+    | "subject-body"
+    | "subject-body-footer";
 
   const languagePrompt = PromptService.getLanguagePrompt(language);
   const template = getTemplate(format, language);
@@ -86,7 +89,7 @@ Rules:
 - Do not describe the diff before the answer.
 - Do not include surrounding whitespace before or after the commit message.
 - If the diff is unclear, still return the single best commit message based on the strongest visible change.
-- The first line must be at most ${maxSubjectLength} characters.
+ - The first line must be at most ${maxLength} characters.
 
 Commit format requirements:
 ${template}

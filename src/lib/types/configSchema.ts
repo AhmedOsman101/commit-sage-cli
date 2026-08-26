@@ -11,7 +11,7 @@ import { COMMIT_FORMATS, SUPPORTED_LANGUAGES } from "@/lib/types/commit.ts";
 import {
   BODY_STYLES,
   DIFF_STRATEGIES,
-  SUPPORTED_PROVIDERS,
+  SUPPORTED_API_TYPES,
   SUPPORTED_REASONING_LEVELS,
 } from "@/lib/types/config.ts";
 
@@ -23,18 +23,18 @@ const SCHEMA_URI =
 
 const SCHEMA_DIALECT = "http://json-schema.org/draft-07/schema#" as const;
 
-// ----- Section: general -----
+// ----- Section: generation -----
 
-const GENERAL_CONFIG_SCHEMA = {
+const GENERATION_CONFIG_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["maxRetries", "initialRetryDelayMs", "temperature"],
+  required: ["maxRetries", "retryDelay", "temperature"],
   properties: {
     maxRetries: {
       type: "integer",
       minimum: 0,
     },
-    initialRetryDelayMs: {
+    retryDelay: {
       type: "integer",
       minimum: 0,
     },
@@ -44,10 +44,11 @@ const GENERAL_CONFIG_SCHEMA = {
       maximum: 2,
       description: "Global generation temperature used by all providers",
     },
-    maxInputChars: {
+    maxPromptTokens: {
       type: "integer",
       minimum: 1,
-      description: "Maximum diff size sent to the model before truncation",
+      description:
+        "Maximum diff size sent to the model before truncation (token-counted)",
     },
     diffStrategy: {
       type: "string",
@@ -58,57 +59,107 @@ const GENERAL_CONFIG_SCHEMA = {
   },
 } as const;
 
-// ----- Section: ollama -----
+// ----- Section: providers -----
 
-const OLLAMA_CONFIG_SCHEMA = {
+const PROVIDER_DEFAULTS_SCHEMA = {
   type: "object",
   additionalProperties: false,
   properties: {
-    baseUrl: {
+    timeoutMs: {
+      type: "integer",
+      minimum: 0,
+      description:
+        "Request timeout in milliseconds for model generation. Set to 0 to disable the timeout.",
+    },
+    reasoning: {
+      oneOf: [
+        { type: "boolean" },
+        { type: "string", enum: [...SUPPORTED_REASONING_LEVELS] },
+      ],
+      description:
+        "Reasoning effort level for providers that support it, or boolean tri-state",
+    },
+    apiType: {
       type: "string",
-      format: "uri",
+      enum: [...SUPPORTED_API_TYPES],
+      description: "Provider API type",
+    },
+    contextWindow: {
+      type: "integer",
+      minimum: 1,
+    },
+    maxInputTokens: {
+      type: "integer",
+      minimum: 1,
+    },
+    maxOutputTokens: {
+      type: "integer",
+      minimum: 1,
     },
   },
 } as const;
 
-// ----- Section: openrouter -----
+const MODEL_PRESET_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    name: { type: "string" },
+    reasoning: {
+      oneOf: [
+        { type: "boolean" },
+        { type: "string", enum: [...SUPPORTED_REASONING_LEVELS] },
+      ],
+    },
+    contextWindow: { type: "integer", minimum: 1 },
+    maxInputTokens: { type: "integer", minimum: 1 },
+    maxOutputTokens: { type: "integer", minimum: 1 },
+    temperature: { type: "number", minimum: 0, maximum: 2 },
+  },
+} as const;
 
-const OPENROUTER_CONFIG_SCHEMA = {
+const PROVIDER_ENTRY_SCHEMA = {
   type: "object",
   additionalProperties: false,
   properties: {
     baseUrl: {
       type: "string",
       format: "uri",
+    },
+    apiKey: {
+      type: "string",
+      description: 'API key literal or "$ENV_VAR" reference',
+    },
+    apiType: {
+      type: "string",
+      enum: [...SUPPORTED_API_TYPES],
+    },
+    timeoutMs: {
+      type: "integer",
+      minimum: 0,
+    },
+    reasoning: {
+      oneOf: [
+        { type: "boolean" },
+        { type: "string", enum: [...SUPPORTED_REASONING_LEVELS] },
+      ],
+    },
+    contextWindow: { type: "integer", minimum: 1 },
+    maxInputTokens: { type: "integer", minimum: 1 },
+    maxOutputTokens: { type: "integer", minimum: 1 },
+    models: {
+      type: "object",
+      additionalProperties: { ...MODEL_PRESET_SCHEMA },
       description:
-        "OpenRouter API base URL (defaults to https://openrouter.ai/api/v1)",
+        "Per-model preset overrides, keyed by model id (may contain slashes)",
     },
   },
 } as const;
 
-// ----- Section: openai -----
-
-const OPENAI_CONFIG_SCHEMA = {
+const PROVIDERS_CONFIG_SCHEMA = {
   type: "object",
-  additionalProperties: false,
+  additionalProperties: { ...PROVIDER_ENTRY_SCHEMA },
   properties: {
-    baseUrl: {
-      type: "string",
-      format: "uri",
-      description:
-        "OpenAI-compatible API base URL (defaults to https://api.openai.com/v1)",
-    },
-    apiKeyEnvVar: {
-      type: "string",
-      pattern: "^[A-Z_][A-Z0-9_]*$",
-      description:
-        "Environment variable name used to read the OpenAI-compatible API key",
-    },
-    useChatCompletions: {
-      type: "boolean",
-      description:
-        "Use the Chat Completions API instead of the Responses API for OpenAI-compatible providers",
-    },
+    defaults: { ...PROVIDER_DEFAULTS_SCHEMA },
   },
 } as const;
 
@@ -140,7 +191,7 @@ const COMMIT_CONFIG_SCHEMA = {
     promptForRefs: {
       type: "boolean",
     },
-    maxSubjectLength: {
+    maxLength: {
       type: "integer",
       minimum: 1,
       description:
@@ -155,35 +206,13 @@ const COMMIT_CONFIG_SCHEMA = {
   },
 } as const;
 
-// ----- Section: provider -----
+// ----- Section: model -----
 
-const PROVIDER_CONFIG_SCHEMA = {
-  type: "object",
-  additionalProperties: false,
-  required: ["type", "model"],
-  properties: {
-    type: {
-      type: "string",
-      enum: [...SUPPORTED_PROVIDERS],
-      description: "AI provider type",
-    },
-    model: {
-      type: "string",
-      description:
-        "Model ID for the selected provider (e.g. 'gemini-2.5-flash-lite', 'gpt-5-nano', 'openai/gpt-4.1-mini')",
-    },
-    timeoutMs: {
-      type: "integer",
-      minimum: 0,
-      description:
-        "Request timeout in milliseconds for model generation. Set to 0 to disable the timeout.",
-    },
-    reasoning: {
-      type: "string",
-      enum: [...SUPPORTED_REASONING_LEVELS],
-      description: "Reasoning effort level for providers that support it",
-    },
-  },
+const MODEL_SCHEMA = {
+  type: "string",
+  pattern: "^.+/.+$",
+  description:
+    'Canonical model string "provider/model" (first slash splits provider from model id)',
 } as const;
 
 // ----- Root (assembled last so section refs resolve) -----
@@ -192,18 +221,16 @@ const ROOT_SCHEMA = {
   $schema: SCHEMA_DIALECT,
   type: "object",
   additionalProperties: false,
-  required: ["$schema", "commit", "provider"],
+  required: ["$schema", "commit", "model"],
   properties: {
     $schema: {
       type: "string",
       const: SCHEMA_URI,
     },
-    general: GENERAL_CONFIG_SCHEMA,
-    ollama: OLLAMA_CONFIG_SCHEMA,
-    openrouter: OPENROUTER_CONFIG_SCHEMA,
-    openai: OPENAI_CONFIG_SCHEMA,
+    model: MODEL_SCHEMA,
+    generation: GENERATION_CONFIG_SCHEMA,
+    providers: PROVIDERS_CONFIG_SCHEMA,
     commit: COMMIT_CONFIG_SCHEMA,
-    provider: PROVIDER_CONFIG_SCHEMA,
   },
 } as const;
 

@@ -88,7 +88,7 @@ class CommitCommand extends Command {
       )
       .option(
         "--max-length <n:number>",
-        "Override maxSubjectLength. Applies to --offline too."
+        "Override maxLength. Applies to --offline too."
       )
       .option(
         "--edit",
@@ -122,13 +122,13 @@ class CommitCommand extends Command {
         if (autoCommitResult.isError()) {
           throw Log.error(autoCommitResult.error.message).exit();
         }
-        const autoCommit = autoCommitResult.ok;
+        const autoCommit = autoCommitResult.ok as unknown as boolean;
 
         const autoPushResult = await ConfigService.get("commit", "autoPush");
         if (autoPushResult.isError()) {
           throw Log.error(autoPushResult.error.message).exit();
         }
-        const autoPush = autoPushResult.ok;
+        const autoPush = autoPushResult.ok as unknown as boolean;
 
         const yes = Boolean(opts.yes);
         const pushValue = opts.push as string | boolean | undefined;

@@ -30,24 +30,32 @@ const CONFIG_PATH: Readonly<string> = getConfigPath();
 const DEFAULT_CONFIG: Readonly<Config> = {
   $schema:
     "https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/refs/heads/main/config.schema.json",
-  general: {
+  model: "openai/gpt-5-nano",
+  generation: {
     maxRetries: 3,
-    initialRetryDelayMs: 1000,
+    retryDelay: 1000,
     temperature: 0.7,
-    maxInputChars: 100_000,
+    maxPromptTokens: 100_000,
     diffStrategy: "auto",
   },
-  ollama: {
-    baseUrl: "http://localhost:11434/api",
-  },
-  openrouter: {
-    baseUrl: "https://openrouter.ai/api/v1",
-  },
-  openai: {
-    baseUrl: "https://api.openai.com/v1",
-    apiKeyEnvVar: "OPENAI_API_KEY",
-    useChatCompletions: true,
-  },
+  providers: {
+    defaults: {
+      timeoutMs: 60_000,
+      reasoning: "off",
+      apiType: "openai-chat",
+    },
+    openai: {
+      baseUrl: "https://api.openai.com/v1",
+      apiKey: "$OPENAI_API_KEY",
+      apiType: "openai-chat",
+    },
+    ollama: {
+      baseUrl: "http://localhost:11434/api",
+    },
+    openrouter: {
+      baseUrl: "https://openrouter.ai/api/v1",
+    },
+  } as Config["providers"],
   commit: {
     autoCommit: false,
     autoPush: false,
@@ -55,14 +63,8 @@ const DEFAULT_CONFIG: Readonly<Config> = {
     onlyStagedChanges: true,
     commitLanguage: "english",
     promptForRefs: false,
-    maxSubjectLength: 80,
+    maxLength: 80,
     bodyStyle: "subject-body",
-  },
-  provider: {
-    type: "gemini",
-    model: "gemini-2.5-flash-lite",
-    timeoutMs: 60_000,
-    reasoning: "off",
   },
 };
 

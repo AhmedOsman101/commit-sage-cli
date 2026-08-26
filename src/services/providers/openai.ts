@@ -18,11 +18,14 @@ class OpenAiService extends ModelService {
     try {
       const apiKey = await ConfigService.getApiKey("OpenAI");
       const model = await ModelService.resolveModel(modelOverride);
-      const baseURL = (await ConfigService.get("openai", "baseUrl")).unwrap();
-      const useChatCompletions = await ConfigService.get(
-        "openai",
-        "useChatCompletions"
-      ).then(result => result.unwrap());
+      const baseURL =
+        ((
+          await ConfigService.get("openai", "baseUrl")
+        ).unwrap() as unknown as string) ?? "https://api.openai.com/v1";
+      const useChatCompletions =
+        ((
+          await ConfigService.get("openai", "useChatCompletions")
+        ).unwrap() as unknown as boolean) ?? true;
       const generationOptions = await ModelService.getGenerationOptions();
       const providerOptions = await ModelService.getOpenAIProviderOptions({
         forceReasoning: baseURL !== "https://api.openai.com/v1",

@@ -2,6 +2,7 @@ import { Err, ErrFromText, ErrFromUnknown, Ok, type Result } from "lib-result";
 import type { GenerateOptions } from "@/cli/types/generateOptions.ts";
 import { ERROR_MESSAGES } from "@/lib/constants.ts";
 import { Log } from "@/lib/logger.ts";
+import { splitProviderModel } from "@/lib/modelString.ts";
 import type { CommitMessage } from "@/lib/types/commit.ts";
 import ConfigService from "@/services/config.ts";
 import GitService from "@/services/git.ts";
@@ -18,14 +19,14 @@ const AiService = {
 
   async resolveDiffMode(): Promise<Result<"staged" | "unstaged", Error>> {
     const diffStrategyResult = await ConfigService.get(
-      "general",
+      "generation",
       "diffStrategy"
     );
     if (diffStrategyResult.isError()) return Err(diffStrategyResult.error);
 
     const hasStagedChanges = await GitService.hasChanges("staged");
 
-    switch (diffStrategyResult.ok) {
+    switch (diffStrategyResult.ok as unknown as string) {
       case "staged":
         return Ok("staged");
       case "unstaged":
@@ -38,7 +39,9 @@ const AiService = {
         if (onlyStagedResult.isError()) return Err(onlyStagedResult.error);
 
         return Ok(
-          onlyStagedResult.ok || hasStagedChanges ? "staged" : "unstaged"
+          (onlyStagedResult.ok as unknown as boolean) || hasStagedChanges
+            ? "staged"
+            : "unstaged"
         );
       }
     }
@@ -63,12 +66,12 @@ const AiService = {
     if (!diff) return ErrFromText(ERROR_MESSAGES.noChanges);
 
     // ConfigService.get already supplies DEFAULT_CONFIG on missing key.
-    const maxInputCharsResult = await ConfigService.get(
-      "general",
-      "maxInputChars"
+    const maxPromptResult = await ConfigService.get(
+      "generation",
+      "maxPromptTokens"
     );
-    if (maxInputCharsResult.isError()) return Err(maxInputCharsResult.error);
-    const maxInputChars = maxInputCharsResult.ok;
+    if (maxPromptResult.isError()) return Err(maxPromptResult.error);
+    const maxInputChars = maxPromptResult.ok as unknown as number;
 
     const truncatedDiff = this.truncateDiff(diff, maxInputChars);
     Log.debug(
@@ -92,22 +95,28 @@ const AiService = {
     );
 
     // Resolve provider: flag ?? config (config falls back to DEFAULT_CONFIG).
-    const providerTypeResult =
-      runOptions.provider !== undefined
-        ? Ok(runOptions.provider)
-        : await ConfigService.get("provider", "type");
-    if (providerTypeResult.isError()) return Err(providerTypeResult.error);
-    const providerType = providerTypeResult.ok;
+    // New shape: provider derived from model string "provider/model"
+    let providerType: string;
+    if (runOptions.provider !== undefined) {
+      providerType = runOptions.provider as unknown as string;
+    } else {
+      const modelResult = await ConfigService.get("model");
+      if (modelResult.isError()) return Err(modelResult.error);
+      const modelStr = modelResult.ok as unknown as string;
+      const split = splitProviderModel(modelStr);
+      if (split.isError()) return Err(split.error);
+      providerType = split.ok.provider;
+    }
     Log.debug(
       `[aiService.generateCommitMessage] STEP provider=${providerType}`
     );
 
     try {
-      const Service = getProviderService(providerType);
+      const Service = getProviderService(providerType as never);
       Log.debug(`[aiService.generateCommitMessage] CALL ${Service.name}`);
       // modelOverride is passed to the provider; it resolves via
       // ModelService.resolveModel(modelOverride) which does
-      // `modelOverride ?? ConfigService.get("provider", "model")`.
+      // `modelOverride ?? ConfigService.get("model")`.
       const commitMessage = await Service.generateCommitMessage(
         prompt,
         1,
@@ -144,7 +153,7 @@ const AiService = {
     Log.debug(`[aiService.generateMessage] STEP diffMode=${diffMode}`);
 
     const diffResult = await GitService.getDiff(diffMode);
-    if (diffResult.isError()) return Err(diffResult.error);
+    if (diffResult.isError()) return Err(diffResult.error as Error);
 
     const diff = diffResult.ok;
     Log.debug(`[aiService.generateMessage] STEP diff length=${diff.length}`);

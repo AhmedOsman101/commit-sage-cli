@@ -7,7 +7,7 @@ import {
   BODY_STYLES,
   type Config,
   DIFF_STRATEGIES,
-  SUPPORTED_PROVIDERS,
+  SUPPORTED_API_TYPES,
   SUPPORTED_REASONING_LEVELS,
 } from "@/lib/types/config.ts";
 import { JsonParse } from "@/lib/utils.ts";
@@ -15,37 +15,63 @@ import { JsonParse } from "@/lib/utils.ts";
 const INF = Number.POSITIVE_INFINITY;
 const NINF = Number.NEGATIVE_INFINITY;
 
+const providerDefaultsSchema = z.object({
+  timeoutMs: z.uint32().optional(),
+  reasoning: z
+    .union([z.boolean(), z.enum(SUPPORTED_REASONING_LEVELS)])
+    .optional(),
+  apiType: z.enum(SUPPORTED_API_TYPES).optional(),
+  contextWindow: z.uint32().optional(),
+  maxInputTokens: z.uint32().optional(),
+  maxOutputTokens: z.uint32().optional(),
+});
+
+const modelPresetSchema = z.object({
+  name: z.string().optional(),
+  reasoning: z
+    .union([z.boolean(), z.enum(SUPPORTED_REASONING_LEVELS)])
+    .optional(),
+  contextWindow: z.uint32().optional(),
+  maxInputTokens: z.uint32().optional(),
+  maxOutputTokens: z.uint32().optional(),
+  temperature: z.number().min(0).max(2).optional(),
+});
+
+const providerEntrySchema = z.object({
+  baseUrl: z.url().optional(),
+  apiKey: z.string().optional(),
+  apiType: z.enum(SUPPORTED_API_TYPES).optional(),
+  timeoutMs: z.uint32().optional(),
+  reasoning: z
+    .union([z.boolean(), z.enum(SUPPORTED_REASONING_LEVELS)])
+    .optional(),
+  contextWindow: z.uint32().optional(),
+  maxInputTokens: z.uint32().optional(),
+  maxOutputTokens: z.uint32().optional(),
+  models: z.record(z.string(), modelPresetSchema).optional(),
+});
+
 const ConfigSchema = z.strictObject({
   $schema: z
     .enum([
       "https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/refs/heads/main/config.schema.json",
     ])
     .optional(),
-  general: z
+  model: z.string().regex(/^.+\/.+$/),
+  generation: z
     .object({
       maxRetries: z.uint32(),
-      initialRetryDelayMs: z.uint32(),
-      temperature: z.float32().min(0).max(2),
-      maxInputChars: z.uint32().min(1),
+      retryDelay: z.uint32(),
+      temperature: z.number().min(0).max(2),
+      maxPromptTokens: z.uint32().min(1),
       diffStrategy: z.enum(DIFF_STRATEGIES),
     })
     .optional(),
-  ollama: z
+  providers: z
     .object({
-      baseUrl: z.url().optional(),
+      defaults: providerDefaultsSchema.optional(),
     })
-    .optional(),
-  openrouter: z
-    .object({
-      baseUrl: z.url().optional(),
-    })
-    .optional(),
-  openai: z
-    .object({
-      baseUrl: z.url().optional(),
-      apiKeyEnvVar: z.string().optional(),
-      useChatCompletions: z.boolean().optional(),
-    })
+    .catchall(providerEntrySchema)
     .optional(),
   commit: z.object({
     autoCommit: z.boolean().optional(),
@@ -54,14 +80,8 @@ const ConfigSchema = z.strictObject({
     commitFormat: z.enum(COMMIT_FORMATS),
     commitLanguage: z.enum(SUPPORTED_LANGUAGES),
     promptForRefs: z.boolean().optional(),
-    maxSubjectLength: z.uint32().optional(),
+    maxLength: z.uint32().optional(),
     bodyStyle: z.enum(BODY_STYLES).optional(),
-  }),
-  provider: z.object({
-    type: z.enum(SUPPORTED_PROVIDERS),
-    model: z.string(),
-    timeoutMs: z.uint32().optional(),
-    reasoning: z.enum(SUPPORTED_REASONING_LEVELS).optional(),
   }),
 });
 
@@ -103,105 +123,114 @@ const ConfigValidationService = {
     // Zod messages don't contain /path. patterns; return as-is
     return message;
   },
-  validateGeneral(general: object): Result<boolean> {
-    if ("maxRetries" in general) {
-      const maxRetries = this.validateInt(general.maxRetries);
+  validateGeneration(generation: object): Result<boolean> {
+    if ("maxRetries" in generation) {
+      const maxRetries = this.validateInt(
+        (generation as Record<string, unknown>).maxRetries
+      );
       if (maxRetries.isError()) {
         throw Log.error(
-          `Error at key general.maxRetries => ${maxRetries.error.message}`
+          `Error at key generation.maxRetries => ${maxRetries.error.message}`
         ).exit();
       }
     }
-    if ("initialRetryDelayMs" in general) {
-      const validation = this.validateInt(general.initialRetryDelayMs);
+    if ("retryDelay" in generation) {
+      const validation = this.validateInt(
+        (generation as Record<string, unknown>).retryDelay
+      );
       if (validation.isError()) {
         throw Log.error(
-          `Error at key general.initialRetryDelayMs => ${validation.error.message}`
+          `Error at key generation.retryDelay => ${validation.error.message}`
         ).exit();
       }
     }
-    if ("temperature" in general) {
-      if (
-        typeof general.temperature !== "number" ||
-        Number.isNaN(general.temperature)
-      ) {
+    if ("temperature" in generation) {
+      const temp = (generation as Record<string, unknown>).temperature;
+      if (typeof temp !== "number" || Number.isNaN(temp)) {
         throw Log.error(
-          "Error at key general.temperature => must be a number."
+          "Error at key generation.temperature => must be a number."
         ).exit();
       }
 
-      if (typeof general.temperature === "number") {
-        if (general.temperature < 0) {
+      if (typeof temp === "number") {
+        if (temp < 0) {
           throw Log.error(
-            "Error at key general.temperature => must be at least 0."
+            "Error at key generation.temperature => must be at least 0."
           ).exit();
         }
-        if (general.temperature > 2) {
+        if (temp > 2) {
           throw Log.error(
-            "Error at key general.temperature => must not exceed 2."
+            "Error at key generation.temperature => must not exceed 2."
           ).exit();
         }
       }
     }
-    if ("maxInputChars" in general) {
-      const validation = this.validateInt(general.maxInputChars, 1);
+    if ("maxPromptTokens" in generation) {
+      const validation = this.validateInt(
+        (generation as Record<string, unknown>).maxPromptTokens,
+        1
+      );
       if (validation.isError()) {
         throw Log.error(
-          `Error at key general.maxInputChars => ${validation.error.message}`
+          `Error at key generation.maxPromptTokens => ${validation.error.message}`
         ).exit();
       }
     }
     return Ok(true);
   },
   validateCommit(commit: object): Result<boolean> {
-    if ("maxSubjectLength" in commit) {
-      const validation = this.validateInt(commit.maxSubjectLength, 1);
-      if (validation.isError()) {
-        throw Log.error(
-          `Error at key commit.maxSubjectLength => ${validation.error.message}`
-        ).exit();
-      }
-    }
-
-    return Ok(true);
-  },
-  validateProvider(provider: object): Result<boolean> {
-    if ("timeoutMs" in provider) {
-      const validation = this.validateInt(provider.timeoutMs, 0);
-      if (validation.isError()) {
-        throw Log.error(
-          `Error at key provider.timeoutMs => ${validation.error.message}`
-        ).exit();
-      }
-    }
-
-    return Ok(true);
-  },
-  validateProviderUrl(
-    provider: object,
-    name: "ollama" | "openrouter" | "openai"
-  ): Result<boolean> {
-    if ("baseUrl" in provider) {
-      const baseUrl = this.validateUrl(provider.baseUrl);
-      if (baseUrl.isError()) {
-        throw Log.error(
-          `Error at key ${name}.baseUrl => ${baseUrl.error.message}`
-        ).exit();
-      }
-    }
-    return Ok(true);
-  },
-  validateEnvVarName(value: unknown): Result<boolean> {
-    if (typeof value !== "string") {
-      return ErrFromText("Environment variable name must be a string");
-    }
-
-    if (!/^[A-Z_][A-Z0-9_]*$/.test(value)) {
-      return ErrFromText(
-        "Environment variable name must match /^[A-Z_][A-Z0-9_]*$/"
+    if ("maxLength" in commit) {
+      const validation = this.validateInt(
+        (commit as Record<string, unknown>).maxLength,
+        1
       );
+      if (validation.isError()) {
+        throw Log.error(
+          `Error at key commit.maxLength => ${validation.error.message}`
+        ).exit();
+      }
     }
 
+    return Ok(true);
+  },
+  validateProviders(providers: object): Result<boolean> {
+    const p = providers as Record<string, unknown>;
+    if (
+      "defaults" in p &&
+      typeof p.defaults === "object" &&
+      p.defaults !== null
+    ) {
+      const d = p.defaults as Record<string, unknown>;
+      if ("timeoutMs" in d) {
+        const validation = this.validateInt(d.timeoutMs, 0);
+        if (validation.isError()) {
+          throw Log.error(
+            `Error at key providers.defaults.timeoutMs => ${validation.error.message}`
+          ).exit();
+        }
+      }
+    }
+    for (const [name, entry] of Object.entries(p)) {
+      if (name === "defaults") continue;
+      if (typeof entry !== "object" || entry === null) continue;
+      const e = entry as Record<string, unknown>;
+      if ("baseUrl" in e) {
+        const baseUrl = this.validateUrl(e.baseUrl);
+        if (baseUrl.isError()) {
+          throw Log.error(
+            `Error at key providers.${name}.baseUrl => ${baseUrl.error.message}`
+          ).exit();
+        }
+      }
+      if ("timeoutMs" in e) {
+        const validation = this.validateInt(e.timeoutMs, 0);
+        if (validation.isError()) {
+          throw Log.error(
+            `Error at key providers.${name}.timeoutMs => ${validation.error.message}`
+          ).exit();
+        }
+      }
+    }
     return Ok(true);
   },
   validate(config: unknown): Result<Config> {
@@ -253,7 +282,9 @@ const ConfigValidationService = {
           typeof configContent.$schema === "object" &&
           configContent.$schema !== null
         ) {
-          const validation = this.validateUrl(configContent.$schema);
+          const validation = this.validateUrl(
+            (configContent as Record<string, unknown>).$schema
+          );
           if (validation.isError()) {
             throw Log.error(
               `Error at key $schema => ${validation.error.message}`
@@ -266,67 +297,52 @@ const ConfigValidationService = {
         ).exit();
       }
 
-      if ("general" in configContent) {
+      if ("model" in configContent) {
+        const m = (configContent as Record<string, unknown>).model;
+        if (typeof m !== "string" || !/^.+\/.+$/.test(m)) {
+          throw Log.error(
+            `Error at key model => must match "^.+\\\\/.+$" (expected "provider/model").`
+          ).exit();
+        }
+      } else {
+        throw Log.error(
+          "Error at key model => Missing a required value."
+        ).exit();
+      }
+
+      if ("generation" in configContent) {
         if (
-          typeof configContent.general === "object" &&
-          configContent.general !== null
+          typeof (configContent as Record<string, unknown>).generation ===
+            "object" &&
+          (configContent as Record<string, unknown>).generation !== null
         ) {
-          this.validateGeneral(configContent.general);
+          this.validateGeneration(
+            (configContent as Record<string, unknown>).generation as object
+          );
         }
       }
 
       if ("commit" in configContent) {
         if (
-          typeof configContent.commit === "object" &&
-          configContent.commit !== null
+          typeof (configContent as Record<string, unknown>).commit ===
+            "object" &&
+          (configContent as Record<string, unknown>).commit !== null
         ) {
-          this.validateCommit(configContent.commit);
+          this.validateCommit(
+            (configContent as Record<string, unknown>).commit as object
+          );
         }
       }
 
-      if ("ollama" in configContent) {
+      if ("providers" in configContent) {
         if (
-          typeof configContent.ollama === "object" &&
-          configContent.ollama !== null
+          typeof (configContent as Record<string, unknown>).providers ===
+            "object" &&
+          (configContent as Record<string, unknown>).providers !== null
         ) {
-          this.validateProviderUrl(configContent.ollama, "ollama");
-        }
-      }
-
-      if ("openrouter" in configContent) {
-        if (
-          typeof configContent.openrouter === "object" &&
-          configContent.openrouter !== null
-        ) {
-          this.validateProviderUrl(configContent.openrouter, "openrouter");
-        }
-      }
-
-      if ("openai" in configContent) {
-        if (
-          typeof configContent.openai === "object" &&
-          configContent.openai !== null
-        ) {
-          this.validateProviderUrl(configContent.openai, "openai");
-          if ("apiKeyEnvVar" in configContent.openai) {
-            const validation = this.validateEnvVarName(
-              configContent.openai.apiKeyEnvVar
-            );
-            if (validation.isError()) {
-              throw Log.error(
-                `Error at key openai.apiKeyEnvVar => ${validation.error.message}`
-              ).exit();
-            }
-          }
-        }
-      }
-
-      if ("provider" in configContent) {
-        if (
-          typeof configContent.provider === "object" &&
-          configContent.provider !== null
-        ) {
-          this.validateProvider(configContent.provider);
+          this.validateProviders(
+            (configContent as Record<string, unknown>).providers as object
+          );
         }
       }
     }
@@ -375,10 +391,13 @@ const ConfigValidationService = {
 
       if ("$schema" in configContent) {
         if (
-          typeof configContent.$schema === "object" &&
-          configContent.$schema !== null
+          typeof (configContent as Record<string, unknown>).$schema ===
+            "object" &&
+          (configContent as Record<string, unknown>).$schema !== null
         ) {
-          const validation = this.validateUrl(configContent.$schema);
+          const validation = this.validateUrl(
+            (configContent as Record<string, unknown>).$schema
+          );
           if (validation.isError()) {
             return ErrFromText(
               `Error at key $schema => ${validation.error.message}`
@@ -389,25 +408,38 @@ const ConfigValidationService = {
         return ErrFromText("Error at key $schema => Missing a required value.");
       }
 
-      if ("general" in configContent) {
+      if ("model" in configContent) {
+        const m = (configContent as Record<string, unknown>).model;
+        if (typeof m !== "string" || !/^.+\/.+$/.test(m)) {
+          return ErrFromText(
+            `Error at key model => must match "^.+\\\\/.+$" (expected "provider/model").`
+          );
+        }
+      } else {
+        return ErrFromText("Error at key model => Missing a required value.");
+      }
+
+      if ("generation" in configContent) {
         if (
-          typeof configContent.general === "object" &&
-          configContent.general !== null
+          typeof (configContent as Record<string, unknown>).generation ===
+            "object" &&
+          (configContent as Record<string, unknown>).generation !== null
         ) {
-          const g = configContent.general as Record<string, unknown>;
+          const g = (configContent as Record<string, unknown>)
+            .generation as Record<string, unknown>;
           if ("maxRetries" in g) {
             const r = this.validateInt(g.maxRetries);
             if (r.isError()) {
               return ErrFromText(
-                `Error at key general.maxRetries => ${r.error.message}`
+                `Error at key generation.maxRetries => ${r.error.message}`
               );
             }
           }
-          if ("initialRetryDelayMs" in g) {
-            const r = this.validateInt(g.initialRetryDelayMs);
+          if ("retryDelay" in g) {
+            const r = this.validateInt(g.retryDelay);
             if (r.isError()) {
               return ErrFromText(
-                `Error at key general.initialRetryDelayMs => ${r.error.message}`
+                `Error at key generation.retryDelay => ${r.error.message}`
               );
             }
           }
@@ -417,25 +449,25 @@ const ConfigValidationService = {
               Number.isNaN(g.temperature)
             ) {
               return ErrFromText(
-                "Error at key general.temperature => must be a number."
+                "Error at key generation.temperature => must be a number."
               );
             }
             if (g.temperature < 0) {
               return ErrFromText(
-                "Error at key general.temperature => must be at least 0."
+                "Error at key generation.temperature => must be at least 0."
               );
             }
             if (g.temperature > 2) {
               return ErrFromText(
-                "Error at key general.temperature => must not exceed 2."
+                "Error at key generation.temperature => must not exceed 2."
               );
             }
           }
-          if ("maxInputChars" in g) {
-            const r = this.validateInt(g.maxInputChars, 1);
+          if ("maxPromptTokens" in g) {
+            const r = this.validateInt(g.maxPromptTokens, 1);
             if (r.isError()) {
               return ErrFromText(
-                `Error at key general.maxInputChars => ${r.error.message}`
+                `Error at key generation.maxPromptTokens => ${r.error.message}`
               );
             }
           }
@@ -444,92 +476,67 @@ const ConfigValidationService = {
 
       if ("commit" in configContent) {
         if (
-          typeof configContent.commit === "object" &&
-          configContent.commit !== null
+          typeof (configContent as Record<string, unknown>).commit ===
+            "object" &&
+          (configContent as Record<string, unknown>).commit !== null
         ) {
-          const c = configContent.commit as Record<string, unknown>;
-          if ("maxSubjectLength" in c) {
-            const r = this.validateInt(c.maxSubjectLength, 1);
+          const c = (configContent as Record<string, unknown>).commit as Record<
+            string,
+            unknown
+          >;
+          if ("maxLength" in c) {
+            const r = this.validateInt(c.maxLength, 1);
             if (r.isError()) {
               return ErrFromText(
-                `Error at key commit.maxSubjectLength => ${r.error.message}`
+                `Error at key commit.maxLength => ${r.error.message}`
               );
             }
           }
         }
       }
 
-      if ("ollama" in configContent) {
+      if ("providers" in configContent) {
         if (
-          typeof configContent.ollama === "object" &&
-          configContent.ollama !== null
+          typeof (configContent as Record<string, unknown>).providers ===
+            "object" &&
+          (configContent as Record<string, unknown>).providers !== null
         ) {
-          const o = configContent.ollama as Record<string, unknown>;
-          if ("baseUrl" in o) {
-            const r = this.validateUrl(o.baseUrl);
-            if (r.isError()) {
-              return ErrFromText(
-                `Error at key ollama.baseUrl => ${r.error.message}`
-              );
+          const p = (configContent as Record<string, unknown>)
+            .providers as Record<string, unknown>;
+          if (
+            "defaults" in p &&
+            typeof p.defaults === "object" &&
+            p.defaults !== null
+          ) {
+            const d = p.defaults as Record<string, unknown>;
+            if ("timeoutMs" in d) {
+              const r = this.validateInt(d.timeoutMs, 0);
+              if (r.isError()) {
+                return ErrFromText(
+                  `Error at key providers.defaults.timeoutMs => ${r.error.message}`
+                );
+              }
             }
           }
-        }
-      }
-
-      if ("openrouter" in configContent) {
-        if (
-          typeof configContent.openrouter === "object" &&
-          configContent.openrouter !== null
-        ) {
-          const o = configContent.openrouter as Record<string, unknown>;
-          if ("baseUrl" in o) {
-            const r = this.validateUrl(o.baseUrl);
-            if (r.isError()) {
-              return ErrFromText(
-                `Error at key openrouter.baseUrl => ${r.error.message}`
-              );
+          for (const [name, entry] of Object.entries(p)) {
+            if (name === "defaults") continue;
+            if (typeof entry !== "object" || entry === null) continue;
+            const e = entry as Record<string, unknown>;
+            if ("baseUrl" in e) {
+              const r = this.validateUrl(e.baseUrl);
+              if (r.isError()) {
+                return ErrFromText(
+                  `Error at key providers.${name}.baseUrl => ${r.error.message}`
+                );
+              }
             }
-          }
-        }
-      }
-
-      if ("openai" in configContent) {
-        if (
-          typeof configContent.openai === "object" &&
-          configContent.openai !== null
-        ) {
-          const o = configContent.openai as Record<string, unknown>;
-          if ("baseUrl" in o) {
-            const r = this.validateUrl(o.baseUrl);
-            if (r.isError()) {
-              return ErrFromText(
-                `Error at key openai.baseUrl => ${r.error.message}`
-              );
-            }
-          }
-          if ("apiKeyEnvVar" in o) {
-            const r = this.validateEnvVarName(o.apiKeyEnvVar);
-            if (r.isError()) {
-              return ErrFromText(
-                `Error at key openai.apiKeyEnvVar => ${r.error.message}`
-              );
-            }
-          }
-        }
-      }
-
-      if ("provider" in configContent) {
-        if (
-          typeof configContent.provider === "object" &&
-          configContent.provider !== null
-        ) {
-          const p = configContent.provider as Record<string, unknown>;
-          if ("timeoutMs" in p) {
-            const r = this.validateInt(p.timeoutMs, 0);
-            if (r.isError()) {
-              return ErrFromText(
-                `Error at key provider.timeoutMs => ${r.error.message}`
-              );
+            if ("timeoutMs" in e) {
+              const r = this.validateInt(e.timeoutMs, 0);
+              if (r.isError()) {
+                return ErrFromText(
+                  `Error at key providers.${name}.timeoutMs => ${r.error.message}`
+                );
+              }
             }
           }
         }
