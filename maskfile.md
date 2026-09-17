@@ -7,7 +7,7 @@
 ```bash
 unset BIOME_CONFIG_PATH &>/dev/null
 unset BIOME_BINARY_PATH &>/dev/null
-version="2.5.6"
+version="2.5.11"
 pkg="@biomejs/biome@${version}"
 
 declare -a argv
