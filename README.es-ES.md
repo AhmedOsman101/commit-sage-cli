@@ -7,7 +7,7 @@ Genera mensajes de commit significativos con IA — o análisis estático offlin
 > (`generate`, `commit`, `config`) con sobrescrituras por flags, flujo interactivo de staging
 > y respaldo `--offline`.
 
-## Descripción general
+## Descripción
 
 Commit Sage convierte tu `git diff` en un mensaje de commit. Dos caminos, una misma superficie:
 
@@ -126,7 +126,7 @@ Flujo interactivo:
 - Si nada staged → TUI multiselect sobre unstaged tracked + untracked (Cliffy
   Checkbox, buscable, select-all) → `git add`.
 - Re-verifica staged; si sigue vacío y `commit.onlyStagedChanges=true` → salida 1;
-  si no, respeta `general.diffStrategy`.
+   si no, respeta `generation.diffStrategy`.
 - Genera mensaje (IA o `--offline`).
 - Vista previa markdown vía `@littletof/charmd` (subject en negrita + body).
 
@@ -177,8 +177,8 @@ commit-sage commit
 # 4 — commit + push rama actual (aviso-y-salto si no hay origin, salida 0)
 commit-sage commit --push
 
-# 5 — cambiar proveedor/modelo sin abrir un archivo (forma unificada provider.{type,model})
-commit-sage config set provider.type openai && commit-sage config set provider.model gpt-5
+# 5 — cambiar modelo sin abrir un archivo (string único proveedor/modelo)
+commit-sage config set model openai/gpt-5
 
 # 6 — inspeccionar config combinada
 commit-sage config print
@@ -186,8 +186,8 @@ commit-sage config print
 # bonus — commit offline, y generación con contexto IA extra + longitud máxima personalizada
 commit-sage commit --offline
 commit-sage generate --context "fixes #123, retry on 5xx" --max-length 72
-commit-sage generate --provider ollama --model gpt-oss-120b --format emoji --lang russian
-commit-sage config get provider.model
+commit-sage generate --model ollama/gpt-oss-120b --format emoji --lang russian
+commit-sage config get model
 commit-sage config path
 ```
 
@@ -198,17 +198,16 @@ Más en `docs/demos/` (gifs):  -->
 
 ### Flags compartidos `generate` / `commit`
 
-Una tabla — ambos subcomandos aceptan los mismos 8 flags (commit añade 3 más abajo).
+Una tabla — ambos subcomandos aceptan los mismos 7 flags (commit añade 3 más abajo).
 
 | Flag                | Descripción                                                                                                                                                      | Notas                                                                                                                                       |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--offline`         | Usa generador de análisis estático (sin API). Siempre forma convencional `<type>: <desc>` o simple `<desc>`; trunca en límite de palabra `--max-length`.        | Ignora `--format`; sigue respetando `--max-length`; necesita filas `git diff-index` — archivos untracked no aparecerán hasta hacer stage.  |
 | `--context <text>`  | Inyecta `## External Context\n<text>` antes del diff en el prompt IA.                                                                                           | **Solo IA** — ignorado con `--offline`.                                                                                                     |
-| `--provider <name>` | Sobrescribe `provider.type` para esta ejecución (`gemini`, `openai`, `anthropic`, `deepseek`, `mistral`, `xai`, `ollama`, `moonshotai`, `zai`, `minimax`, `openrouter`). | Sobrescritura por ejecución de `provider.type`; mapea a `DEFAULT_CONFIG.provider.type`.                                                    |
-| `--model <name>`    | Sobrescribe `provider.model` para esta ejecución.                                                                                                                | Sobrescritura por ejecución de `provider.model`; cualquier string aceptado — el proveedor valida al llamar. `commit` lista `SUPPORTED_PROVIDERS`. |
-| `--format <name>`   | Plantilla de commit: `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform`.                                                                        | **Solo IA** — ignorado con `--offline` (offline siempre convencional). Default `conventional` (ver `commit.commitFormat`).                 |
-| `--lang <name>`     | Idioma del commit: `english`, `russian`, `chinese`, `japanese`.                                                                                                  | Sobrescritura por ejecución de `commit.commitLanguage`.                                                                                    |
-| `--max-length <n>`  | Sobrescribe `commit.maxSubjectLength` para este mensaje.                                                                                                         | Aplica a **ambos** IA y `--offline` (truncado en límite de palabra + `…`).                                                                 |
+| `--model <name>`     | Modelo para esta ejecución en formato `proveedor/modelo` (ej. `openai/gpt-5-nano`). La primera barra separa proveedor de modelo; ids multisegmento preservados (`9router/kc/stealth/ox-alpha`). | Sobrescritura por ejecución del `model` top-level; cualquier string `proveedor/modelo` aceptado — el proveedor valida al llamar. |
+| `--format <name>`    | Plantilla de commit: `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform`.                                                                                                                                      | **Solo IA** — ignorado con `--offline` (offline siempre convencional). Default `conventional` (ver `commit.commitFormat`).                     |
+| `--lang <name>`      | Idioma del commit (BCP-47, guardado tal cual, ej. `en`, `en-US`, `jp`).                                                                                                                                                        | Sobrescritura por ejecución de `commit.commitLanguage`; normalizado internamente.                                                              |
+| `--max-length <n>`   | Sobrescribe `commit.maxLength` para este mensaje.                                                                                                                                                                              | Aplica a **ambos** IA y `--offline` (truncado en límite de palabra + `…`).                                                                     |
 | `--edit`            | Abrir antes de guardar.                                                                                                                                          | `generate`: tempfile + `$EDITOR`/`$VISUAL` → imprime final a stdout. `commit`: pasa `-e` a `git commit` → editor sobre el mensaje staged. |
 
 Flags solo de `commit`:
@@ -258,56 +257,68 @@ Cada `set`/`edit` valida contra `config.schema.json` (generado desde
 `src/lib/types/configSchema.ts` — ejecuta `mask schema build` / `mask schema check`
 — no edites el schema a mano).
 
-### `provider.{type,model}` unificado (desde la migración CLI)
+### `model` top-level + registro `providers` (Config V2)
 
-Las secciones antiguas top-level `gemini`/`ollama`/`openai` para `type`/`model`
-han desaparecido — reemplazadas por una sección `provider`:
+Un único string canónico selecciona proveedor y modelo. División en la primera
+`/` — izquierda proveedor, derecha modelo (barras siguientes preservadas):
 
-| Clave                | Tipo              | Por defecto               | Descripción                                                                                                             |
-| -------------------- | ----------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `provider.type`      | `string` (enum)   | `"gemini"`                | `gemini`, `openai`, `anthropic`, `deepseek`, `mistral`, `xai`, `ollama`, `moonshotai`, `zai`, `minimax`, `openrouter`   |
-| `provider.model`     | `string`          | `"gemini-2.5-flash-lite"` | Opaco — validado por el proveedor seleccionado al llamar                                                                |
-| `provider.timeoutMs` | `number`          | `60000`                   | Timeout de la petición                                                                                                  |
-| `provider.reasoning` | `string`          | `"off"`                   | `off`, `default`, `low`, `medium`, `high`, `xhigh`, `ultra`                                                             |
+| Clave   | Tipo                   | Por defecto            | Descripción                                                                                                   |
+| ------- | ---------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `model` | `string` (forma `a/b`) | `"openai/gpt-5-nano"`  | `"9router/kc/stealth/ox-alpha"` → proveedor `9router`, modelo `kc/stealth/ox-alpha`. Falla sin `/`             |
 
-El transporte por proveedor permanece en su propia sección (ej. `ollama.baseUrl`,
-`openrouter.baseUrl`, `openai.baseUrl` + `openai.apiKeyEnvVar` +
-`openai.useChatCompletions`).
+El transporte por proveedor vive en el registro `providers`. `providers.defaults`
+guarda defaults IA compartidos; `providers.<name>` sobrescribe por proveedor
+(registro abierto — routers propios sin cambios de código):
 
-No confundas esos con los overrides
-unificados `provider.type`/`provider.model` (`--provider`/`--model`).
+| Clave                            | Tipo              | Por defecto              | Descripción                                                                                                         |
+| -------------------------------- | ----------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `providers.defaults.timeoutMs`   | `number`          | `60000`                  | Timeout de la petición                                                                                              |
+| `providers.defaults.reasoning`   | `string/boolean`  | `"off"`                  | `off`, `default`, `low`, `medium`, `high`, `xhigh`, `ultra` (tri-estado con boolean)                                 |
+| `providers.defaults.apiType`     | `string`          | `"openai-chat"`          | `openai-chat`, `openai-responses`, `anthropic`                                                                      |
+| `providers.<name>.baseUrl`       | `string`          | por proveedor            | ej. `http://localhost:11434/api` para `ollama`                                                                      |
+| `providers.<name>.apiKey`        | `string`          | `"$<NAME>_API_KEY"`      | Prefijo `$` lee env, si no literal del archivo; opcional para locales (`ollama`)                                    |
+| `providers.<name>.apiType`       | `string`          | hereda                   | Sobrescritura por proveedor                                                                                         |
+| `providers.<name>.models`        | mapa              | —                        | Presets por modelo (`name`, `reasoning`, `contextWindow`, `maxInputTokens`, `maxOutputTokens`, `temperature`)        |
+
+Los presets `providers.<name>.models` resuelven por valor
+(`preset de modelo > proveedor > defaults`) y se gestionan con `config edit` —
+`config get/set` sigue shallow por diseño.
+
+No confundas el string `model` guardado con el flag por ejecución
+`--model` (ver [Referencia de flags](#referencia-de-flags)).
 
 ### Todas las secciones de un vistazo
 
 | Sección    | Clave                 | Tipo      | Por defecto                       | Notas                                                                                                                          |
 | ---------- | --------------------- | --------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `general`  | `maxRetries`          | `number`  | `3`                               | Reintento en fallo de API                                                                                                      |
-| `general`  | `initialRetryDelayMs` | `number`  | `1000`                            | Primer backoff de reintento                                                                                                    |
-| `general`  | `temperature`         | `number`  | `0.7`                             | Temperatura del modelo                                                                                                         |
-| `general`  | `maxInputChars`       | `number`  | `100000`                          | Chars de diff enviados a la IA                                                                                                 |
-| `general`  | `diffStrategy`        | `string`  | `"auto"`                          | `staged` / `unstaged` / `auto`                                                                                                 |
-| `ollama`   | `baseUrl`             | `string`  | `"http://localhost:11434/api"`    | Ollama autocontenido                                                                                                           |
-| `openrouter` | `baseUrl`           | `string`  | `"https://openrouter.ai/api/v1"`  | Meta-proveedor OpenRouter                                                                                                      |
-| `openai`   | `baseUrl`             | `string`  | `"https://api.openai.com/v1"`     | Base compatible con OpenAI                                                                                                     |
-| `openai`   | `apiKeyEnvVar`        | `string`  | `"OPENAI_API_KEY"`                | Env var que contiene la clave (otros usan `${TYPE}_API_KEY`)                                                                   |
-| `openai`   | `useChatCompletions`  | `boolean` | `true`                            | Chat completions vs responses API                                                                                              |
+| `generation` | `maxRetries`        | `number`  | `3`                               | Reintento en fallo de API                                                                                                      |
+| `generation` | `retryDelay`        | `number`  | `1000`                            | Backoff de reintento                                                                                                           |
+| `generation` | `temperature`       | `number`  | `0.7`                             | Temperatura del modelo (default global; presets por modelo pueden sobrescribir)                                                |
+| `generation` | `maxPromptTokens`   | `number`  | `100000`                          | Tokens de diff enviados a la IA (truncado contado por tokens)                                                                  |
+| `generation` | `diffStrategy`      | `string`  | `"auto"`                          | `staged` / `unstaged` / `auto`                                                                                                 |
+| `providers` | `defaults.timeoutMs` | `number` | `60000`                           | Timeout compartido                                                                                                             |
+| `providers` | `defaults.reasoning` | `string` | `"off"`                           | Default compartido de reasoning                                                                                                |
+| `providers` | `defaults.apiType`   | `string` | `"openai-chat"`                   | Tipo API compartido                                                                                                            |
+| `providers` | `<name>.baseUrl`     | `string`  | por proveedor                     | ej. `ollama` → `"http://localhost:11434/api"`; `openrouter` → `"https://openrouter.ai/api/v1"`                                 |
+| `providers` | `<name>.apiKey`      | `string`  | `"$<NAME>_API_KEY"`               | Prefijo `$` lee env, si no literal; opcional para locales                                                                      |
+| `providers` | `<name>.apiType`     | `string`  | hereda                            | `openai-chat`, `openai-responses`, `anthropic`                                                                                 |
 | `commit`   | `autoCommit`          | `boolean` | `false`                           | Omite confirmación `Commit changes?` (o usa `-y/--yes`)                                                                        |
 | `commit`   | `autoPush`            | `boolean` | `false`                           | Omite confirmación `Push to <branch>?` (o usa `-y/--yes`)                                                                      |
 | `commit`   | `commitFormat`        | `string`  | `"conventional"`                  | `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform` (`freeform` solo IA)                                      |
 | `commit`   | `onlyStagedChanges`   | `boolean` | `true`                            | Cuando es true y nada staged tras el selector, `commit` sale con `No staged changes`; si no, cae a `diffStrategy`             |
-| `commit`   | `commitLanguage`      | `string`  | `"english"`                       | `english`, `russian`, `chinese`, `japanese` (`--lang` sobrescribe)                                                             |
+| `commit`   | `commitLanguage`      | `string`  | `"english"`                       | BCP-47, guardado tal cual (`en`, `en-US`, `jp` …); `--lang` sobrescribe                                                        |
 | `commit`   | `promptForRefs`       | `boolean` | `false`                           | Reservado (preparado para futuro prompt de refs)                                                                               |
-| `commit`   | `maxSubjectLength`    | `number`  | `80`                              | Límite de subject; `--max-length` por ejecución                                                                                |
+| `commit`   | `maxLength`           | `number`  | `80`                              | Límite de subject; `--max-length` por ejecución                                                                                |
 | `commit`   | `bodyStyle`           | `string`  | `"subject-body"`                  | `subject-only`, `subject-body`, `subject-body-footer`                                                                          |
 
 Las variables de entorno siguen siendo alternativa para la clave: define `GEMINI_API_KEY`,
 `OPENAI_API_KEY`, etc. antes de ejecutar. Para una sola ejecución:
 
 ```shell
-OPENAI_API_KEY='sk-...' commit-sage generate --provider openai --model gpt-5
+OPENAI_API_KEY='sk-...' commit-sage generate --model openai/gpt-5
 ```
 
-Ollama no necesita clave. Las claves guardadas en el archivo JSON siguen el mismo enrutado `provider.type`.
+Ollama no necesita clave. Las claves guardadas en el archivo JSON siguen el mismo enrutado `proveedor/modelo`.
 
 ## Contribuciones
 

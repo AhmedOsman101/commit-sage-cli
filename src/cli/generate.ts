@@ -25,11 +25,15 @@ async function guardNonTTY(opts: Record<string, unknown>): Promise<true> {
   if (opts.offline) return true; // offline doesn't need a key
   if (Deno.stdin.isTerminal()) return true; // interactive session
 
-  // Determine the active provider
-  const providerOverride = opts.provider as ProviderType | undefined;
+  // Determine the active provider: --model provider/model wins, then the
+  // config model string.
+  const modelOpt = opts.model as string | undefined;
   let providerType: ProviderType;
-  if (providerOverride) {
-    providerType = providerOverride;
+  const modelSplit = modelOpt?.includes("/")
+    ? splitProviderModel(modelOpt)
+    : undefined;
+  if (modelSplit?.isOk()) {
+    providerType = modelSplit.ok.provider as ProviderType;
   } else {
     const modelResult = await ConfigService.get("model");
     const modelStr = (
@@ -79,17 +83,16 @@ class GenerateCommand extends Command {
         "Additional context to inject into the prompt (AI only)."
       )
       .option(
-        "--provider <name:string>",
-        "Override provider.type for this run."
+        "--model <name:string>",
+        'Model for this run in provider/model format (e.g. "openai/gpt-5-nano"). First slash splits provider from model id; multi-segment ids preserved ("9router/kc/stealth/ox-alpha"). Overrides config model.'
       )
-      .option("--model <name:string>", "Override provider.model for this run.")
       .option(
         "--format <name:string>",
         `Commit format. One of: ${COMMIT_FORMATS.join(", ")}. Ignored when --offline is set.`
       )
       .option(
         "--lang <name:string>",
-        `Commit language. One of: ${SUPPORTED_LANGUAGES.join(", ")}.`
+        `Commit language (BCP-47, stored as-given, e.g. en, en-US, jp). Canonical: ${SUPPORTED_LANGUAGES.join(", ")}.`
       )
       .option(
         "--max-length <n:number>",

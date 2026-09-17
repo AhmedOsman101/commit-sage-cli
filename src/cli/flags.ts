@@ -1,15 +1,14 @@
 // Copyright (C) 2025 Ahmad Othman
 // Licensed under the GNU General Public License v3.0. See LICENSE for details.
 
-import { ErrFromText, Ok, type Result } from "lib-result";
+import { Err, ErrFromText, Ok, type Result } from "lib-result";
 import type { GenerateOptions } from "@/cli/types/generateOptions.ts";
+import { splitProviderModel } from "@/lib/modelString.ts";
 import {
   COMMIT_FORMATS,
   type CommitFormat,
   type CommitLanguage,
-  SUPPORTED_LANGUAGES,
 } from "@/lib/types/commit.ts";
-import { type ProviderType, SUPPORTED_PROVIDERS } from "@/lib/types/config.ts";
 
 /**
  * Resolve {@link GenerateOptions} from raw CLI option bag. Each field is
@@ -18,8 +17,7 @@ import { type ProviderType, SUPPORTED_PROVIDERS } from "@/lib/types/config.ts";
  */
 function resolveOptions(opts: Record<string, unknown>): GenerateOptions {
   return {
-    provider: opts.provider as ProviderType,
-    model: opts.model as string,
+    model: opts.model as string | undefined,
     format: opts.format as CommitFormat,
     maxLength: opts.maxLength as number,
     language: opts.lang as CommitLanguage,
@@ -44,20 +42,22 @@ function validateOptions(runOptions: GenerateOptions): Result<boolean, Error> {
     }
   }
 
-  if (runOptions.provider) {
-    const valid = SUPPORTED_PROVIDERS.includes(runOptions.provider);
-    if (!valid) {
-      return ErrFromText(
-        `Invalid provider "${runOptions.provider}". Valid: ${SUPPORTED_PROVIDERS.join(", ")}`
-      );
-    }
+  if (runOptions.model !== undefined) {
+    // Single canonical flag: must be a full "provider/model" string (first
+    // slash splits; multi-segment model ids preserved).
+    const split = splitProviderModel(runOptions.model);
+    if (split.isError()) return Err(split.error);
   }
 
-  if (runOptions.language) {
-    const valid = SUPPORTED_LANGUAGES.includes(runOptions.language);
-    if (!valid) {
+  if (runOptions.language !== undefined) {
+    // Store-as-given (BCP-47): any non-empty tag passes; PromptService
+    // normalizes internally and falls back to english on unknown tags.
+    if (
+      typeof runOptions.language !== "string" ||
+      runOptions.language.trim() === ""
+    ) {
       return ErrFromText(
-        `Invalid language "${runOptions.language}". Valid: ${SUPPORTED_LANGUAGES.join(", ")}`
+        "--lang must be a non-empty language tag (e.g. en, en-US, jp)"
       );
     }
   }

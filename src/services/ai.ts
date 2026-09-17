@@ -89,11 +89,16 @@ const AiService = {
       `[aiService.generateCommitMessage] STEP prompt generated, length=${prompt.length}`
     );
 
-    // Resolve provider: flag ?? config (config falls back to DEFAULT_CONFIG).
-    // New shape: provider derived from model string "provider/model"
+    // Resolve provider from the effective model string: `--model
+    // "provider/model"` flag wins, otherwise the config model string
+    // (which falls back to DEFAULT_CONFIG). First slash splits provider
+    // from model id; multi-segment ids preserved.
+    const effectiveModel = runOptions.model;
     let providerType: string;
-    if (runOptions.provider !== undefined) {
-      providerType = runOptions.provider as unknown as string;
+    if (effectiveModel !== undefined) {
+      const split = splitProviderModel(effectiveModel);
+      if (split.isError()) return Err(split.error);
+      providerType = split.ok.provider;
     } else {
       const modelResult = await ConfigService.get("model");
       if (modelResult.isError()) return Err(modelResult.error);
@@ -109,13 +114,13 @@ const AiService = {
     try {
       const Service = getProviderService(providerType as never);
       Log.debug(`[aiService.generateCommitMessage] CALL ${Service.name}`);
-      // modelOverride is passed to the provider; it resolves via
-      // ModelService.resolveModel(modelOverride) which does
+      // modelOverride is the effective "provider/model" string; the provider
+      // resolves it via ModelService.resolveModel(modelOverride) which does
       // `modelOverride ?? ConfigService.get("model")`.
       const commitMessage = await Service.generateCommitMessage(
         prompt,
         1,
-        runOptions.model
+        effectiveModel
       );
 
       Log.debug(

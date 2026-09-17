@@ -63,7 +63,8 @@ async function buildPrompt(
   if (bodyStyleResult.isError()) return Err(bodyStyleResult.error);
 
   const format = formatResult.ok as unknown as CommitFormat;
-  const language = languageResult.ok as unknown as CommitLanguage;
+  const rawLanguage = languageResult.ok as unknown as string;
+  const language = PromptService.normalizeLanguage(rawLanguage);
   const maxLength = lengthResult.ok as unknown as number;
   const bodyStyle = bodyStyleResult.ok as unknown as
     | "subject-only"
@@ -111,8 +112,42 @@ ${blameSection}
 Final instruction: return only the commit message.`);
 }
 
+/**
+ * Alias map for stored-as-given language tags → canonical prompt language.
+ * Short codes need no second table: BCP-47 primary subtags (`en-US` → `en`)
+ * resolve through the same map, so future languages extend here only.
+ */
+const LANGUAGE_ALIASES: Record<string, CommitLanguage> = {
+  en: "english",
+  english: "english",
+  ru: "russian",
+  russian: "russian",
+  zh: "chinese",
+  chinese: "chinese",
+  ja: "japanese",
+  jp: "japanese",
+  japanese: "japanese",
+};
+
 const PromptService = {
   buildPrompt,
+
+  /**
+   * Normalize a stored-as-given language tag (BCP-47) to canonical prompt
+   * language. `ja` and `jp` both alias Japanese; region/script subtags are
+   * stripped (`en-US` → `en`). Unknown tags warn and fall back to english —
+   * the stored value is never rewritten.
+   */
+  normalizeLanguage(language: string): CommitLanguage {
+    const key = language.toLowerCase();
+    const direct = LANGUAGE_ALIASES[key];
+    if (direct) return direct;
+    const primary = key.split(/[-_]/)[0] as string;
+    const canonical = LANGUAGE_ALIASES[primary];
+    if (canonical) return canonical;
+    Log.warning(`Unknown language "${language}", falling back to english`);
+    return "english";
+  },
 
   getBodyStylePrompt(
     bodyStyle: "subject-only" | "subject-body" | "subject-body-footer"

@@ -38,7 +38,7 @@ The `generate` subcommand is the foundation: pure text-in (diff + flags) → tex
 
 ### `generate`
 6. As a dev, I want `commit-sage generate` to print a commit message to stdout, so I can pipe it into `git commit -F -`.
-7. As a dev, I want `commit-sage generate --provider openai --model gpt-5`, so I can override config without editing files.
+7. As a dev, I want `commit-sage generate --model openai/gpt-5`, so I can override config without editing files.
 8. As a dev, I want `commit-sage generate --format emoji`, so I can produce emoji-style messages.
 9. As a dev, I want `commit-sage generate --max-length 50`, so I can match a project's subject length convention.
 10. As a dev, I want `commit-sage generate --context "fixes #123, retry on 5xx"`, so the AI sees additional intent.
@@ -61,8 +61,8 @@ The `generate` subcommand is the foundation: pure text-in (diff + flags) → tex
 
 ### `config`
 25. As a user, I want `commit-sage config list` to print my merged config, so I can see what's in effect.
-26. As a user, I want `commit-sage config get provider.model`, so I can inspect one value.
-27. As a user, I want `commit-sage config set provider.type openai`, so I can change providers without opening a file.
+26. As a user, I want `commit-sage config get model`, so I can inspect one value.
+27. As a user, I want `commit-sage config set model openai/gpt-5-nano`, so I can change models without opening a file.
 28. As a user, I want `config set` to validate the new value before saving, so I don't end up with a broken config.
 29. As a user, I want `commit-sage config path` to print the config file location, so I can `cat` it.
 30. As a user, I want `commit-sage config open` to open the config in my OS default handler, so I can browse it.
@@ -179,8 +179,8 @@ Future sessions may add tests; the offline generator's pure-function shape leave
 All tickets T1–T7 merged; T8 closed docs gap. Surface now:
 
 - `src/cli/root.ts` → `commit-sage` help on no-args, `generate`/`commit`/`config` + `help [sub]`, `--version` exits 0, exit codes 0/1/2/130.
-- `src/cli/generate.ts` + `commit.ts` → shared 8 flags (`--offline/--context/--provider/--model/--format/--lang/--max-length/--edit`) + commit extras `--push/--no-push/--yes`.
+- `src/cli/generate.ts` + `commit.ts` → shared 7 flags (`--offline/--context/--model/--format/--lang/--max-length/--edit`) + commit extras `--push/--no-push/--yes`.
 - `src/services/offlineGenerator.ts` → `runOffline` via `git diff-index --name-status` status rows (not `getDiff` content).
 - `src/cli/config.ts` → 7 subcommands `get/set/list/print/path/default/open/edit` with TYPE_MAP coerce + `validateOrError` restore.
-- `src/lib/constants.ts` → `CONFIG_PATH`/`DEFAULT_CONFIG` unified `provider.{type,model}`; `config schema` updated; no module-load repo coupling.
+- `src/lib/constants.ts` → `CONFIG_PATH`/`DEFAULT_CONFIG` top-level `model` string; `config schema` updated; no module-load repo coupling.
 - Verified: `mask lint` + `mask typecheck` clean; `commit-sage --help/--version/commit --help/config --help` smokes pass; `grep -rn "deno task"` zero hits.

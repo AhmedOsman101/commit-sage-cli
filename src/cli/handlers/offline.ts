@@ -22,7 +22,7 @@ import {
  *   things already staged — those would still show in `diff-index HEAD`
  *   because the working tree differs from HEAD even after staging).
  *
- * Honors user config (`general.diffStrategy` + `commit.onlyStagedChanges`)
+ * Honors user config (`generation.diffStrategy` + `commit.onlyStagedChanges`)
  * via `AiService.resolveDiffMode()`. No silent fallback — empty result is
  * surfaced as `NoChangesDetectedError`.
  */
@@ -100,7 +100,7 @@ async function runOffline(
   opts: OfflineRunOptions
 ): Promise<Result<string, Error>> {
   // Resolve staged vs unstaged via the same code path the AI uses, so the
-  // user's `general.diffStrategy` + `commit.onlyStagedChanges` config is
+  // user's `generation.diffStrategy` + `commit.onlyStagedChanges` config is
   // honored.
   const diffModeResult = await AiService.resolveDiffMode();
   if (diffModeResult.isError()) return Err(diffModeResult.error);

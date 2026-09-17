@@ -35,7 +35,7 @@ The release must be a hard rename (old keys migrated automatically) with an open
 - Canonical storage is `model: "openai/gpt-5-nano"` (string, top-level, replaces the whole `provider` object).
 - Split on **first** `/` only: `provider = s.slice(0, i)`, `model = s.slice(i+1)`. `kc/stealth/ox-alpha` → provider `9router`, model `kc/stealth/ox-alpha` (slashes preserved).
 - Fail only if no `/`, empty provider part, or empty model part. Provider part validated against open union `KnownProvider | (string & {})` — known enum values get help text, custom strings (e.g. `9router`) are allowed if a `providers.<name>` entry exists.
-- CLI `--model "provider/model"` replaces `--provider <name>` + `--model <name>` pair. Keep deprecated `--provider` that warns and concatenates for one run.
+- Single CLI `--model "provider/model"` flag. No `--provider` flag.
 - No bare-provider fallback (always require `provider/model`).
 
 ### 2. `providers` registry with `providers.defaults`

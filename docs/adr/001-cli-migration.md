@@ -49,8 +49,7 @@ Turn `commit-sage` from a one-shot "print a commit message" tool into a full CLI
 |---|---|---|
 | `--offline` | `generate`, `commit` | Static-analysis generator (auto-commit-msg port). Always produces conventional-shape output (type + description). Only `--max-length` constraint applies; other format-flavor flags ignored. |
 | `--context <text>` | `generate`, `commit` | AI only. Injects `## External Context\n<text>` into the prompt. |
-| `--provider <name>` | `generate`, `commit` | Override `provider.type` for this run. |
-| `--model <name>` | `generate`, `commit` | Override `provider.model` for this run. |
+| `--model <name>` | `generate`, `commit` | Model for this run as a full `provider/model` string (Config V2 canonical). |
 | `--format <name>` | `generate`, `commit` | One of: `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform`. `freeform` is AI-only. |
 | `--max-length <n>` | `generate`, `commit` | Override `commit.maxSubjectLength`. Applies to `--offline` too. |
 | `--edit` | `generate`, `commit` | `generate`: tempfile + `$EDITOR`/`$VISUAL`, print final to stdout. `commit`: passes `-e` to `git commit`. |
@@ -92,7 +91,7 @@ Contract:
 
 1. If no staged changes: TUI multiselect (Cliffy Checkbox with search + select-all) over unstaged tracked + untracked files. `git add` selected.
 2. If `commit.onlyStagedChanges=true` (default) AND still no staged changes after picker → error "no staged changes", exit 1.
-3. Resolve diff mode (`commit.onlyStagedChanges` + `general.diffStrategy`).
+3. Resolve diff mode (`commit.onlyStagedChanges` + `generation.diffStrategy`).
 4. Generate message (AI or `--offline`).
 5. Markdown preview (subject + body, ANSI-rendered).
 6. Confirm dialog "Commit changes?".

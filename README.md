@@ -126,7 +126,7 @@ Interactive flow:
 - If nothing staged → TUI multiselect over unstaged tracked + untracked (Cliffy
   Checkbox, searchable, select-all) → `git add`.
 - Re-check staged; if still empty and `commit.onlyStagedChanges=true` → exit 1;
-  else honor `general.diffStrategy`.
+   else honor `generation.diffStrategy`.
 - Generate message (AI or `--offline`).
 - Markdown preview via `@littletof/charmd` (subject as bold + body).
 
@@ -177,8 +177,8 @@ commit-sage commit
 # 4 — commit + push current branch (warn-and-skip if no origin, exit 0)
 commit-sage commit --push
 
-# 5 — switch provider/model without opening a file (unified provider.{type,model} shape)
-commit-sage config set provider.type openai && commit-sage config set provider.model gpt-5
+# 5 — switch model without opening a file (single provider/model string)
+commit-sage config set model openai/gpt-5
 
 # 6 — inspect merged config
 commit-sage config print
@@ -186,8 +186,8 @@ commit-sage config print
 # bonus — commit offline, and generate with extra AI context + custom max length
 commit-sage commit --offline
 commit-sage generate --context "fixes #123, retry on 5xx" --max-length 72
-commit-sage generate --provider ollama --model gpt-oss-120b --format emoji --lang russian
-commit-sage config get provider.model
+commit-sage generate --model ollama/gpt-oss-120b --format emoji --lang russian
+commit-sage config get model
 commit-sage config path
 ```
 
@@ -198,17 +198,16 @@ More in `docs/demos/` (gifs):  -->
 
 ### Shared `generate` / `commit` flags
 
-One table — both subcommands accept the same 8 flags (commit adds 3 more below).
+One table — both subcommands accept the same 7 flags (commit adds 3 more below).
 
 | Flag                | Description                                                                                                                                                    | Notes                                                                                                                                     |
 | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `--offline`         | Use static-analysis generator (no API). Always conventional-shape `<type>: <desc>` or bare `<desc>`; truncates at `--max-length` word boundary.                | Ignores `--format`; still respects `--max-length`; needs `git diff-index` status rows — untracked files won't appear until staged.        |
 | `--context <text>`  | Inject `## External Context\n<text>` before the diff in the AI prompt.                                                                                         | **AI-only** — ignored with `--offline`.                                                                                                   |
-| `--provider <name>` | Override `provider.type` for this run (`gemini`, `openai`, `anthropic`, `deepseek`, `mistral`, `xai`, `ollama`, `moonshotai`, `zai`, `minimax`, `openrouter`). | Per-run override of `provider.type`; maps to `DEFAULT_CONFIG.provider.type`.                                                              |
-| `--model <name>`    | Override `provider.model` for this run.                                                                                                                        | Per-run override of `provider.model`; any string accepted — provider validates at call time. `commit` help lists `SUPPORTED_PROVIDERS`.   |
-| `--format <name>`   | Commit template: `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform`.                                                                          | **AI-only** — ignored with `--offline` (offline always conventional). Default `conventional` (see `commit.commitFormat`).                 |
-| `--lang <name>`     | Commit language: `english`, `russian`, `chinese`, `japanese`.                                                                                                  | Per-run override of `commit.commitLanguage`.                                                                                              |
-| `--max-length <n>`  | Override `commit.maxSubjectLength` for this message.                                                                                                           | Applies to **both** AI and `--offline` (offline truncation uses word boundary + `…`).                                                     |
+| `--model <name>`     | Model for this run in `provider/model` format (e.g. `openai/gpt-5-nano`). First slash splits provider from model id; multi-segment ids preserved (`9router/kc/stealth/ox-alpha`). | Per-run override of top-level `model`; any `provider/model` string accepted — provider validates at call time. |
+| `--format <name>`   | Commit template: `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform`.                                                                                                                          | **AI-only** — ignored with `--offline` (offline always conventional). Default `conventional` (see `commit.commitFormat`).                                     |
+| `--lang <name>`     | Commit language (BCP-47, stored as-given, e.g. `en`, `en-US`, `jp`).                                                                                                                                           | Per-run override of `commit.commitLanguage`; normalized internally.                                                                                           |
+| `--max-length <n>`  | Override `commit.maxLength` for this message.                                                                                                                                                                  | Applies to **both** AI and `--offline` (offline truncation uses word boundary + `…`).                                                                         |
 | `--edit`            | Open before saving.                                                                                                                                            | `generate`: tempfile + `$EDITOR`/`$VISUAL` → print final to stdout. `commit`: passes `-e` to `git commit` → editor on the staged message. |
 
 Commit-only flags:
@@ -258,56 +257,68 @@ Every `set`/`edit` validates against `config.schema.json` (generated from
 `src/lib/types/configSchema.ts` — run `mask schema build` / `mask schema check`
 — don't hand-edit the schema).
 
-### Unified `provider.{type,model}` (since CLI migration)
+### Top-level `model` + `providers` registry (Config V2)
 
-Old top-level `gemini`/`ollama`/`openai` provider sections for `type`/`model`
-are gone — replaced by one `provider` section:
+One canonical string selects the provider and model. Split on the first `/` —
+left is the provider, right is the model id (further slashes preserved):
 
-| Key                  | Type            | Default                   | Description                                                                                                           |
-| -------------------- | --------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `provider.type`      | `string` (enum) | `"gemini"`                | `gemini`, `openai`, `anthropic`, `deepseek`, `mistral`, `xai`, `ollama`, `moonshotai`, `zai`, `minimax`, `openrouter` |
-| `provider.model`     | `string`        | `"gemini-2.5-flash-lite"` | Opaque — validated by the selected provider at call time                                                              |
-| `provider.timeoutMs` | `number`        | `60000`                   | Request timeout                                                                                                       |
-| `provider.reasoning` | `string`        | `"off"`                   | `off`, `default`, `low`, `medium`, `high`, `xhigh`, `ultra`                                                           |
+| Key     | Type                    | Default               | Description                                                                                          |
+| ------- | ----------------------- | --------------------- | ---------------------------------------------------------------------------------------------------- |
+| `model` | `string` (`a/b` shape)  | `"openai/gpt-5-nano"` | `"9router/kc/stealth/ox-alpha"` → provider `9router`, model `kc/stealth/ox-alpha`. Fails without `/` |
 
-Per-provider transport stays under its own section (e.g. `ollama.baseUrl`,
-`openrouter.baseUrl`, `openai.baseUrl` + `openai.apiKeyEnvVar` +
-`openai.useChatCompletions`).
+Per-provider transport lives in the `providers` registry. `providers.defaults`
+holds shared AI defaults; `providers.<name>` overrides per provider
+(open registry — custom routers need no code change):
 
-Don't confuse those with the unified
-`provider.type`/`provider.model` overrides (`--provider`/`--model`).
+| Key                          | Type              | Default                          | Description                                                                                                  |
+| ---------------------------- | ----------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `providers.defaults.timeoutMs` | `number`        | `60000`                          | Request timeout                                                                                              |
+| `providers.defaults.reasoning` | `string/boolean`| `"off"`                          | `off`, `default`, `low`, `medium`, `high`, `xhigh`, `ultra` (tri-state with boolean)                          |
+| `providers.defaults.apiType`   | `string`        | `"openai-chat"`                    | `openai-chat`, `openai-responses`, `anthropic`                                                               |
+| `providers.<name>.baseUrl`     | `string`        | per-provider                       | e.g. `http://localhost:11434/api` for `ollama`                                                               |
+| `providers.<name>.apiKey`      | `string`        | `"$<NAME>_API_KEY"`                | `$`-prefix reads env, else literal from the file; optional for local providers (`ollama`)                    |
+| `providers.<name>.apiType`     | `string`        | inherits                           | Per-provider override                                                                                        |
+| `providers.<name>.models`      | map             | —                                  | Per-model presets (`name`, `reasoning`, `contextWindow`, `maxInputTokens`, `maxOutputTokens`, `temperature`) |
+
+`providers.<name>.models` presets resolve per value
+(`model preset > provider > defaults`) and are managed via `config edit` —
+`config get/set` stays shallow by design.
+
+Don't confuse the stored `model` string with the per-run
+`--model` flag (see [Flags Reference](#flags-reference)).
 
 ### All sections at a glance
 
 | Section      | Key                   | Type      | Default                          | Notes                                                                                                                      |
 | ------------ | --------------------- | --------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `general`    | `maxRetries`          | `number`  | `3`                              | Retry on API call                                                                                                          |
-| `general`    | `initialRetryDelayMs` | `number`  | `1000`                           | First retry backoff                                                                                                        |
-| `general`    | `temperature`         | `number`  | `0.7`                            | Model temperature                                                                                                          |
-| `general`    | `maxInputChars`       | `number`  | `100000`                         | Diff chars sent to AI                                                                                                      |
-| `general`    | `diffStrategy`        | `string`  | `"auto"`                         | `staged` / `unstaged` / `auto`                                                                                             |
-| `ollama`     | `baseUrl`             | `string`  | `"http://localhost:11434/api"`   | Self-hosted Ollama                                                                                                         |
-| `openrouter` | `baseUrl`             | `string`  | `"https://openrouter.ai/api/v1"` | OpenRouter meta-provider                                                                                                   |
-| `openai`     | `baseUrl`             | `string`  | `"https://api.openai.com/v1"`    | OpenAI-compatible base                                                                                                     |
-| `openai`     | `apiKeyEnvVar`        | `string`  | `"OPENAI_API_KEY"`               | Env var that holds the key (other providers use `${TYPE}_API_KEY`)                                                         |
-| `openai`     | `useChatCompletions`  | `boolean` | `true`                           | Chat completions vs responses API                                                                                          |
+| `generation` | `maxRetries`          | `number`  | `3`                              | Retry on API call                                                                                                          |
+| `generation` | `retryDelay`          | `number`  | `1000`                           | Retry backoff                                                                                                              |
+| `generation` | `temperature`         | `number`  | `0.7`                            | Model temperature (global default; per-model presets may override)                                                         |
+| `generation` | `maxPromptTokens`     | `number`  | `100000`                         | Diff tokens sent to AI (token-counted truncation)                                                                          |
+| `generation` | `diffStrategy`        | `string`  | `"auto"`                         | `staged` / `unstaged` / `auto`                                                                                             |
+| `providers`  | `defaults.timeoutMs`  | `number`  | `60000`                          | Shared request timeout                                                                                                     |
+| `providers`  | `defaults.reasoning`  | `string`  | `"off"`                          | Shared reasoning default                                                                                                   |
+| `providers`  | `defaults.apiType`    | `string`  | `"openai-chat"`                  | Shared API type                                                                                                            |
+| `providers`  | `<name>.baseUrl`      | `string`  | per-provider                     | e.g. `ollama` → `"http://localhost:11434/api"`; `openrouter` → `"https://openrouter.ai/api/v1"`                            |
+| `providers`  | `<name>.apiKey`       | `string`  | `"$<NAME>_API_KEY"`              | `$`-prefix reads env, else literal; optional for local providers                                                           |
+| `providers`  | `<name>.apiType`      | `string`  | inherits                         | `openai-chat`, `openai-responses`, `anthropic`                                                                             |
 | `commit`     | `autoCommit`          | `boolean` | `false`                          | Skip `Commit changes?` confirm (or use `-y/--yes`)                                                                         |
 | `commit`     | `autoPush`            | `boolean` | `false`                          | Skip `Push to <branch>?` confirm (or use `-y/--yes`)                                                                       |
 | `commit`     | `commitFormat`        | `string`  | `"conventional"`                 | `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform` (`freeform` AI-only)                                   |
 | `commit`     | `onlyStagedChanges`   | `boolean` | `true`                           | When true and nothing staged after picker, `commit` exits 0 with `No staged changes`; else falls through to `diffStrategy` |
-| `commit`     | `commitLanguage`      | `string`  | `"english"`                      | `english`, `russian`, `chinese`, `japanese` (`--lang` overrides)                                                           |
+| `commit`     | `commitLanguage`      | `string`  | `"english"`                      | BCP-47, stored as-given (`en`, `en-US`, `jp` …); `--lang` overrides                                                        |
 | `commit`     | `promptForRefs`       | `boolean` | `false`                          | Reserved (wired for future refs prompt)                                                                                    |
-| `commit`     | `maxSubjectLength`    | `number`  | `80`                             | Subject truncation limit; `--max-length` per-run                                                                           |
+| `commit`     | `maxLength`           | `number`  | `80`                             | Subject truncation limit; `--max-length` per-run                                                                           |
 | `commit`     | `bodyStyle`           | `string`  | `"subject-body"`                 | `subject-only`, `subject-body`, `subject-body-footer`                                                                      |
 
 Environment variables remain an alternative for the key: set `GEMINI_API_KEY`,
 `OPENAI_API_KEY`, etc. before running. Single-run:
 
 ```shell
-OPENAI_API_KEY='sk-...' commit-sage generate --provider openai --model gpt-5
+OPENAI_API_KEY='sk-...' commit-sage generate --model openai/gpt-5
 ```
 
-Ollama needs no key. Keys stored in the JSON file follow the same `provider.type` routing.
+Ollama needs no key. Keys stored in the JSON file follow the same `provider/model` routing.
 
 ## Contributing
 

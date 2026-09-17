@@ -7,7 +7,7 @@
 // script spreads them into mutable arrays at JSON-serialization time so the
 // JSON Schema can express them.
 
-import { COMMIT_FORMATS, SUPPORTED_LANGUAGES } from "@/lib/types/commit.ts";
+import { COMMIT_FORMATS } from "@/lib/types/commit.ts";
 import {
   BODY_STYLES,
   DIFF_STRATEGIES,
@@ -186,7 +186,9 @@ const COMMIT_CONFIG_SCHEMA = {
     },
     commitLanguage: {
       type: "string",
-      enum: [...SUPPORTED_LANGUAGES],
+      minLength: 1,
+      description:
+        "Commit language tag (BCP-47, stored as-given, e.g. en, en-US, jp). Normalized internally.",
     },
     promptForRefs: {
       type: "boolean",

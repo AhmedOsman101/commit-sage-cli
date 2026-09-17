@@ -2,7 +2,11 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "additionalProperties": false,
-  "required": ["$schema", "commit", "model"],
+  "required": [
+    "$schema",
+    "commit",
+    "model"
+  ],
   "properties": {
     "$schema": {
       "type": "string",
@@ -16,7 +20,11 @@
     "generation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["maxRetries", "retryDelay", "temperature"],
+      "required": [
+        "maxRetries",
+        "retryDelay",
+        "temperature"
+      ],
       "properties": {
         "maxRetries": {
           "type": "integer",
@@ -39,7 +47,11 @@
         },
         "diffStrategy": {
           "type": "string",
-          "enum": ["staged", "unstaged", "auto"],
+          "enum": [
+            "staged",
+            "unstaged",
+            "auto"
+          ],
           "description": "Whether to analyze staged changes, unstaged changes, or automatically prefer staged changes when present"
         }
       }
@@ -60,7 +72,11 @@
           },
           "apiType": {
             "type": "string",
-            "enum": ["openai-chat", "openai-responses", "anthropic"]
+            "enum": [
+              "openai-chat",
+              "openai-responses",
+              "anthropic"
+            ]
           },
           "timeoutMs": {
             "type": "integer",
@@ -180,7 +196,11 @@
             },
             "apiType": {
               "type": "string",
-              "enum": ["openai-chat", "openai-responses", "anthropic"],
+              "enum": [
+                "openai-chat",
+                "openai-responses",
+                "anthropic"
+              ],
               "description": "Provider API type"
             },
             "contextWindow": {
@@ -202,7 +222,11 @@
     "commit": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["commitFormat", "onlyStagedChanges", "commitLanguage"],
+      "required": [
+        "commitFormat",
+        "onlyStagedChanges",
+        "commitLanguage"
+      ],
       "properties": {
         "autoCommit": {
           "type": "boolean"
@@ -227,7 +251,8 @@
         },
         "commitLanguage": {
           "type": "string",
-          "enum": ["english", "russian", "chinese", "japanese"]
+          "minLength": 1,
+          "description": "Commit language tag (BCP-47, stored as-given, e.g. en, en-US, jp). Normalized internally."
         },
         "promptForRefs": {
           "type": "boolean"
@@ -239,7 +264,11 @@
         },
         "bodyStyle": {
           "type": "string",
-          "enum": ["subject-only", "subject-body", "subject-body-footer"],
+          "enum": [
+            "subject-only",
+            "subject-body",
+            "subject-body-footer"
+          ],
           "description": "Controls whether the generated commit message includes only a subject, a subject and body, or a subject, body, and optional footer"
         }
       }

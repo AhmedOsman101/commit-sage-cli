@@ -37,13 +37,10 @@ Purpose: Establish ubiquitous language for the CLI domain. Derived from codegrap
 ### GlobalConfig (~/.config/commitSage/config.json)
 ```typescript
 interface GlobalConfig {
-  provider: ProviderConfig;
+  model: string; // "provider/model" (Config V2 canonical)
   commit: CommitConfig;
-  general: GeneralConfig;
-  // per-provider sections
-  gemini: GeminiConfig;
-  openai: OpenAIConfig;
-  // ... all 14 providers
+  generation: GenerationConfig;
+  providers: ProvidersConfig; // defaults + per-provider entries + models presets
 }
 ```
 

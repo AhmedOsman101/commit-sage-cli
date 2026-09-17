@@ -26,7 +26,7 @@ const isValidFormat = (format: string): format is CommitFormat =>
   Object.keys(templates).includes(format);
 
 const isValidLanguage = (language: string): language is CommitLanguage =>
-  SUPPORTED_LANGUAGES.includes(language as CommitLanguage);
+  (SUPPORTED_LANGUAGES as readonly string[]).includes(language);
 
 function getTemplate(format: CommitFormat, language: CommitLanguage): string {
   let template: CommitTemplate;

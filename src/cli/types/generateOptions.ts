@@ -2,7 +2,6 @@
 // Licensed under the GNU General Public License v3.0. See LICENSE for details.
 
 import type { CommitFormat, CommitLanguage } from "@/lib/types/commit.ts";
-import type { ProviderType } from "@/lib/types/config.ts";
 
 /**
  * Per-command options for the `generate` subcommand.
@@ -12,15 +11,13 @@ import type { ProviderType } from "@/lib/types/config.ts";
  * a plain struct threaded through the layers.
  */
 type GenerateOptions = {
-  /** Override `provider.type` for this run (from `--provider` flag). */
-  provider?: ProviderType;
-  /** Override `provider.model` for this run (from `--model` flag). */
+  /** Model for this run in `provider/model` format (from `--model` flag). First `/` splits provider from model id. */
   model?: string;
   /** Override `commit.commitFormat` for this run (from `--format` flag). */
   format?: CommitFormat;
   /** Override `commit.maxLength` for this run (from `--max-length` flag). */
   maxLength?: number;
-  /** Override `commit.commitLanguage` for this run (from `--lang` flag). */
+  /** Commit language tag (from `--lang` flag). BCP-47, stored as-given; normalized internally. */
   language?: CommitLanguage;
   /** AI-only. Inject `## External Context\n<text>` into the prompt (from `--context` flag). */
   context?: string;

@@ -9,7 +9,6 @@ import { runOffline } from "@/cli/handlers/offline.ts";
 import { confirmPrompt, selectFilesToStage } from "@/cli/prompts.ts";
 import { Log } from "@/lib/logger.ts";
 import { COMMIT_FORMATS, SUPPORTED_LANGUAGES } from "@/lib/types/commit.ts";
-import { SUPPORTED_PROVIDERS } from "@/lib/types/config.ts";
 import AiService from "@/services/ai.ts";
 import ConfigService from "@/services/config.ts";
 import GitService from "@/services/git.ts";
@@ -71,12 +70,8 @@ class CommitCommand extends Command {
         "Additional context to inject into the prompt (AI only)."
       )
       .option(
-        "--provider <name:string>",
-        "Override provider.type for this run."
-      )
-      .option(
         "--model <name:string>",
-        `Override provider.model for this run.\n  Possible values [${SUPPORTED_PROVIDERS.join(", ")}]`
+        'Model for this run in provider/model format (e.g. "openai/gpt-5-nano"). First slash splits provider from model id; multi-segment ids preserved ("9router/kc/stealth/ox-alpha"). Overrides config model.'
       )
       .option(
         "--format <name:string>",
@@ -84,7 +79,7 @@ class CommitCommand extends Command {
       )
       .option(
         "--lang <name:string>",
-        `Commit language. One of: ${SUPPORTED_LANGUAGES.join(", ")}.`
+        `Commit language (BCP-47, stored as-given, e.g. en, en-US, jp). Canonical: ${SUPPORTED_LANGUAGES.join(", ")}.`
       )
       .option(
         "--max-length <n:number>",

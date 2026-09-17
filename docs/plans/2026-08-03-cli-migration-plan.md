@@ -27,7 +27,7 @@
 
 | # | Ticket | Scope | Gate |
 |---|--------|-------|------|
-| T4 #26 | **`generate` subcommand + `GenerateOptions` + `runEditor`** (`src/cli/generate.ts` 8 flags, `src/cli/handlers/editor.ts`, `src/cli/handlers/offline.ts` wiring) | `generate` prints to stdout; `--edit` tempfile via `$EDITOR` | `generate --help` shows 8 flags, `--context/--provider/--offline` overrides, non-TTY guard |
+| T4 #26 | **`generate` subcommand + `GenerateOptions` + `runEditor`** (`src/cli/generate.ts` 7 flags, `src/cli/handlers/editor.ts`, `src/cli/handlers/offline.ts` wiring) | `generate` prints to stdout; `--edit` tempfile via `$EDITOR` | `generate --help` shows 7 flags, `--context/--model/--offline` overrides, non-TTY guard |
 | T5 #27 | **`offlineGenerator.ts` + `runOffline`** (port `auto-commit-msg` contract verbatim: `parseDiffIndex`, `getConventionType`, `_collapse`, `_msgFromChanges`, `maxLength` truncation) | `generate --offline` deterministic without API | Verification cases from #27 pass; `generate --offline` outside TTY exits 0 |
 
 ### Phase 2 — Commit flow (T6, after T4+T5)

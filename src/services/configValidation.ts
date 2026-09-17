@@ -2,7 +2,7 @@ import { Err, ErrFromText, Ok, type Result, wrapThrowable } from "lib-result";
 import { z } from "zod";
 import { CONFIG_PATH } from "@/lib/constants.ts";
 import { Log } from "@/lib/logger.ts";
-import { COMMIT_FORMATS, SUPPORTED_LANGUAGES } from "@/lib/types/commit.ts";
+import { COMMIT_FORMATS } from "@/lib/types/commit.ts";
 import {
   BODY_STYLES,
   type Config,
@@ -78,7 +78,7 @@ const ConfigSchema = z.strictObject({
     autoPush: z.boolean().optional(),
     onlyStagedChanges: z.boolean(),
     commitFormat: z.enum(COMMIT_FORMATS),
-    commitLanguage: z.enum(SUPPORTED_LANGUAGES),
+    commitLanguage: z.string().min(1),
     promptForRefs: z.boolean().optional(),
     maxLength: z.uint32().optional(),
     bodyStyle: z.enum(BODY_STYLES).optional(),

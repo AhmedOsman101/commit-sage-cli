@@ -87,9 +87,14 @@ function parseDotPath(arg: string) {
 
 function parseProvidersPath(arg: string) {
   const parts = arg.split(".");
-  if (parts.length !== 3 || parts[0] !== "providers") {
+  if (parts.length !== 3 || parts[0] !== "providers" || parts[2] === "models") {
+    if (parts[0] === "providers" && parts[2] === "models") {
+      return ErrFromText(
+        `Key "${arg}" targets per-model presets, which stay shallow by design — use "config edit" to manage providers.<name>.models directly.`
+      );
+    }
     return ErrFromText(
-      `Invalid key "${arg}". Usage: providers.<name>.<key> (e.g. providers.openai.baseUrl) or providers.defaults.<key>`
+      `Invalid key "${arg}". Usage: providers.<name>.<key> (e.g. providers.openai.baseUrl) or providers.defaults.<key>. Note: providers.<name>.models presets are managed via "config edit"; get/set stays shallow.`
     );
   }
   const [, provider, key] = parts;
@@ -281,7 +286,9 @@ class ConfigCommand extends Command {
     this.command(
       "get",
       new Command()
-        .description("Print a single config value")
+        .description(
+          "Print a single config value. Shallow: providers.<name>.models presets are managed via config edit."
+        )
         .arguments("<key:string>")
         .action(async (_opts: unknown, key: string) => {
           // model special case
@@ -397,7 +404,9 @@ class ConfigCommand extends Command {
     this.command(
       "set",
       new Command()
-        .description("Persist a config value (writes to disk)")
+        .description(
+          "Persist a config value (writes to disk). Shallow: providers.<name>.models presets are managed via config edit."
+        )
         .arguments("<key:string> <value:string>")
         .action(async (_opts: unknown, key: string, rawValue: string) => {
           // model special case
