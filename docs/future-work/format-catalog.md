@@ -207,7 +207,7 @@ Grilling Decision: Offline generator stays conventional-only (Priority 0 for mul
 "commit": {
   "commitFormat": "conventional",
   "commitLanguage": "english",
-  "maxSubjectLength": 80,
+  "maxLength": 80,
   "bodyStyle": "subject-body"
 }
 ```
@@ -234,7 +234,7 @@ Grilling Decision: Offline generator stays conventional-only (Priority 0 for mul
 "commit": {
   "commitFormat": "conventional",
   "commitLanguage": "english",
-  "maxSubjectLength": 80,
+  "maxLength": 80,
   "bodyStyle": "subject-body",
   "customTemplate": "",           // NEW: filename in ~/.config/commitSage/templates/
   "useRecentCommitsAsContext": false,  // NEW

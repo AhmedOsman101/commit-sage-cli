@@ -54,17 +54,16 @@ interface GlobalConfig {
 CLI flags > Project config > Global config > Defaults
 
 ### ProviderConfig
-- type: ProviderType (14 values)
-- model: string
-- apiKeyEnvVar?: string (OpenAI only)
-- reasoning?: "off" | "low" | "medium" | "high"
-- thinkingBudget?: number (Gemini)
-- thinkingLevel?: "minimal" | "low" | "medium" | "high" (Gemini)
+- baseUrl?: string (per-provider, in `providers.<name>`)
+- apiKey?: string (`"$ENV_VAR"` env reference or literal; optional for local providers)
+- apiType?: "openai-chat" | "openai-responses" | "anthropic"
+- reasoning?: boolean | "off" | "default" | "low" | "medium" | "high" | "xhigh" | "ultra"
+- models?: Record<modelId, ModelPreset> (per-model overrides: reasoning/contextWindow/maxInputTokens/maxOutputTokens/temperature)
 
 ### CommitConfig
 - commitFormat: CommitFormat (12 values)
 - commitLanguage: CommitLanguage (9 + custom)
-- maxSubjectLength: number (default 80)
+- maxLength: number (default 80)
 - bodyStyle: "subject-only" | "subject-body" | "subject-body-footer"
 - useCustomInstructions: boolean
 - customInstructions: string (deprecated, replaced by template files)
@@ -87,10 +86,11 @@ CLI flags > Project config > Global config > Defaults
 - value: string (for "input" source)
 - branchPattern: string (regex, default: "[A-Z][A-Z0-9]*-[0-9]+")
 
-### GeneralConfig
+### GenerationConfig
 - maxRetries: number (default 3)
+- retryDelay: number (default 1000)
 - temperature: number (default 0.3)
-- timeoutMs: number (default 30000)
+- maxPromptTokens: number (token-counted, default 100000)
 - diffStrategy: "staged" | "unstaged" | "auto"
 
 ### OpenAICompatibleConfig
@@ -174,8 +174,7 @@ Template body with {{variable}} placeholders
 - language?: CommitLanguage
 - maxLength?: number
 - context?: string
-- provider?: ProviderType
-- model?: string
+- model?: string // "provider/model" (Config V2 canonical; per-run override)
 - template?: string (custom template name)
 - edit: boolean
 - push?: string | boolean

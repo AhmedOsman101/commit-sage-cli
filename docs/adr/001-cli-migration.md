@@ -51,7 +51,7 @@ Turn `commit-sage` from a one-shot "print a commit message" tool into a full CLI
 | `--context <text>` | `generate`, `commit` | AI only. Injects `## External Context\n<text>` into the prompt. |
 | `--model <name>` | `generate`, `commit` | Model for this run as a full `provider/model` string (Config V2 canonical). |
 | `--format <name>` | `generate`, `commit` | One of: `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform`. `freeform` is AI-only. |
-| `--max-length <n>` | `generate`, `commit` | Override `commit.maxSubjectLength`. Applies to `--offline` too. |
+| `--max-length <n>` | `generate`, `commit` | Override `commit.maxLength`. Applies to `--offline` too. |
 | `--edit` | `generate`, `commit` | `generate`: tempfile + `$EDITOR`/`$VISUAL`, print final to stdout. `commit`: passes `-e` to `git commit`. |
 
 ## Formats (kept)
@@ -84,7 +84,7 @@ Contract:
   - 2–4 all-same action → `verb a, b and c` (humanList joining, no Oxford comma). Mixed actions → count format. Rename rows here use the **bare** verb (`rename a and b`), not the phrase.
   - ≥5 → count format per action, ` and `-joined: `create 3 files and delete 2 files`.
 - **Format** (`_formatMsg`): `type ? \`${type}: ${desc}\` : desc` — unknown type → bare description.
-- **Adapter addition (NOT in auto-commit-msg)**: truncate subject to `--max-length` (default 80 = `maxSubjectLength`) at the last word boundary before the limit, append `…`. Source has no truncation.
+- **Adapter addition (NOT in auto-commit-msg)**: truncate subject to `--max-length` (default 80 = `commit.maxLength`) at the last word boundary before the limit, append `…`. Source has no truncation.
 - **Not ported**: old-message merge (`parseExisting.ts` `splitMsg`/`_joinOldAndNew`). `generate --offline` always emits a fresh message. Revisit only if `commit --offline` ever needs to preserve a template/prefix.
 
 ## `commit` flow (UX contract)
