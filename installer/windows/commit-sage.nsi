@@ -11,13 +11,13 @@ InstallDir "$PROGRAMFILES\commitSage"
 InstallDirRegKey HKLM "Software\commitSage" "InstallDir"
 RequestExecutionLevel admin
 
-; Version info
-VIProductVersion "1.0.0.0"
+; Version info — keep in sync with version.txt
+VIProductVersion "1.8.0.0"
 VIAddVersionKey "ProductName" "Commit Sage"
 VIAddVersionKey "CompanyName" "Commit Sage"
 VIAddVersionKey "FileDescription" "Commit Sage Installer"
-VIAddVersionKey "FileVersion" "1.0.0"
-VIAddVersionKey "ProductVersion" "1.0.0"
+VIAddVersionKey "FileVersion" "1.8.0"
+VIAddVersionKey "ProductVersion" "1.8.0"
 VIAddVersionKey "LegalCopyright" "Commit Sage"
 
 ; Interface Settings

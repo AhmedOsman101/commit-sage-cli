@@ -1,4 +1,4 @@
-export const conventionalTemplate = {
+const conventionalTemplate = {
   english: `Generate a commit message following the Conventional Commits format:
 
 <type>[optional scope]: <description>
@@ -194,3 +194,5 @@ feat(auth): ユーザー認証を追加
 - 認証サービスモジュールを作成
 - セッション管理を追加`,
 };
+
+export { conventionalTemplate };

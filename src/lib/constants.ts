@@ -1,7 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
-import GitService from "@/services/gitService.ts";
-import type { Config } from "./configServiceTypes.d.ts";
+import type { Config } from "@/lib/types/config.ts";
 
 function getConfigPath(): string {
   switch (OS) {
@@ -22,35 +21,41 @@ function getConfigPath(): string {
   }
 }
 
-export const OS: Readonly<string> = Deno.build.os;
+const OS: Readonly<string> = Deno.build.os;
 
-export const HOME_DIR: Readonly<string> = homedir();
+const HOME_DIR: Readonly<string> = homedir();
 
-export const CONFIG_PATH: Readonly<string> = getConfigPath();
+const CONFIG_PATH: Readonly<string> = getConfigPath();
 
-export const REPO_PATH: Readonly<string> = GitService.initialize();
-
-export const DEFAULT_CONFIG: Readonly<Config> = {
+const DEFAULT_CONFIG: Readonly<Config> = {
   $schema:
     "https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/refs/heads/main/config.schema.json",
-  general: {
+  model: "openai/gpt-5-nano",
+  generation: {
     maxRetries: 3,
-    initialRetryDelayMs: 1000,
+    retryDelay: 1000,
     temperature: 0.7,
-    maxInputChars: 100_000,
+    maxPromptTokens: 100_000,
     diffStrategy: "auto",
   },
-  ollama: {
-    baseUrl: "http://localhost:11434/api",
-  },
-  openrouter: {
-    baseUrl: "https://openrouter.ai/api/v1",
-  },
-  openai: {
-    baseUrl: "https://api.openai.com/v1",
-    apiKeyEnvVar: "OPENAI_API_KEY",
-    useChatCompletions: true,
-  },
+  providers: {
+    defaults: {
+      timeoutMs: 60_000,
+      reasoning: "off",
+      apiType: "openai-chat",
+    },
+    openai: {
+      baseUrl: "https://api.openai.com/v1",
+      apiKey: "$OPENAI_API_KEY",
+      apiType: "openai-chat",
+    },
+    ollama: {
+      baseUrl: "http://localhost:11434/api",
+    },
+    openrouter: {
+      baseUrl: "https://openrouter.ai/api/v1",
+    },
+  } as Config["providers"],
   commit: {
     autoCommit: false,
     autoPush: false,
@@ -58,18 +63,12 @@ export const DEFAULT_CONFIG: Readonly<Config> = {
     onlyStagedChanges: true,
     commitLanguage: "english",
     promptForRefs: false,
-    maxSubjectLength: 80,
+    maxLength: 80,
     bodyStyle: "subject-body",
-  },
-  provider: {
-    type: "gemini",
-    model: "gemini-2.5-flash-lite",
-    timeoutMs: 60_000,
-    reasoning: "off",
   },
 };
 
-export const ERROR_MESSAGES = {
+const ERROR_MESSAGES = {
   commandExecution: "Error in command execution:",
   generateCommitMessage: "Failed to generate commit message",
   apiError: "API Error: {0}",
@@ -95,3 +94,5 @@ export const ERROR_MESSAGES = {
   fileNotCommitted: "File has not been committed yet",
   fileDeleted: "File has been deleted",
 } as const;
+
+export { CONFIG_PATH, DEFAULT_CONFIG, ERROR_MESSAGES, HOME_DIR, OS };

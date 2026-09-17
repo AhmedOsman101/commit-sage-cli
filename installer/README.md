@@ -16,7 +16,7 @@ Download `commit-sage-windows-x64.exe` and run directly.
 
 ### Quick Install
 ```bash
-curl -fsSL https://get.commitsage.dev | bash
+curl -fsSL https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/main/installer/unix.sh | bash
 ```
 
 The installer will:

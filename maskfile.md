@@ -7,7 +7,7 @@
 ```bash
 unset BIOME_CONFIG_PATH &>/dev/null
 unset BIOME_BINARY_PATH &>/dev/null
-version="2.5.6"
+version="2.5.11"
 pkg="@biomejs/biome@${version}"
 
 declare -a argv
@@ -72,12 +72,38 @@ $MASK biome "${args[*]}"
 deno check
 ```
 
-## run
+## schema
+
+> Generate or verify the `config.schema.json` from `src/lib/types/configSchema.ts`
+
+### build
+
+> Regenerate `config.schema.json` from `src/lib/types/configSchema.ts`
+
+```bash
+deno run -A scripts/build-schema.ts
+```
+
+### check
+
+> Verify the schema is in sync instead of writing (exits non-zero on drift)
+
+```bash
+deno run -A scripts/build-schema.ts --check
+```
+
+## run [args]
 
 > Run the CLI
 
 ```bash
-deno run -A src/main.ts
+if [[ -n "${args}" ]]; then
+  declare -a argv
+  eval 'argv=(${args})'
+  deno run -A src/main.ts "${argv[@]}"
+else
+  deno run -A src/main.ts
+fi
 ```
 
 ## compile [path]

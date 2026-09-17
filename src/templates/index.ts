@@ -1,33 +1,17 @@
-import type { CommitLanguage } from "@/lib/configServiceTypes.d.ts";
-import { logWarning } from "@/lib/logger.ts";
-import { angularTemplate } from "./formats/angular.ts";
-import { conventionalTemplate } from "./formats/conventional.ts";
-import { emojiTemplate } from "./formats/emoji.ts";
-import { karmaTemplate } from "./formats/karma.ts";
-import { semanticTemplate } from "./formats/semantic.ts";
+import { Log } from "@/lib/logger.ts";
+import {
+  type CommitFormat,
+  type CommitLanguage,
+  SUPPORTED_LANGUAGES,
+} from "@/lib/types/commit.ts";
+import { angularTemplate } from "@/templates/formats/angular.ts";
+import { conventionalTemplate } from "@/templates/formats/conventional.ts";
+import { emojiTemplate } from "@/templates/formats/emoji.ts";
+import { freeformTemplate } from "@/templates/formats/freeform.ts";
+import { karmaTemplate } from "@/templates/formats/karma.ts";
+import { semanticTemplate } from "@/templates/formats/semantic.ts";
 
-export type CommitTemplate = {
-  english: string;
-  russian: string;
-  chinese: string;
-  japanese: string;
-};
-
-export type CommitFormat =
-  | "conventional"
-  | "angular"
-  | "karma"
-  | "semantic"
-  | "emoji";
-
-const SUPPORTED_LANGUAGES = [
-  "english",
-  "russian",
-  "chinese",
-  "japanese",
-] as const;
-
-type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
+type CommitTemplate = Record<CommitLanguage, string>;
 
 const templates: Record<CommitFormat, CommitTemplate> = {
   conventional: conventionalTemplate,
@@ -35,29 +19,29 @@ const templates: Record<CommitFormat, CommitTemplate> = {
   karma: karmaTemplate,
   semantic: semanticTemplate,
   emoji: emojiTemplate,
+  freeform: freeformTemplate,
 } as const;
 
 const isValidFormat = (format: string): format is CommitFormat =>
   Object.keys(templates).includes(format);
 
-const isValidLanguage = (language: string): language is SupportedLanguage =>
-  SUPPORTED_LANGUAGES.includes(language as SupportedLanguage);
+const isValidLanguage = (language: string): language is CommitLanguage =>
+  (SUPPORTED_LANGUAGES as readonly string[]).includes(language);
 
-export function getTemplate(
-  format: CommitFormat,
-  language: CommitLanguage
-): string {
+function getTemplate(format: CommitFormat, language: CommitLanguage): string {
   let template: CommitTemplate;
 
   if (!isValidFormat(format)) {
-    logWarning(`Invalid format "${format}", falling back to conventional`);
+    Log.warning(`Invalid format "${format}", falling back to conventional`);
     template = templates.conventional;
   } else template = templates[format];
 
   if (!isValidLanguage(language)) {
-    logWarning(`Invalid language "${language}", falling back to english`);
+    Log.warning(`Invalid language "${language}", falling back to english`);
     return template.english;
   }
 
   return template[language];
 }
+
+export { getTemplate };

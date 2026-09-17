@@ -35,8 +35,8 @@ src/templates/formats/   # commit format templates (conventional, emoji, ...)
 - `import type` for type-only imports; `node:` prefix for Node builtins.
 - Failures use the `Result` pattern from `lib-result` (`Ok`/`Err`); custom errors extend `Error` in `src/lib/errors.ts`.
 - Services use static methods, default export.
-- Logging via `@/lib/logger.ts` — `logError()` exits 1.
-- AI providers plug in via `providerRegistry.ts` using `ai` SDK providers.
+- Exports: Consolidate all named exports (`export { ... }`) and type exports (`export type { ... }`) at the very end of the file; strictly avoid using inline `export` keywords during variable, function, or type declaration.
+- Logging via `@/lib/logger.ts` — `throw Log.error().exit()` exits 1.
 - Git: Conventional Commits (`feat:`, `fix:`, ...).
 
 ## Skills

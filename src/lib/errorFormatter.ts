@@ -1,4 +1,4 @@
-export function formatUserError(error: Error): string {
+function formatUserError(error: Error): string {
   const errorName = error.constructor.name;
 
   switch (errorName) {
@@ -37,9 +37,7 @@ export function formatUserError(error: Error): string {
   }
 }
 
-export function getErrorContext(
-  error: Error
-): Record<string, unknown> | undefined {
+function getErrorContext(error: Error): Record<string, unknown> | undefined {
   if ("context" in error && error.context) {
     return error.context as Record<string, unknown>;
   }
@@ -53,3 +51,5 @@ export function getErrorContext(
 
   return;
 }
+
+export { formatUserError, getErrorContext };

@@ -28,12 +28,12 @@ import type { AxiosError } from "axios";
 import { ERROR_MESSAGES } from "@/lib/constants.ts";
 import { ConfigurationError } from "@/lib/errors.ts";
 
-export type NormalizedAIError = {
+type NormalizedAIError = {
   message: string;
   shouldRetry: boolean;
 };
 
-export type UnifiedError = NormalizedAIError & { status?: number };
+type UnifiedError = NormalizedAIError & { status?: number };
 
 /**
  * Unified handler for all AI SDK errors.
@@ -41,7 +41,7 @@ export type UnifiedError = NormalizedAIError & { status?: number };
  * It returns a normalized, consistent error object that
  * higher-level services can use for retries, logging, etc.
  */
-export function handleAIError(error: unknown): NormalizedAIError | null {
+function handleAIError(error: unknown): NormalizedAIError | null {
   // ---- API / NETWORK ISSUES --------------------------------------------
   if (APICallError.isInstance(error)) {
     return {
@@ -224,7 +224,7 @@ export function handleAIError(error: unknown): NormalizedAIError | null {
   return null;
 }
 
-export function classifyAIError(error: unknown): UnifiedError {
+function classifyAIError(error: unknown): UnifiedError {
   // 1. Handle ConfigurationError
   if (error instanceof ConfigurationError) {
     return {
@@ -298,3 +298,6 @@ export function classifyAIError(error: unknown): UnifiedError {
 function isAxiosError(err: unknown): err is AxiosError {
   return Boolean((err as AxiosError)?.isAxiosError);
 }
+
+export type { NormalizedAIError, UnifiedError };
+export { classifyAIError, handleAIError };

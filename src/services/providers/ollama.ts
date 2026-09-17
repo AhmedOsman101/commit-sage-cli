@@ -1,0 +1,73 @@
+import {
+  extractReasoningMiddleware,
+  generateText,
+  wrapLanguageModel,
+} from "ai";
+import { createOllama } from "ollama-ai-provider-v2";
+import { DEFAULT_CONFIG } from "@/lib/constants.ts";
+import { Log } from "@/lib/logger.ts";
+import type { CommitMessage } from "@/lib/types/commit.ts";
+import ConfigService from "@/services/config.ts";
+import { ModelService } from "@/services/model.ts";
+
+class OllamaService extends ModelService {
+  static override async generateCommitMessage(
+    prompt: string,
+    attempt = 1,
+    modelOverride?: string
+  ): Promise<CommitMessage> {
+    Log.debug(
+      `[ollamaService.generateCommitMessage] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
+    );
+
+    const baseURLResult = await ConfigService.get("ollama", "baseUrl");
+    const baseURL = (
+      baseURLResult.isOk() && baseURLResult.ok
+        ? (baseURLResult.ok as unknown as string)
+        : ((
+            DEFAULT_CONFIG.providers as unknown as Record<
+              string,
+              Record<string, string>
+            >
+          ).ollama?.baseUrl as string)
+    ) as string;
+
+    const { provider, modelId, model } =
+      await ModelService.resolveProviderAndModel(modelOverride);
+    const generationOptions = await ModelService.getGenerationOptions(
+      provider,
+      modelId
+    );
+
+    Log.debug(
+      `[ollamaService.generateCommitMessage] CALL API model=${model}, baseURL=${baseURL}`
+    );
+
+    const ollama = createOllama({ baseURL });
+
+    try {
+      const wrappedModel = wrapLanguageModel({
+        model: ollama(modelId),
+        middleware: extractReasoningMiddleware({ tagName: "think" }),
+      });
+
+      const response = await generateText({
+        model: wrappedModel,
+        prompt,
+        ...generationOptions,
+      });
+
+      return { message: response.text, model };
+    } catch (error) {
+      return await OllamaService.handleGenerationError(
+        error,
+        prompt,
+        attempt,
+        (p: string, a: number) =>
+          OllamaService.generateCommitMessage(p, a, modelOverride)
+      );
+    }
+  }
+}
+
+export default OllamaService;

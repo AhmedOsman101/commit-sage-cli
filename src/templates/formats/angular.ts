@@ -1,4 +1,4 @@
-export const angularTemplate = {
+const angularTemplate = {
   english: `Generate a commit message following the Angular format:
 <type>(<scope>): <short summary>
 
@@ -131,3 +131,5 @@ refactor(core): データベースクエリを最適化
 - コネクションプーリングを追加
 - エラー処理を更新`,
 };
+
+export { angularTemplate };

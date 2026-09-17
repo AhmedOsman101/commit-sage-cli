@@ -1,4 +1,4 @@
-export const semanticTemplate = {
+const semanticTemplate = {
   english: `Generate a commit message following the Semantic format:
 type: message
 
@@ -59,3 +59,5 @@ feat: 添加用户头像上传功能`,
 例：
 feat: ユーザーアバターのアップロード機能を追加`,
 };
+
+export { semanticTemplate };
