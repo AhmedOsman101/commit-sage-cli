@@ -16,30 +16,37 @@ class OpenAiService extends ModelService {
     modelOverride?: string
   ): Promise<CommitMessage> {
     try {
-      const apiKey = await ConfigService.getApiKey("OpenAI");
-      const model = await ModelService.resolveModel(modelOverride);
+      const { provider, modelId, model } =
+        await ModelService.resolveProviderAndModel(modelOverride);
+      const apiKey =
+        (await ConfigService.getProviderApiKey(provider)) ?? undefined;
       const baseURL =
         ((
           await ConfigService.get("openai", "baseUrl")
         ).unwrap() as unknown as string) ?? "https://api.openai.com/v1";
-      const useChatCompletions =
-        ((
-          await ConfigService.get("openai", "useChatCompletions")
-        ).unwrap() as unknown as boolean) ?? true;
-      const generationOptions = await ModelService.getGenerationOptions();
+      const apiType = await ModelService.getApiType(provider, modelId);
+      const generationOptions = await ModelService.getGenerationOptions(
+        provider,
+        modelId
+      );
       const providerOptions = await ModelService.getOpenAIProviderOptions({
         forceReasoning: baseURL !== "https://api.openai.com/v1",
+        provider,
+        modelId,
       });
       Log.debug("Using OpenAI-compatible provider", {
         baseURL,
         model,
-        useChatCompletions,
+        apiType,
       });
 
       const openai = createOpenAI({ apiKey, baseURL });
 
       const wrappedModel = wrapLanguageModel({
-        model: useChatCompletions ? openai.chat(model) : openai(model),
+        model:
+          apiType === "openai-responses"
+            ? openai(modelId)
+            : openai.chat(modelId),
         middleware: extractReasoningMiddleware({ tagName: "think" }),
       });
 

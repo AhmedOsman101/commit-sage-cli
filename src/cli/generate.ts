@@ -15,26 +15,11 @@ import ConfigService from "@/services/config.ts";
 import GitService from "@/services/git.ts";
 
 /**
- * Resolve the env var name for the active provider.
- * Returns `null` for ollama (no key needed).
- */
-async function resolveProviderEnvVar(
-  providerType: ProviderType
-): Promise<string | null> {
-  if (providerType === "ollama") return null;
-
-  if (providerType === "openai") {
-    const result = await ConfigService.get("openai", "apiKeyEnvVar");
-    const val = result.isOk() ? (result.ok as unknown as string) : undefined;
-    return val ? val : "OPENAI_API_KEY";
-  }
-
-  return `${(providerType as string).toUpperCase()}_API_KEY`;
-}
-
-/**
  * Guard: non-TTY + no API key + not --offline → hard fail.
- * Interactive `Secret.prompt` in `ConfigService.getApiKey` would hang.
+ * Resolves `providers.<name>.apiKey` via `ConfigService.resolveApiKey`
+ * (`$ENV` → env, literal passthrough, local providers need no key,
+ * otherwise `${NAME}_API_KEY` fallback). An `Err` means no key is
+ * available for this run.
  */
 async function guardNonTTY(opts: Record<string, unknown>): Promise<true> {
   if (opts.offline) return true; // offline doesn't need a key
@@ -58,15 +43,23 @@ async function guardNonTTY(opts: Record<string, unknown>): Promise<true> {
     ) as ProviderType;
   }
 
-  const envVarName = await resolveProviderEnvVar(providerType);
-  if (envVarName && !Deno.env.get(envVarName)) {
-    throw Log.error(
-      `No API key found in $${envVarName} and stdin is not a TTY. ` +
-        `Export $${envVarName} or use --offline.`
-    ).exit();
+  const loaded = await ConfigService.load();
+  let raw: unknown;
+  if (loaded.isOk()) {
+    const providers = (loaded.ok as unknown as Record<string, unknown>)
+      .providers as Record<string, unknown> | undefined;
+    const entry = providers?.[providerType] as
+      | Record<string, unknown>
+      | undefined;
+    raw = entry?.apiKey;
   }
+  const resolved = ConfigService.resolveApiKey(raw, providerType);
+  if (resolved.isOk()) return true;
 
-  return true;
+  throw Log.error(
+    `No API key found for provider "${providerType}" (${resolved.error.message}) and stdin is not a TTY. ` +
+      `Export $${providerType.toUpperCase()}_API_KEY or use --offline.`
+  ).exit();
 }
 
 // ─── The generate subcommand ────────────────────────────────────────────────

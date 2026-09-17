@@ -15,13 +15,18 @@ class MistralService extends ModelService {
     modelOverride?: string
   ): Promise<CommitMessage> {
     try {
-      const apiKey = await ConfigService.getApiKey("Mistral");
-      const model = await ModelService.resolveModel(modelOverride);
-      const generationOptions = await ModelService.getGenerationOptions();
+      const { provider, modelId, model } =
+        await ModelService.resolveProviderAndModel(modelOverride);
+      const apiKey =
+        (await ConfigService.getProviderApiKey(provider)) ?? undefined;
+      const generationOptions = await ModelService.getGenerationOptions(
+        provider,
+        modelId
+      );
       const mistral = createMistral({ apiKey });
 
       const wrappedModel = wrapLanguageModel({
-        model: mistral(model),
+        model: mistral(modelId),
         middleware: extractReasoningMiddleware({ tagName: "think" }),
       });
 

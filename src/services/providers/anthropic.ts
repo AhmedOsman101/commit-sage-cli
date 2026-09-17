@@ -15,14 +15,22 @@ class AnthropicService extends ModelService {
     modelOverride?: string
   ): Promise<CommitMessage> {
     try {
-      const apiKey = await ConfigService.getApiKey("Anthropic");
-      const model = await ModelService.resolveModel(modelOverride);
-      const generationOptions = await ModelService.getGenerationOptions();
-      const providerOptions = await ModelService.getAnthropicProviderOptions();
+      const { provider, modelId, model } =
+        await ModelService.resolveProviderAndModel(modelOverride);
+      const apiKey =
+        (await ConfigService.getProviderApiKey(provider)) ?? undefined;
+      const generationOptions = await ModelService.getGenerationOptions(
+        provider,
+        modelId
+      );
+      const providerOptions = await ModelService.getAnthropicProviderOptions(
+        provider,
+        modelId
+      );
       const anthropic = createAnthropic({ apiKey });
 
       const wrappedModel = wrapLanguageModel({
-        model: anthropic(model),
+        model: anthropic(modelId),
         middleware: extractReasoningMiddleware({ tagName: "think" }),
       });
 

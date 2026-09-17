@@ -15,14 +15,22 @@ class GeminiService extends ModelService {
     modelOverride?: string
   ): Promise<CommitMessage> {
     try {
-      const apiKey = await ConfigService.getApiKey("Gemini");
-      const model = await ModelService.resolveModel(modelOverride);
-      const generationOptions = await ModelService.getGenerationOptions();
-      const providerOptions = await ModelService.getGoogleProviderOptions();
+      const { provider, modelId, model } =
+        await ModelService.resolveProviderAndModel(modelOverride);
+      const apiKey =
+        (await ConfigService.getProviderApiKey(provider)) ?? undefined;
+      const generationOptions = await ModelService.getGenerationOptions(
+        provider,
+        modelId
+      );
+      const providerOptions = await ModelService.getGoogleProviderOptions(
+        provider,
+        modelId
+      );
       const google = createGoogleGenerativeAI({ apiKey });
 
       const wrappedModel = wrapLanguageModel({
-        model: google(model),
+        model: google(modelId),
         middleware: extractReasoningMiddleware({ tagName: "think" }),
       });
 

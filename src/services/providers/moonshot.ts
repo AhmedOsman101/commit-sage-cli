@@ -19,9 +19,14 @@ class MoonshotService extends ModelService {
       `[moonshotService.generateCommitMessage] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
     );
     try {
-      const apiKey = await ConfigService.getApiKey("MoonshotAI");
-      const model = await ModelService.resolveModel(modelOverride);
-      const generationOptions = await ModelService.getGenerationOptions();
+      const { provider, modelId, model } =
+        await ModelService.resolveProviderAndModel(modelOverride);
+      const apiKey =
+        (await ConfigService.getProviderApiKey(provider)) ?? undefined;
+      const generationOptions = await ModelService.getGenerationOptions(
+        provider,
+        modelId
+      );
       Log.debug(
         `[moonshotService.generateCommitMessage] CALL API model=${model}`
       );
@@ -29,7 +34,7 @@ class MoonshotService extends ModelService {
       const client = createMoonshotAI({ apiKey });
 
       const wrappedModel = wrapLanguageModel({
-        model: client(model),
+        model: client(modelId),
         middleware: extractReasoningMiddleware({ tagName: "think" }),
       });
 

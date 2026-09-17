@@ -3,7 +3,9 @@
 import { setTimeout } from "node:timers/promises";
 import { DEFAULT_CONFIG } from "@/lib/constants.ts";
 import { classifyAIError } from "@/lib/handleAiErrors.ts";
+import { splitProviderModel } from "@/lib/modelString.ts";
 import type { CommitMessage } from "@/lib/types/commit.ts";
+import type { ApiType } from "@/lib/types/config.ts";
 import type { ApiError, ErrorWithResponse } from "@/lib/types/index.ts";
 import ConfigService from "@/services/config.ts";
 
@@ -32,6 +34,25 @@ abstract class ModelService {
     if (result.isError()) return DEFAULT_CONFIG.model as string;
     const val = result.ok as unknown as string | undefined;
     return val ?? (DEFAULT_CONFIG.model as string);
+  }
+
+  /**
+   * Resolve the full `"provider/model"` string plus its split parts in one
+   * load. `provider`/`modelId` feed the per-value fallback resolver
+   * (`preset > provider > defaults`); `model` is the untouched canonical
+   * string passed to the AI SDK.
+   */
+  protected static async resolveProviderAndModel(
+    modelOverride?: string
+  ): Promise<{ provider: string; modelId: string; model: string }> {
+    const model = await ModelService.resolveModel(modelOverride);
+    const split = splitProviderModel(model);
+    if (split.isError()) return { provider: "openai", modelId: model, model };
+    return {
+      provider: split.ok.provider,
+      modelId: split.ok.model,
+      model,
+    };
   }
 
   /**
@@ -83,7 +104,18 @@ abstract class ModelService {
     );
   }
 
-  protected static async getTemperature(): Promise<number> {
+  protected static async getTemperature(
+    providerName?: string,
+    modelId?: string
+  ): Promise<number> {
+    if (providerName !== undefined) {
+      const preset = await ConfigService.resolveProviderValue(
+        providerName,
+        modelId,
+        "temperature"
+      );
+      if (typeof preset === "number") return preset;
+    }
     const result = await ConfigService.get("generation", "temperature");
     if (result.isError())
       return (DEFAULT_CONFIG.generation as unknown as Record<string, number>)
@@ -95,34 +127,48 @@ abstract class ModelService {
     );
   }
 
-  protected static async getGenerationOptions(): Promise<{
+  protected static async getGenerationOptions(
+    providerName?: string,
+    modelId?: string
+  ): Promise<{
     temperature: number;
     abortSignal: AbortSignal | undefined;
   }> {
-    const temperature = await ModelService.getTemperature();
-    const timeoutResult = await ConfigService.get("providers", "defaults");
+    const temperature = await ModelService.getTemperature(
+      providerName,
+      modelId
+    );
     let timeoutMs: number = (
       DEFAULT_CONFIG.providers as unknown as Record<
         string,
         Record<string, number>
       >
     ).defaults.timeoutMs;
-    if (timeoutResult.isOk()) {
-      const defaults = timeoutResult.ok as unknown as
-        | Record<string, number>
-        | undefined;
-      if (defaults && typeof defaults.timeoutMs === "number")
-        timeoutMs = defaults.timeoutMs;
+    if (providerName !== undefined) {
+      const resolved = await ConfigService.resolveProviderValue(
+        providerName,
+        modelId,
+        "timeoutMs"
+      );
+      if (typeof resolved === "number") timeoutMs = resolved;
     } else {
-      // fallback via direct load for robustness
-      const cfg = await ConfigService.load();
-      if (cfg.isOk()) {
-        const prov = (cfg.ok as unknown as Record<string, unknown>).providers as
-          | Record<string, unknown>
+      const timeoutResult = await ConfigService.get("providers", "defaults");
+      if (timeoutResult.isOk()) {
+        const defaults = timeoutResult.ok as unknown as
+          | Record<string, number>
           | undefined;
-        const d = prov?.defaults as Record<string, unknown> | undefined;
-        if (d && typeof d.timeoutMs === "number")
-          timeoutMs = d.timeoutMs as number;
+        if (defaults && typeof defaults.timeoutMs === "number")
+          timeoutMs = defaults.timeoutMs;
+      } else {
+        // fallback via direct load for robustness
+        const cfg = await ConfigService.load();
+        if (cfg.isOk()) {
+          const prov = (cfg.ok as unknown as Record<string, unknown>)
+            .providers as Record<string, unknown> | undefined;
+          const d = prov?.defaults as Record<string, unknown> | undefined;
+          if (d && typeof d.timeoutMs === "number")
+            timeoutMs = d.timeoutMs as number;
+        }
       }
     }
 
@@ -132,40 +178,109 @@ abstract class ModelService {
     };
   }
 
-  protected static async getReasoningLevel(): Promise<
-    string | boolean | undefined
-  > {
-    const result = await ConfigService.get("providers", "defaults");
-    let reasoning: unknown = (
+  /**
+   * Tri-state reasoning resolver (Config V2).
+   *
+   * Resolution is per-value `preset > provider > defaults`. `false`/`"off"`
+   * (disabled) and `true`/`"default"` (provider default — no explicit level)
+   * both yield `undefined` (no provider options); otherwise the explicit
+   * level string (`"low"`/`"medium"`/…) is returned for the provider-options
+   * helpers. Called without args it keeps the legacy `providers.defaults`
+   * behavior.
+   */
+  protected static async getReasoningLevel(
+    providerName?: string,
+    modelId?: string
+  ): Promise<string | undefined> {
+    let reasoning: unknown;
+    if (providerName !== undefined) {
+      reasoning = await ConfigService.resolveProviderValue(
+        providerName,
+        modelId,
+        "reasoning"
+      );
+      if (reasoning === undefined || reasoning === null) {
+        reasoning = (
+          DEFAULT_CONFIG.providers as unknown as Record<
+            string,
+            Record<string, unknown>
+          >
+        ).defaults.reasoning;
+      }
+    } else {
+      const result = await ConfigService.get("providers", "defaults");
+      reasoning = (
+        DEFAULT_CONFIG.providers as unknown as Record<
+          string,
+          Record<string, unknown>
+        >
+      ).defaults.reasoning;
+      if (result.isOk()) {
+        const defaults = result.ok as unknown as
+          | Record<string, unknown>
+          | undefined;
+        if (defaults && "reasoning" in defaults) reasoning = defaults.reasoning;
+      } else {
+        const cfg = await ConfigService.load();
+        if (cfg.isOk()) {
+          const prov = (cfg.ok as unknown as Record<string, unknown>)
+            .providers as Record<string, unknown> | undefined;
+          const d = prov?.defaults as Record<string, unknown> | undefined;
+          if (d && "reasoning" in d) reasoning = d.reasoning;
+        }
+      }
+    }
+
+    if (
+      reasoning === false ||
+      reasoning === "off" ||
+      reasoning === true ||
+      reasoning === "default"
+    )
+      return;
+    if (typeof reasoning !== "string") return;
+    return reasoning;
+  }
+
+  /**
+   * Resolve `apiType` per-value `preset > provider > defaults`
+   * (model presets carry no `apiType`, so they fall through to the provider).
+   * Unknown/missing values fall back to `"openai-chat"`.
+   */
+  protected static async getApiType(
+    providerName?: string,
+    modelId?: string
+  ): Promise<ApiType> {
+    const fallback: ApiType = (
       DEFAULT_CONFIG.providers as unknown as Record<
         string,
         Record<string, unknown>
       >
-    ).defaults.reasoning;
-    if (result.isOk()) {
-      const defaults = result.ok as unknown as
-        | Record<string, unknown>
-        | undefined;
-      if (defaults && "reasoning" in defaults) reasoning = defaults.reasoning;
-    } else {
-      const cfg = await ConfigService.load();
-      if (cfg.isOk()) {
-        const prov = (cfg.ok as unknown as Record<string, unknown>).providers as
-          | Record<string, unknown>
-          | undefined;
-        const d = prov?.defaults as Record<string, unknown> | undefined;
-        if (d && "reasoning" in d) reasoning = d.reasoning;
-      }
-    }
-
-    if (reasoning === false || reasoning === "off") return;
-    return reasoning as string | boolean;
+    ).defaults.apiType as ApiType;
+    if (providerName === undefined) return fallback ?? "openai-chat";
+    const resolved = await ConfigService.resolveProviderValue(
+      providerName,
+      modelId,
+      "apiType"
+    );
+    if (
+      resolved === "openai-chat" ||
+      resolved === "openai-responses" ||
+      resolved === "anthropic"
+    )
+      return resolved;
+    return fallback ?? "openai-chat";
   }
 
   protected static async getOpenAIProviderOptions(options?: {
     forceReasoning?: boolean;
+    provider?: string;
+    modelId?: string;
   }) {
-    const reasoning = await ModelService.getReasoningLevel();
+    const reasoning = await ModelService.getReasoningLevel(
+      options?.provider,
+      options?.modelId
+    );
 
     if (!reasoning) return;
 
@@ -177,8 +292,11 @@ abstract class ModelService {
     };
   }
 
-  protected static async getAnthropicProviderOptions() {
-    const reasoning = await ModelService.getReasoningLevel();
+  protected static async getAnthropicProviderOptions(
+    provider?: string,
+    modelId?: string
+  ) {
+    const reasoning = await ModelService.getReasoningLevel(provider, modelId);
 
     if (!reasoning) return;
 
@@ -192,8 +310,11 @@ abstract class ModelService {
     };
   }
 
-  protected static async getGoogleProviderOptions() {
-    const reasoning = await ModelService.getReasoningLevel();
+  protected static async getGoogleProviderOptions(
+    provider?: string,
+    modelId?: string
+  ) {
+    const reasoning = await ModelService.getReasoningLevel(provider, modelId);
 
     if (!reasoning) return;
 
@@ -206,8 +327,11 @@ abstract class ModelService {
     };
   }
 
-  protected static async getXaiProviderOptions() {
-    const reasoning = await ModelService.getReasoningLevel();
+  protected static async getXaiProviderOptions(
+    provider?: string,
+    modelId?: string
+  ) {
+    const reasoning = await ModelService.getReasoningLevel(provider, modelId);
 
     if (!reasoning) return;
 

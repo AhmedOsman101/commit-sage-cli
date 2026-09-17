@@ -32,8 +32,12 @@ class OllamaService extends ModelService {
           ).ollama?.baseUrl as string)
     ) as string;
 
-    const model = await ModelService.resolveModel(modelOverride);
-    const generationOptions = await ModelService.getGenerationOptions();
+    const { provider, modelId, model } =
+      await ModelService.resolveProviderAndModel(modelOverride);
+    const generationOptions = await ModelService.getGenerationOptions(
+      provider,
+      modelId
+    );
 
     Log.debug(
       `[ollamaService.generateCommitMessage] CALL API model=${model}, baseURL=${baseURL}`
@@ -43,7 +47,7 @@ class OllamaService extends ModelService {
 
     try {
       const wrappedModel = wrapLanguageModel({
-        model: ollama(model),
+        model: ollama(modelId),
         middleware: extractReasoningMiddleware({ tagName: "think" }),
       });
 

@@ -24,7 +24,6 @@ const providers: Record<ProviderType, typeof ModelService> = {
   zai: ZaiService,
   minimax: MinimaxService,
   openrouter: OpenRouterService,
-  "9router": OpenRouterService,
 };
 
 function getProviderService(type: ProviderType): typeof ModelService {

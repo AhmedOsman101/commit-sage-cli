@@ -111,7 +111,6 @@ class ConfigService {
           zai: "glm-4.5-flash",
           minimax: "MiniMax-M2.5",
           openrouter: "openai/gpt-4.1-mini",
-          "9router": "kc/stealth/ox-alpha",
         } as Record<ProviderType, string>;
 
         if (hasType && hasModel) {
@@ -613,6 +612,141 @@ class ConfigService {
     if (writeResult.isError()) return Err(writeResult.error);
 
     return Ok(true);
+  }
+
+  static readonly LOCAL_NO_AUTH_PROVIDERS: readonly string[] = [
+    "ollama",
+    "llamacpp",
+    "vllm",
+  ];
+
+  /**
+   * Pure resolver for `providers.<name>.apiKey` (Config V2 transport).
+   *
+   * - `"$ENV_VAR"` → `Deno.env.get("ENV_VAR")`; missing env → Err
+   * - literal (no `$` prefix) → passthrough Ok
+   * - `undefined`/`null`/`""` + local provider (`ollama`/`llamacpp`/`vllm`)
+   *   → Ok(null), no auth required
+   * - `undefined`/`null`/`""` + any other provider
+   *   → fallback `${NAME}_API_KEY`; missing → Err
+   */
+  static resolveApiKey(
+    raw: unknown,
+    providerName: string
+  ): Result<string | null, Error> {
+    const upper = providerName.toUpperCase();
+    const isLocal = ConfigService.LOCAL_NO_AUTH_PROVIDERS.includes(
+      providerName.toLowerCase()
+    );
+
+    if (
+      raw === undefined ||
+      raw === null ||
+      (typeof raw === "string" && raw.trim() === "")
+    ) {
+      if (isLocal) return Ok<string | null>(null);
+      const fallback = Deno.env.get(`${upper}_API_KEY`);
+      if (fallback) return Ok<string | null>(fallback);
+      return ErrFromText<string | null>(
+        `API key for provider "${providerName}" is not set (providers.${providerName}.apiKey is absent and $${upper}_API_KEY is not set)`
+      );
+    }
+
+    if (typeof raw !== "string") {
+      return ErrFromText<string | null>(
+        `Invalid apiKey for provider "${providerName}": expected "$ENV_VAR" or a literal string`
+      );
+    }
+
+    if (raw.startsWith("$")) {
+      const envName = raw.slice(1);
+      if (!envName) {
+        return ErrFromText<string | null>(
+          `Invalid apiKey "${raw}" for provider "${providerName}": expected "$ENV_VAR"`
+        );
+      }
+      const value = Deno.env.get(envName);
+      if (value) return Ok<string | null>(value);
+      return ErrFromText<string | null>(
+        `API key env var $${envName} for provider "${providerName}" is not set`
+      );
+    }
+
+    return Ok<string | null>(raw);
+  }
+
+  /**
+   * Read `providers.<name>.apiKey` from the loaded config and resolve it via
+   * `resolveApiKey`. Returns `null` for local no-auth providers, otherwise
+   * the key string. Missing/unresolvable keys for non-local providers are
+   * fatal (use `guardNonTTY` for a friendly message in CLI flows).
+   */
+  static async getProviderApiKey(providerName: string): Promise<string | null> {
+    const loaded = await ConfigService.load();
+    let raw: unknown;
+    if (loaded.isOk()) {
+      const providers = (loaded.ok as unknown as Record<string, unknown>)
+        .providers as Record<string, unknown> | undefined;
+      const entry = providers?.[providerName] as
+        | Record<string, unknown>
+        | undefined;
+      raw = entry?.apiKey;
+    }
+    const resolved = ConfigService.resolveApiKey(raw, providerName);
+    if (resolved.isError()) {
+      throw Log.error(resolved.error.message).exit();
+    }
+    return resolved.ok;
+  }
+
+  /**
+   * Per-value fallback `preset > provider > defaults` (Config V2).
+   *
+   * For `key` (one of `reasoning`/`contextWindow`/`maxInputTokens`/
+   * `maxOutputTokens`/`temperature`/`timeoutMs`/`apiType`/`baseUrl`):
+   * `providers.<name>.models.<modelId>[key] ?? providers.<name>[key]`
+   * `?? providers.defaults[key] ?? DEFAULT_CONFIG.providers.defaults[key]`
+   * (`temperature` additionally falls back to
+   * `DEFAULT_CONFIG.generation.temperature` since providers carry no
+   * global temperature). Returns `undefined` when unset everywhere.
+   */
+  static async resolveProviderValue(
+    providerName: string,
+    modelId: string | undefined,
+    key: string
+  ): Promise<unknown> {
+    const defaultProviders = DEFAULT_CONFIG.providers as unknown as Record<
+      string,
+      Record<string, unknown>
+    >;
+    const compiledFallback = defaultProviders.defaults?.[key];
+    const temperatureFallback = (
+      DEFAULT_CONFIG.generation as unknown as Record<string, unknown>
+    ).temperature;
+
+    const loaded = await ConfigService.load();
+    if (loaded.isError()) {
+      return key === "temperature" && compiledFallback === undefined
+        ? temperatureFallback
+        : compiledFallback;
+    }
+
+    const providers = (loaded.ok as unknown as Record<string, unknown>)
+      .providers as Record<string, unknown> | undefined;
+    const entry = providers?.[providerName] as
+      | Record<string, unknown>
+      | undefined;
+    const models = entry?.models as
+      | Record<string, Record<string, unknown>>
+      | undefined;
+    const preset = modelId !== undefined ? models?.[modelId] : undefined;
+    const defaults = providers?.defaults as Record<string, unknown> | undefined;
+
+    const value =
+      preset?.[key] ?? entry?.[key] ?? defaults?.[key] ?? compiledFallback;
+    if (value !== undefined) return value;
+    if (key === "temperature") return temperatureFallback;
+    return undefined;
   }
 
   static async getApiKey(service: ApiService): Promise<string> {

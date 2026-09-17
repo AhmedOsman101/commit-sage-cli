@@ -45,7 +45,6 @@ const SUPPORTED_PROVIDERS = [
   "openai",
   "anthropic",
   "gemini",
-  "9router",
   "ollama",
   "openrouter",
   "mistral",

@@ -15,13 +15,18 @@ class DeepseekService extends ModelService {
     modelOverride?: string
   ): Promise<CommitMessage> {
     try {
-      const apiKey = await ConfigService.getApiKey("DeepSeek");
-      const model = await ModelService.resolveModel(modelOverride);
-      const generationOptions = await ModelService.getGenerationOptions();
+      const { provider, modelId, model } =
+        await ModelService.resolveProviderAndModel(modelOverride);
+      const apiKey =
+        (await ConfigService.getProviderApiKey(provider)) ?? undefined;
+      const generationOptions = await ModelService.getGenerationOptions(
+        provider,
+        modelId
+      );
       const deepseek = createDeepSeek({ apiKey });
 
       const wrappedModel = wrapLanguageModel({
-        model: deepseek(model),
+        model: deepseek(modelId),
         middleware: extractReasoningMiddleware({ tagName: "think" }),
       });
 

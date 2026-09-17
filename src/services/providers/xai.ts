@@ -15,14 +15,22 @@ class XaiService extends ModelService {
     modelOverride?: string
   ): Promise<CommitMessage> {
     try {
-      const apiKey = await ConfigService.getApiKey("Xai");
-      const model = await ModelService.resolveModel(modelOverride);
-      const generationOptions = await ModelService.getGenerationOptions();
-      const providerOptions = await ModelService.getXaiProviderOptions();
+      const { provider, modelId, model } =
+        await ModelService.resolveProviderAndModel(modelOverride);
+      const apiKey =
+        (await ConfigService.getProviderApiKey(provider)) ?? undefined;
+      const generationOptions = await ModelService.getGenerationOptions(
+        provider,
+        modelId
+      );
+      const providerOptions = await ModelService.getXaiProviderOptions(
+        provider,
+        modelId
+      );
       const xai = createXai({ apiKey });
 
       const wrappedModel = wrapLanguageModel({
-        model: xai(model),
+        model: xai(modelId),
         middleware: extractReasoningMiddleware({ tagName: "think" }),
       });
 

@@ -27,15 +27,26 @@ class OpenRouterService extends ModelService {
       `[openrouterService.generateCommitMessage] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
     );
     try {
-      const apiKey = await ConfigService.getApiKey("OpenRouter");
+      // Resolve the active provider from the model string so the matching
+      // `providers.<name>` entry supplies apiKey/baseUrl.
+      const { provider, modelId, model } =
+        await ModelService.resolveProviderAndModel(modelOverride);
+      const apiKey =
+        (await ConfigService.getProviderApiKey(provider)) ?? undefined;
 
-      const model = await ModelService.resolveModel(modelOverride);
-      const generationOptions = await ModelService.getGenerationOptions();
+      const generationOptions = await ModelService.getGenerationOptions(
+        provider,
+        modelId
+      );
 
-      const baseURLResult = await ConfigService.get("openrouter", "baseUrl");
+      const rawBaseUrl = await ConfigService.resolveProviderValue(
+        provider,
+        modelId,
+        "baseUrl"
+      );
       const baseURL = (
-        baseURLResult.isOk() && baseURLResult.ok
-          ? (baseURLResult.ok as unknown as string)
+        typeof rawBaseUrl === "string" && rawBaseUrl
+          ? rawBaseUrl
           : ((
               DEFAULT_CONFIG.providers as unknown as Record<
                 string,
@@ -57,7 +68,7 @@ class OpenRouterService extends ModelService {
       });
 
       const wrappedModel = wrapLanguageModel({
-        model: client(model),
+        model: client(modelId),
         middleware: extractReasoningMiddleware({ tagName: "think" }),
       });
 
