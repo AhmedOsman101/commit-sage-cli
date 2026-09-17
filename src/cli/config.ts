@@ -286,9 +286,11 @@ class ConfigCommand extends Command {
         .action(async (_opts: unknown, key: string) => {
           // model special case
           if (key === "model") {
-            const userSet = await isUserSet("model", "");
             const result = await ConfigService.get("model");
             if (result.isError()) throw Log.error(result.error.message).exit();
+            // Check user-set AFTER load: load() persists pending migrations,
+            // so a pre-migration file must not read as "not set".
+            const userSet = await isUserSet("model", "");
             const value = result.ok as unknown;
             if (!userSet) {
               const fallback = (
@@ -307,9 +309,10 @@ class ConfigCommand extends Command {
             const parsed = parseProvidersPath(key);
             if (parsed.isError()) throw Log.error(parsed.error.message).exit();
             const [provider, subKey] = parsed.ok;
-            const userSet = await isProvidersUserSet(provider, subKey);
             const loaded = await ConfigService.load();
             if (loaded.isError()) throw Log.error(loaded.error.message).exit();
+            // Check user-set AFTER load (see model branch above).
+            const userSet = await isProvidersUserSet(provider, subKey);
             const providers = (loaded.ok as unknown as Record<string, unknown>)
               .providers as Record<string, Record<string, unknown>>;
             const entry = providers?.[provider] as
@@ -361,10 +364,10 @@ class ConfigCommand extends Command {
           if (parsed.isError()) throw Log.error(parsed.error.message).exit();
           const [section, k] = parsed.ok;
 
-          const userSet = await isUserSet(section, k);
-
           const result = await ConfigService.get(section as never, k as never);
           if (result.isError()) throw Log.error(result.error.message).exit();
+          // Check user-set AFTER load (see model branch above).
+          const userSet = await isUserSet(section, k);
           const value = result.ok as unknown;
 
           if (!userSet) {

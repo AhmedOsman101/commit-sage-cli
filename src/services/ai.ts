@@ -3,6 +3,7 @@ import type { GenerateOptions } from "@/cli/types/generateOptions.ts";
 import { ERROR_MESSAGES } from "@/lib/constants.ts";
 import { Log } from "@/lib/logger.ts";
 import { splitProviderModel } from "@/lib/modelString.ts";
+import { truncateToTokens } from "@/lib/tokenCounter.ts";
 import type { CommitMessage } from "@/lib/types/commit.ts";
 import ConfigService from "@/services/config.ts";
 import GitService from "@/services/git.ts";
@@ -11,12 +12,6 @@ import { PromptService } from "@/services/prompt.ts";
 import { getProviderService } from "@/services/providerRegistry.ts";
 
 const AiService = {
-  truncateDiff(diff: string, maxInputChars: number): string {
-    return diff.length > maxInputChars
-      ? `${diff.substring(0, maxInputChars)}\n...(truncated)`
-      : diff;
-  },
-
   async resolveDiffMode(): Promise<Result<"staged" | "unstaged", Error>> {
     const diffStrategyResult = await ConfigService.get(
       "generation",
@@ -71,9 +66,9 @@ const AiService = {
       "maxPromptTokens"
     );
     if (maxPromptResult.isError()) return Err(maxPromptResult.error);
-    const maxInputChars = maxPromptResult.ok as unknown as number;
+    const maxPromptTokens = maxPromptResult.ok as unknown as number;
 
-    const truncatedDiff = this.truncateDiff(diff, maxInputChars);
+    const truncatedDiff = truncateToTokens(diff, maxPromptTokens);
     Log.debug(
       `[aiService.generateCommitMessage] STEP truncated diff, length=${truncatedDiff.length}`
     );
