@@ -10,7 +10,7 @@ Type "git status --short"
 Enter
 
 Sleep 1s
-Type "commit-sage"
+Type "commit-sage generate"
 Enter
 Wait
 Sleep 2s
