@@ -43,4 +43,4 @@ mask run
 
 Use the issue templates when possible. For small enhancements, feel free to open a discussion first.
 
-> "If you have questions or suggestions, feel free to [open an issue](https://github.com/AhmedOsman101/commit-sage-cli/issues) or [email me directly](mailto:ahmad.ali.othman@outlook.com).”
+> "If you have questions or suggestions, feel free to [open an issue](https://github.com/AhmedOsman101/commit-sage-cli/issues) or [email me directly](mailto:ahmad.ali.othman@outlook.com)."

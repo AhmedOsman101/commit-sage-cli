@@ -11,8 +11,8 @@ mask lint                    # biome check
 mask format                  # biome check --fix (+ --unsafe for unsafe fixes)
 mask typecheck               # deno check
 mask run                     # deno run -A src/main.ts
-mask compile [path]          # binary → ~/.local/bin/commit-sage
-mask compile dev             # → ~/scripts/bin/commit-sage
+mask compile [path]          # binary -> ~/.local/bin/commit-sage
+mask compile dev             # -> ~/scripts/bin/commit-sage
 mask release                 # cross-compile all platforms to bin/
 mask release pr              # release-please release-pr
 mask release gh              # release-please github-release (--force for manual tag+release)
