@@ -1,5 +1,33 @@
 # Changelog
 
+## [2.0.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.8.0...v2.0.0) (2026-09-18)
+
+
+### Features
+
+* **cli:** implement --offline static-analysis generator ([23a9d3d](https://github.com/AhmedOsman101/commit-sage-cli/commit/23a9d3d1860e738d720f6ec9f2692afddf527676))
+* **cli:** implement generate command with options and editor support ([0758fa1](https://github.com/AhmedOsman101/commit-sage-cli/commit/0758fa1c145b3241bb5df0cc0c7436cf30697a0a))
+* **cli:** single --model flag + BCP-47 commitLanguage (T4) ([e42f91d](https://github.com/AhmedOsman101/commit-sage-cli/commit/e42f91dc3869b91058c2d488bd52b19518d15b9a)), refs [#36](https://github.com/AhmedOsman101/commit-sage-cli/issues/36)
+* **cli:** stream git commit and push output live ([b500c6a](https://github.com/AhmedOsman101/commit-sage-cli/commit/b500c6a047bda304891a65b456b47ec8470213c7))
+* **commit:** add freeform commit format ([772725c](https://github.com/AhmedOsman101/commit-sage-cli/commit/772725cd3c5c33b34efbbb419ecdbbc7cb0cb53a))
+* **commit:** add interactive commit subcommand ([5cbc823](https://github.com/AhmedOsman101/commit-sage-cli/commit/5cbc8233d8d9902e99aff114ea87b114c940a302))
+* Config V2 — unified model string, providers registry, token-counted generation ([b943b4f](https://github.com/AhmedOsman101/commit-sage-cli/commit/b943b4f065bb67abdafe73e288642121eb286015))
+* **config:** add advanced AI provider and commit message options ([4110805](https://github.com/AhmedOsman101/commit-sage-cli/commit/4110805e990701665076a3663676c158a1857e29))
+* **config:** add config subcommand (get/set/list/path/open/edit/default) ([ef0e760](https://github.com/AhmedOsman101/commit-sage-cli/commit/ef0e7600d4711c497210a4709ed1b4c0a47af63c))
+* **config:** add global temperature setting for LLM providers ([d92fe21](https://github.com/AhmedOsman101/commit-sage-cli/commit/d92fe21917a47eee15063cc0fd4b83e9b551279a))
+* **config:** implement T1 core config shape + model string + providers registry + migration baseline (issue [#33](https://github.com/AhmedOsman101/commit-sage-cli/issues/33)) ([7bfec01](https://github.com/AhmedOsman101/commit-sage-cli/commit/7bfec0173068ca2e3ad02f9e1d65030c60327958))
+* **config:** token-counted maxPromptTokens + retryDelay rename ([e5d0685](https://github.com/AhmedOsman101/commit-sage-cli/commit/e5d0685f125bac6d9bfb9739c779e3d1a6b274cc))
+* Implement CLI structure and dependencies ([117416b](https://github.com/AhmedOsman101/commit-sage-cli/commit/117416b3421014bfc53d6ddba9e2ebf50c2d8548))
+* Migrate build and release tasks to Mask ([5deedfa](https://github.com/AhmedOsman101/commit-sage-cli/commit/5deedfa884e929bff1b440c69ad6fe66c4f6cbef))
+* **providers:** wire apiKey, apiType, reasoning tri-state + model presets ([3ff0ff4](https://github.com/AhmedOsman101/commit-sage-cli/commit/3ff0ff43fe3d8265c7bd23ea6015c44cffa1bc35)), refs [#35](https://github.com/AhmedOsman101/commit-sage-cli/issues/35)
+
+
+### Bug Fixes
+
+* **commit:** default confirm to yes, prompt push when remote exists, add --no-push ([5a09399](https://github.com/AhmedOsman101/commit-sage-cli/commit/5a093995aa11c04757839a6575386fcaf7a36306))
+* **config:** clarify list description and add print alias ([a0ff926](https://github.com/AhmedOsman101/commit-sage-cli/commit/a0ff9262412691db61b6d306db4da56b6444c0a6))
+* **prompts:** show selected files as a list after checkbox ([47e02fa](https://github.com/AhmedOsman101/commit-sage-cli/commit/47e02fa434923e16eb84c5308a83096fe369ee02))
+
 ## [1.8.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.7.0...v1.8.0) (2026-05-08)
 
 ### Features
