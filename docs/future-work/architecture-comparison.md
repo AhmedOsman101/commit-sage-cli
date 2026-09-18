@@ -130,6 +130,7 @@ Key Characteristics:
 
 ### Phase 1: Fix Debt (Prerequisite)
 
+```
 src/
 ├── lib/
 │   ├── repoContext.ts      # NEW: lazy getRepoPath(), no module-load IO
@@ -138,6 +139,7 @@ src/
 │   ├── commitWorkflow.ts   # NEW: orchestrate generate -> validate -> commit
 │   ├── providerRegistry.ts # NEW: Provider protocol, spec registry
 │   └── projectConfig.ts    # NEW: .commit-sage/config.json watcher
+```
 
 ### Phase 2: Protocol + Registry
 
