@@ -1,6 +1,29 @@
 # Changelog
-
 ## [2.0.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.8.0...v2.0.0) (2026-09-18)
+
+> **⚠ BREAKING CHANGES**
+>
+> v2.0.0 is a complete rewrite of the user-facing surface. v1 was a single
+> command — run `commit-sage`, get a message on stdout, control everything
+> from the config file. v2 is a full CLI with subcommands and flag overrides:
+>
+> - `commit-sage generate [flags]` — generate a message from the staged diff
+>   and print it to stdout (pipe-able, hook-callable).
+> - `commit-sage commit [flags]` — interactive flow: stage files → generate →
+>   preview → commit → optional push.
+> - `commit-sage config get|set|list|path|open|edit` — inspect and modify config.
+> - Bare `commit-sage` now prints help (git/npm convention) — it no longer
+>   silently generates.
+>
+> Config shape also changed (Config V2): `provider: {type, model}` →
+> `model: "provider/model"`, `general` → `generation`,
+> `maxSubjectLength` → `maxLength`, `initialRetryDelayMs` → `retryDelay`,
+> `maxInputChars` → `maxPromptTokens` (token-counted via `gpt-tokenizer`),
+> top-level `ollama`/`openai`/`openrouter` sections → `providers` registry,
+> `apiKeyEnvVar` → `apiKey` (`$`-prefix reads env, else literal),
+> `useChatCompletions` → `apiType`. **Existing v1 config files are migrated
+> automatically on first run with printed warnings — no manual edits needed.**
+
 
 ### Features
 

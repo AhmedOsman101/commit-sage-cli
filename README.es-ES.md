@@ -3,9 +3,10 @@
 Genera mensajes de commit significativos con IA — o análisis estático offline
 — directamente desde tu terminal.
 
-> **CLI-first desde v1.8.0.** `commit-sage` ahora es una CLI autocontenida y multiplataforma
+> **v2.0.0** — `commit-sage` es una CLI completa y multiplataforma
 > (`generate`, `commit`, `config`) con sobrescrituras por flags, flujo interactivo de staging
-> y respaldo `--offline`.
+> y respaldo `--offline`. Cambio incompatible desde v1: `commit-sage` sin argumentos ahora
+> muestra ayuda en lugar de generar silenciosamente. Ver [CHANGELOG](./CHANGELOG.md).
 
 ## Descripción
 
@@ -107,7 +108,7 @@ commit-sage [flags]
   config          Inspeccionar o modificar la configuración (get/set/list/path/default/open/edit)
   help [sub]      Muestra ayuda para un subcomando
   --help, -h      Muestra ayuda
-  --version, -V   Muestra versión (1.8.0)
+  --version, -V   Muestra versión (2.0.0)
 ```
 
 Códigos de salida:

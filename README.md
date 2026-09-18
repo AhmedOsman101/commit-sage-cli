@@ -3,9 +3,10 @@
 Generate meaningful git commit messages with AI — or offline static analysis
 — right from your terminal.
 
-> **CLI-first since v1.8.0.** `commit-sage` is now a self-contained, cross-platform
+> **v2.0.0** — `commit-sage` is a full-fledged, cross-platform
 > CLI (`generate`, `commit`, `config`) with flag overrides, an interactive staging
-> flow, and `--offline` fallback.
+> flow, and `--offline` fallback. Breaking change from v1: bare `commit-sage` now
+> prints help instead of silently generating. See [CHANGELOG](./CHANGELOG.md).
 
 ## Overview
 
@@ -107,7 +108,7 @@ commit-sage [flags]
   config          Inspect or modify configuration (get/set/list/path/default/open/edit)
   help [sub]      Show help for a subcommand
   --help, -h      Show help
-  --version, -V   Show version (1.8.0)
+  --version, -V   Show version (2.0.0)
 ```
 
 Exit codes:
