@@ -21,8 +21,8 @@ async function runEditor(
 ): Promise<Result<string, Error>> {
   // Create temp file
   const tmpFileResult = await FileSystemService.createTempFile(
-    "commit-sage-",
-    ".txt"
+    "git",
+    ".commitmsg"
   );
   if (tmpFileResult.isError()) return Err(tmpFileResult.error);
   const tmpFile = tmpFileResult.ok;

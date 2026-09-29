@@ -5,6 +5,7 @@ import { Command } from "@cliffy/command";
 import { renderMarkdown } from "@littletof/charmd";
 import { bold } from "@std/fmt/colors";
 import { resolveOptions, validateOptions } from "@/cli/flags.ts";
+import { runEditor } from "@/cli/handlers/editor.ts";
 import { runOffline } from "@/cli/handlers/offline.ts";
 import { confirmPrompt, selectFilesToStage } from "@/cli/prompts.ts";
 import { Log } from "@/lib/logger.ts";
@@ -75,11 +76,15 @@ class CommitCommand extends Command {
       )
       .option(
         "--format <name:string>",
-        `Commit format. One of: ${COMMIT_FORMATS.join(", ")}. Ignored when --offline is set.`
+        `Commit format. One of: ${COMMIT_FORMATS.join(
+          ", "
+        )}. Ignored when --offline is set.`
       )
       .option(
         "--lang <name:string>",
-        `Commit language (BCP-47, stored as-given, e.g. en, en-US, jp). Canonical: ${SUPPORTED_LANGUAGES.join(", ")}.`
+        `Commit language (BCP-47, stored as-given, e.g. en, en-US, jp). Canonical: ${SUPPORTED_LANGUAGES.join(
+          ", "
+        )}.`
       )
       .option(
         "--max-length <n:number>",
@@ -87,7 +92,7 @@ class CommitCommand extends Command {
       )
       .option(
         "--edit",
-        "Pass -e to git commit so $EDITOR/$VISUAL opens before saving."
+        "Open the generated message in $EDITOR/$VISUAL before saving."
       )
       // Commit-specific flags.
       .option(
@@ -186,11 +191,20 @@ class CommitCommand extends Command {
           if (!message) throw Log.error("Generated message is empty.").exit();
         }
 
+        // --edit: open in $EDITOR, re-read, print final
+        if (opts.edit) {
+          const editResult = await runEditor(message);
+          if (editResult.isError()) {
+            throw Log.error(editResult.error.message).exit();
+          }
+          message = editResult.ok as string;
+        }
+
         // ── Markdown preview ─────────────────────────────────────────────
         console.log(`\n${renderPreview(message)}\n`);
 
         // ── Confirm dialog ───────────────────────────────────────────────
-        if (!autoCommit && !yes) {
+        if (!autoCommit && !yes && !opts.edit) {
           const confirmed = await confirmPrompt("Commit changes?", true);
           if (!confirmed) throw Log.info("Aborted.").exit(0);
         }
@@ -203,7 +217,6 @@ class CommitCommand extends Command {
         } else {
           commitArgs.push("-m", subject);
         }
-        if (opts.edit) commitArgs.push("-e");
 
         // Streams live: commit summary + pre-commit hook output go straight
         // to the terminal instead of being captured.
