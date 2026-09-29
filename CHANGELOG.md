@@ -1,4 +1,11 @@
 # Changelog
+## [2.0.1](https://github.com/AhmedOsman101/commit-sage-cli/compare/v2.0.0...v2.0.1) (2026-09-29)
+
+
+### Bug Fixes
+
+* correct edit workflow and temp file extension ([5c245bf](https://github.com/AhmedOsman101/commit-sage-cli/commit/5c245bf27416fbffb632ca187c6e9e7d67d11753))
+
 ## [2.0.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.8.0...v2.0.0) (2026-09-18)
 
 > **⚠ BREAKING CHANGES**
