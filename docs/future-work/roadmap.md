@@ -52,7 +52,7 @@ Deliverable: 10 formats total (6 -> 10)
 |------|--------|--------------|
 | Add spanish, german, french, korean, portuguese to SUPPORTED_LANGUAGES | 0.5 day | |
 | Translate 10 format templates x 5 languages = 50 translations | 2-3 days | Can phase: English-first, translations follow |
-| Add custom language support (template file frontmatter) | 1 day | Template loader (v2.4) |
+| Add custom language support (template file frontmatter) | 1 day | Template loader (**v2.7**) |
 
 Deliverable: 9 languages + custom
 
@@ -90,14 +90,14 @@ Deliverable: Richer context without prompt explosion
 Theme: "Per-repo settings, persistent templates"
 Priority: Grilling #3 (project config), #4 (custom instructions), #7 (refs)
 
-### v2.6: Project Config (.commit-sage/config.json)
+### v2.6: Project Config (per-repo; directory name undecided)
 
 | Task | Effort | Dependencies |
 |------|--------|--------------|
 | Create ProjectConfigService (mirror VS Code ConfigService project config) | 2 days | |
 | File watcher: Deno.watchFs (1.40+) with poll fallback | 1 day | |
 | Config precedence: global -> project -> CLI flags | 1 day | |
-| Migration: detect .commit-sage file -> dir + config.json | 0.5 day | |
+| Migration: detect legacy per-repo config file -> chosen directory + config.json | 0.5 day | Blocked on the directory-name decision (see v2.6 heading) |
 | Lenient parser: drop invalid keys with warning | 0.5 day | |
 | CLI: commit-sage config project-init to create template | 0.5 day | |
 
@@ -131,7 +131,7 @@ Deliverable: commit-sage commit --ref JIRA-123 --ref-placement footer
 ## Phase 4: Validation & Polish (v3.0)
 
 Theme: "Production-grade, team-ready"
-Priority: Grilling #0 (commitlint - maybe), OpenRouter PKCE
+Priority: Grilling #0 (commitlint - maybe). OpenRouter OAuth was on this list but is now deferred and undecided — see v3.0b.
 
 ### v3.0: Commitlint Validation (Conditional)
 
@@ -148,17 +148,14 @@ Only if approved — grilling says "maybe"
 
 Deliverable: commit-sage generate --commitlint validates + fixes
 
-### v3.0b: OpenRouter Authentication (Device Code Flow)
+### v3.0b: OpenRouter Authentication — DEFERRED, FLOW UNDECIDED
 
 | Task | Effort | Dependencies |
 |------|--------|--------------|
-| Implement RFC 8628 Device Code Flow for OpenRouter | 2 days | |
-| Token storage: ~/.config/commitSage/openrouter-token.json (encrypted?) | 1 day | |
-| Auto-refresh before expiry | 1 day | |
-| CLI: commit-sage auth openrouter command | 0.5 day | |
-| Fallback: manual token entry (current pattern) | 0.5 day | |
+| *(nothing scoped yet)* | deferred | Flow choice: RFC 8628 device code (headless-friendly, no port binding, ~5d) vs browser-launch + localhost callback (VS Code v3 UX parity, needs a bound port, ~3-4d) |
+| Fallback: manual token entry (current pattern) | ships with v2.1 | — |
 
-Deliverable: commit-sage auth openrouter -> opens browser, user enters code
+**Status (2026-09-18):** OAuth stays deferred past v2.1. The CLI continues to accept an OpenRouter API key (or a manually pasted token) exactly as it does today. Reopen this section when OAuth is actually needed; `feature-gap.md` previously recommended the localhost callback here and device code flow elsewhere — both are now marked undecided rather than picked.
 
 ### v3.0c: Provider Consolidation
 
@@ -179,12 +176,14 @@ Deliverable: 14 providers, all documented
 | 1 | Local-First (OpenAI-compat, formats, languages) | 10-14 | v2.1-v2.3 |
 | 2 | Repo Intelligence (recent commits, blame) | 5-6 | v2.4-v2.5 |
 | 3 | Project Config & Customization | 8-10 | v2.6-v2.7 |
-| 4 | Validation & Polish (commitlint, OpenRouter, providers) | 8-10 | v3.0 |
-| Total | | 34-45 days | |
+| 4 | Validation & Polish (commitlint, providers) | 5.5-8.5 | v3.0 |
+| Total | | 31.5-43.5 days | |
+
+**Reconciliation (2026-09-18):** Phase 4 previously read 8-10 days, which counted OpenRouter OAuth as scoped (4.5-5d). OAuth is now deferred, so Phase 4 is commitlint (7d) + provider consolidation (3.5d) = **5.5-8.5 days with commitlint conditional** — if commitlint is declined, subtract its 7 days entirely. The `feature-gap.md` per-feature table sums to ~30-40 days because it omits Phase 0 prerequisites (3-5d) and double-counts nothing; the difference from the old 34-45 figure is OpenRouter's removal plus rounding. Per-feature effort differs between the two docs where `feature-gap.md` estimates a feature end-to-end (e.g. "additional formats 1-2d" includes registration and schema) and this roadmap breaks the same work into task rows (2.5d for four formats + registration + schema + help text). Task rows are the binding estimate; the `feature-gap.md` figures are coarse and should be read as ranges, not commitments.
 
 ## Release Strategy
 
-### Option A: Minor Versions -> Major (Recommended)
+### Option A: Minor Versions -> Major
 
 | Version | Contents |
 |---------|----------|
@@ -193,9 +192,9 @@ Deliverable: 14 providers, all documented
 | v2.3 | + 5 languages |
 | v2.4 | + recent commits + previous format |
 | v2.5 | + deeper blame |
-| v2.6 | + project config |
+| v2.6 | + project config *(directory name undecided)* |
 | v2.7 | + custom templates + refs |
-| v3.0 | + commitlint (if approved) + OpenRouter auth + provider consolidation |
+| v3.0 | + commitlint (if approved) + provider consolidation. OpenRouter OAuth only if its deferred section is reopened |
 
 Pros: Users get value incrementally, easier rollback, semantic versioning clear
 Cons: More releases
@@ -212,16 +211,16 @@ Cons: Long dark period, merge conflicts, no feedback until v3.0
 - Phases 1-2 as minors (v2.1-v2.5) — high value, low risk
 - Phases 3-4 as v3.0 — config/schema changes, breaking potential
 
-Recommendation: Option C. Phases 1-2 are additive. Phase 3 changes config precedence (potential break). Phase 4 adds validation (behavior change).
+**Recommendation: Option C.** Option A is superseded — it is the same minor-version ladder this roadmap already assumes, except it draws the v3.0 line after v2.7. Option C draws it after v2.5 instead, because Phase 3 (project config) introduces config **precedence**, which is a behavioral break for users with existing global settings, and Phase 4 adds validation. Phases 1–2 are purely additive. Note that the V2 Config rewrite has already shipped one break (v2.0.0); the v2.1–v2.5 minors add nothing that requires migration.
 
 ## Risk Register
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|------------|--------|------------|
-| Vercel AI SDK breaking changes | Medium | High | Pin versions, test matrix |
+| Vercel AI SDK breaking changes | Medium | High | Pin exact versions in `deno.json`; smoke-test one call per provider family (openai-chat, openai-responses, anthropic, google, ollama) after each SDK bump |
 | Deno watchFs instability | Low | Medium | Poll fallback (5s) |
-| Commitlint rule port inaccuracies | Medium | Medium | Test against commitlint CLI fixtures |
-| OpenRouter API changes | Low | Low | Versioned API, fallback to manual |
+| Commitlint rule port inaccuracies | Medium | Medium | Diff builtin output against `npx commitlint` on a hand-built fixture set of ~20 messages, once, at implementation time |
+| OpenRouter API changes | Low | Low | Versioned API; manual token entry fallback; OAuth deferred anyway |
 | Custom template security (injection) | Low | High | Sandbox variable substitution, no eval |
 | Config migration edge cases | Medium | Medium | Comprehensive test cases, backup |
 | Token estimation inaccuracy | Medium | Low | Conservative budget, user override |
@@ -231,7 +230,7 @@ Recommendation: Option C. Phases 1-2 are additive. Phase 3 changes config preced
 - [ ] Local-first: Works with LM Studio/vLLM/llama.cpp out of box
 - [ ] Repo-aware: previous format mimics team style without config
 - [ ] Customizable: Team templates in ~/.config/commitSage/templates/
-- [ ] Per-repo: .commit-sage/config.json overrides global
+- [ ] Per-repo: a per-repo config (directory name still undecided) overrides global
 - [ ] Provider richness: 14 providers, all free tiers documented
 - [ ] Format richness: 12 formats covering all common conventions
 - [ ] Language richness: 9 languages + custom

@@ -13,7 +13,7 @@ Goal: CLI achieves feature parity with VS Code v3.3.2 plus extensions (custom te
 | Languages | 4 | 5 | 9 + custom | Low — add 5 + custom |
 | Custom Instructions | --context flag only | Config-driven | custom format gate | Medium — add config + custom format |
 | Recent Commits as Examples | No | No | previous format + useRecentCommitsAsContext | High priority |
-| Project Config (.commitsage/config.json) | No | No | File watcher, migration | High priority |
+| Project Config (per-repo, dir name undecided) | No | No | File watcher, migration | High priority |
 | Commitlint Validation | No | No | Built-in engine + auto-fix | Medium — maybe |
 | OpenRouter PKCE | No | No | vscode:// URI handler | Medium — CLI needs different auth flow |
 | OpenAI-Compatible (LM Studio/vLLM/llama.cpp) | No | No | COMPAT_SPECS | Highest priority |
@@ -66,7 +66,7 @@ Action: Keep all 11 CLI providers. Add groq, codestral, openai-compatible. Total
 | freeform | Yes | No | No | CLI only (AI-only, no constraints) |
 | custom | No | No | Yes | Needs custom instructions |
 
-Action: Add 5 formats from VS Code (emojiKarma, google, atom, detailed, previous). Add custom format (gated by custom instructions). Keep freeform as CLI alias or merge.
+Action: Add 5 formats from VS Code (emojiKarma, google, atom, detailed, previous). Add custom format (gated by custom instructions). **freeform stays a distinct format** (grilling decision 2026-09-18): it is AI-only with no template file, whereas `custom` is a user-supplied template loaded from `~/.config/commitSage/templates/*.md`. No deprecation, no migration path needed — `--format freeform` keeps working unchanged.
 
 ### Languages
 
@@ -110,7 +110,7 @@ Grilling Decision: User has --context for ad-hoc additions. Wants persistent cus
 
 Grilling Decision: Priority #2. Enables previous format + improves all formats with repo-specific style.
 
-### Project Config (.commitsage/config.json)
+### Project Config (per-repo; directory name undecided)
 
 | Feature | CLI | VS Code v3 | Notes |
 |---------|-----|------------|-------|
@@ -120,7 +120,7 @@ Grilling Decision: Priority #2. Enables previous format + improves all formats w
 | Project config overrides global | No | Yes | ConfigService.isProjectOverridden(key) |
 | Schema validation on load | No | Yes | Lenient parser, drops invalid keys |
 
-Grilling Decision: Priority #3. CLI equivalent: ~/.config/commitSage/config.json (global) + .commit-sage/config.json (per-repo, optional). File watcher -> poll or Deno.watchFs (Deno 1.40+).
+Grilling Decision: Priority #3. Global config is `~/.config/commitSage/config.json` (camelCase, matches the code in `src/lib/constants.ts`). The **per-repo directory name is undecided** — `.commitSage/` (consistent with the global path) vs `.commitsage/` (shared with the VS Code extension) vs kebab. This document previously asserted `.commit-sage/config.json` without ever being grilled on it; that was an error, corrected 2026-09-18. File watcher -> poll or Deno.watchFs (Deno 1.40+).
 
 ### Commitlint Validation
 
@@ -148,7 +148,7 @@ CLI Approach: No URI handler possible. Options:
 2. Manual token entry — user pastes token from OpenRouter dashboard (current CLI pattern)
 3. Browser-launch + localhost callback — spawn server on localhost:PORT, open browser, receive callback
 
-Recommendation: Option 3 (localhost callback) for UX parity. Fallback to Option 2.
+Recommendation: **Undecided — deferred past v2.1.** Grilling decision (2026-09-18): OpenRouter OAuth stays API-key/manual-token entry for now. Both RFC 8628 device code flow and localhost callback are legitimate designs (the latter is what VS Code v3 approximates via its `vscode://` handler, which a CLI cannot use); neither is selected. Reopen when OAuth is actually needed — see `roadmap.md` Phase 4.
 
 ### OpenAI-Compatible Provider (Local LLMs)
 
@@ -168,7 +168,7 @@ Grilling Decision: Priority #1. Highest local-first value. Implement as new prov
 | Per-branch ref storage | No | Yes | BranchRefs type |
 | refs.source | No | Yes | prompt | branch | input |
 | refs.placement | No | Yes | start | end | footer |
-| refs.branchPattern | No | Yes | Regex: [A-Z][A-Z0-9]*-[0-9]+ |
+| refs.branchPattern | No | Yes | Regex: `[A-Z][A-Z0-9]*-[0-9]+` |
 | promptForRefs config | Exists, unused | Yes | Triggers input box |
 
 Grilling Decision: Priority #7. CLI flags: --ref, --ref-source, --ref-placement, --ref-pattern. Config mirrors VS Code.
@@ -206,7 +206,7 @@ Grilling Decision: Deepen if token-efficient. Add token budget, summarize blame 
 | Additional languages (5 + custom) | 1-2 days | Low | Template translations, custom loader |
 | RefStore / issue refs (CLI) | 2-3 days | Low | Config, git branch parsing, flags |
 | Commitlint validation (builtin) | 5-7 days | Medium | Port rule sets, config discovery, auto-fix |
-| OpenRouter PKCE (device code/localhost) | 3-4 days | Medium | OAuth flow, token storage |
+| OpenRouter OAuth (device code / localhost callback) | deferred | Medium | Undecided: RFC 8628 device code (headless-friendly, ~5d) vs localhost callback (VS Code UX parity, needs a bound port, ~3-4d). Not scoped until chosen. |
 | Custom language templates (markdown) | 2-3 days | Low | Template loader, frontmatter parsing |
 | Deeper git blame (token-aware) | 2-3 days | Low | Token estimation, summarization |
 
@@ -216,21 +216,21 @@ Grilling Decision: Deepen if token-efficient. Add token budget, summarize blame 
 1. OpenAI-compatible provider — LM Studio, vLLM, llama.cpp, custom
 2. Additional formats — emojiKarma, google, atom, detailed (trivial)
 3. Additional languages — de, fr, es, ko, pt (trivial)
-3. Custom template files — ~/.config/commitSage/templates/*.md
+4. Custom template files — ~/.config/commitSage/templates/*.md
 
 ### Phase 2: Repo Intelligence (v2.4 - v2.5)
-5. Recent commits as examples — GitService.getRecentCommitMessages, inject into prompt
+5. Recent commits as examples — GitService.getRecentCommits, inject into prompt
 6. previous format — mimic recent commits template
 7. Deeper git blame — token-budgeted, author/file summary
 
 ### Phase 3: Project Config & Customization (v2.6 - v2.7)
-8. Project config — .commit-sage/config.json + watcher
+8. Project config — directory name undecided, see Open Question 3 + watcher
 9. Custom instructions + custom format — persistent templates
 10. RefStore / issue refs — CLI flags + config
 
 ### Phase 4: Validation & Polish (v3.0)
 11. Commitlint validation — builtin engine, auto-fix (if approved)
-12. OpenRouter PKCE — device code flow or localhost callback
+12. OpenRouter OAuth — flow undecided (device code vs localhost callback)
 13. Provider consolidation — add groq, codestral; audit all 14
 
 ## Non-Goals (Explicitly Out of Scope)
@@ -243,7 +243,7 @@ Grilling Decision: Deepen if token-efficient. Add token budget, summarize blame 
 ## Open Questions
 
 1. Commitlint: Build builtin engine (port rule sets) vs spawn npx commitlint vs skip? Grilling says maybe.
-2. OpenRouter auth: Device code flow vs localhost callback vs manual entry?
-3. Project config precedence: Global -> per-repo -> CLI flags (standard)?
+2. OpenRouter auth: Device code flow vs localhost callback vs manual entry? **Deferred past v2.1** — API key only until then.
+3. Project config directory name: `.commitSage/` (camelCase, consistent with `~/.config/commitSage/`) vs `.commitsage/` (shared with the extension) vs kebab. **Undecided** — project config is future work; nothing is implemented. This doc previously asserted `.commit-sage/config.json` as if it were decided, which was never grilled.
 4. Custom template format: Markdown with frontmatter? Liquid/Handlebars? Plain text with placeholders?
 5. Token budget for blame: What is the limit? (Suggest: 2000 tokens ≈ 8k chars)
