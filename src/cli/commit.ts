@@ -204,7 +204,7 @@ class CommitCommand extends Command {
         console.log(`\n${renderPreview(message)}\n`);
 
         // ── Confirm dialog ───────────────────────────────────────────────
-        if (!autoCommit && !yes && !opts.edit) {
+        if (!autoCommit && !yes) {
           const confirmed = await confirmPrompt("Commit changes?", true);
           if (!confirmed) throw Log.info("Aborted.").exit(0);
         }
