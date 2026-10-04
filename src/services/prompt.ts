@@ -84,7 +84,8 @@ async function buildPrompt(
   return Ok(`You generate exactly one git commit message.
 
 Rules:
-- Output exactly one commit message with its body and nothing else.
+- Say nothing but the commit message in plain text.
+- Output the commit message exactly once. Never repeat it, echo it, or output a second copy in any form — not in a code fence, not as a quote, not at all.
 - Do not add code fences, labels, explanations, notes, or multiple options.
 - Do not mention that you are an AI.
 - Do not describe the diff before the answer.
@@ -109,7 +110,7 @@ ${diff}
 Git blame analysis:
 ${blameSection}
 
-Final instruction: return only the commit message.`);
+Final instruction: return only the commit message, a single time, and then stop. No second copy.`);
 }
 
 /**
