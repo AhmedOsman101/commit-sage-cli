@@ -742,10 +742,27 @@ class ConfigService {
     const preset = modelId !== undefined ? models?.[modelId] : undefined;
     const defaults = providers?.defaults as Record<string, unknown> | undefined;
 
-    const value =
-      preset?.[key] ?? entry?.[key] ?? defaults?.[key] ?? compiledFallback;
+    // Fallback chain, lowest priority first: each level overrides the one
+    // below it, so the final value is preset > entry > defaults > compiled.
+    // Comparisons are against `undefined` (not `??`) so an explicit `null`
+    // propagates as an intentional "omit" signal instead of falling through.
+    let value: unknown = compiledFallback;
+    if (defaults?.[key] !== undefined) value = defaults?.[key];
+    if (entry?.[key] !== undefined) value = entry?.[key];
+    if (preset?.[key] !== undefined) value = preset?.[key];
     if (value !== undefined) return value;
-    if (key === "temperature") return temperatureFallback;
+    if (key === "temperature") {
+      // The user's global `generation.temperature` sits between the
+      // provider chain and the compiled default; without this step the
+      // global value would never take effect. Explicit null propagates.
+      if (loaded.isOk()) {
+        const generation = (loaded.ok as unknown as Record<string, unknown>)
+          .generation as Record<string, unknown> | undefined;
+        const global = generation?.temperature;
+        if (global === null || typeof global === "number") return global;
+      }
+      return temperatureFallback;
+    }
     return undefined;
   }
 

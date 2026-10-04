@@ -105,7 +105,7 @@ Key Characteristics:
 | Provider Abstraction | ModelService base + Vercel AI SDK | Factory + axios per class | Provider protocol + dispatcher | Adopt protocol — cleaner than base class |
 | Orchestration | Inline in generate.ts / commit.ts | Inline in command handler | CommitWorkflow class | Add CommitWorkflow — centralizes logic |
 | Cancellation | AbortSignal.timeout() only | None | AbortSignal throughout | Add AbortSignal to all async paths |
-| Config | JSON file (~/.config/) | VS Code workspace config | Workspace + project file (.commitsage/) | Add project config (.commit-sage/) |
+| Config | JSON file (~/.config/commitSage/) | VS Code workspace config | Workspace + project file (.commitsage/) | Add per-repo project config — **directory name undecided**, see `feature-gap.md` Open Question 3 |
 | DI / Service Locator | Direct imports | Direct imports | Manual instantiation in activate() | Keep direct imports — simple, no container needed |
 | Testing | None | None | Vitest + coverage | Add tests for pure functions (offline, prompt, blame) |
 | Telemetry | None | Custom | Amplitude + VS Code logger | Out of scope |
@@ -138,7 +138,7 @@ src/
 ├── services/
 │   ├── commitWorkflow.ts   # NEW: orchestrate generate -> validate -> commit
 │   ├── providerRegistry.ts # NEW: Provider protocol, spec registry
-│   └── projectConfig.ts    # NEW: .commit-sage/config.json watcher
+│   └── projectConfig.ts    # NEW: per-repo config watcher (dir name undecided)
 ```
 
 ### Phase 2: Protocol + Registry
@@ -232,7 +232,7 @@ class ProjectConfigService {
 | Provider protocol | Replace ModelService base with interface + registry |
 | CommitWorkflow orchestrator | Centralize generate + commit logic |
 | AbortSignal propagation | All async ops take optional signal |
-| Project config file (.commit-sage/config.json) | Mirror .commitsage/ but CLI-friendly |
+| Project config file (per-repo) | Mirror the extension's `.commitsage/` capability; directory name still undecided (`.commitSage/` vs `.commitsage/` vs kebab) |
 | COMPAT_SPECS for OpenAI-compatible | Spec registry for local LLMs |
 | Recent commits as style examples | GitService.getRecentCommitMessages() -> PromptService |
 | Custom instructions + custom format | Config-driven + template files |

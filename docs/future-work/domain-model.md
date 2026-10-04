@@ -44,11 +44,12 @@ interface GlobalConfig {
 }
 ```
 
-### ProjectConfig (.commit-sage/config.json)
+### ProjectConfig (per-repo; directory name undecided)
 - Same schema as GlobalConfig
 - Overrides global when present
 - File watcher for auto-reload
-- Migration from legacy .commit-sage file
+- Migration from any legacy per-repo config file
+- Directory name is **not decided**: `.commitSage/` (consistent with `~/.config/commitSage/`) vs `.commitsage/` (shared with the VS Code extension) vs kebab. Previously asserted here as `.commit-sage/config.json` without being grilled — corrected 2026-09-18.
 
 ### ConfigPrecedence
 CLI flags > Project config > Global config > Defaults
@@ -84,7 +85,7 @@ CLI flags > Project config > Global config > Defaults
 - source: "prompt" | "branch" | "input"
 - placement: "start" | "end" | "footer"
 - value: string (for "input" source)
-- branchPattern: string (regex, default: "[A-Z][A-Z0-9]*-[0-9]+")
+- branchPattern: string (regex, default: `[A-Z][A-Z0-9]*-[0-9]+`)
 
 ### GenerationConfig
 - maxRetries: number (default 3)
@@ -140,6 +141,8 @@ interface Provider {
 
 ### CommitFormat (Union)
 conventional | angular | karma | semantic | emoji | emojiKarma | google | atom | detailed | previous | freeform | custom
+
+`freeform` and `custom` are distinct by decision (2026-09-18): `freeform` is AI-only with no template file, `custom` loads a user-supplied template from `~/.config/commitSage/templates/*.md`. Both stay in the union; neither supersedes the other.
 
 ### CommitTemplate
 - Per-language template strings
@@ -213,8 +216,8 @@ Template body with {{variable}} placeholders
 - GitError: Not a repo, no changes, commit failed, push failed
 - ValidationError: Commitlint failures, schema violations
 - TemplateError: Custom template not found, parse errors, missing variables
-- ProjectConfigError: .commit-sage/config.json parse, watcher failures
-- AuthenticationError: OpenRouter PKCE, device code flow failures
+- ProjectConfigError: per-repo config parse failures, watcher failures
+- AuthenticationError: OpenRouter OAuth failures (flow undecided — see `roadmap.md` v3.0b)
 
 ### Result Pattern
 All fallible operations return `Result<T, Error>` from lib-result.
@@ -308,7 +311,7 @@ All fallible operations return `Result<T, Error>` from lib-result.
 | Conventional Commits | Specification for structured commit messages (type, scope, subject, body, footer) |
 | Offline Generator | Static analysis fallback that produces conventional-style messages without AI |
 | Spec Registry | Configuration-driven list of known OpenAI-compatible endpoints (LM Studio, vLLM, etc.) |
-| Project Config | Per-repository configuration file (.commit-sage/config.json) that overrides global config |
+| Project Config | Per-repository configuration file that overrides global config. Directory name not yet decided |
 | Custom Template | User-defined markdown template with frontmatter for commit message generation |
 | Previous Format | Format that instructs AI to mimic repository's recent commit style |
 | Blame Context | Git blame analysis correlated with changed lines to provide authorship context |

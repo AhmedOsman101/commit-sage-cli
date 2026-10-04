@@ -39,10 +39,11 @@ const GENERATION_CONFIG_SCHEMA = {
       minimum: 0,
     },
     temperature: {
-      type: "number",
+      type: ["number", "null"],
       minimum: 0,
       maximum: 2,
-      description: "Global generation temperature used by all providers",
+      description:
+        "Global generation temperature used by all providers. Null omits temperature (reasoning models reject it).",
     },
     maxPromptTokens: {
       type: "integer",
@@ -113,7 +114,13 @@ const MODEL_PRESET_SCHEMA = {
     contextWindow: { type: "integer", minimum: 1 },
     maxInputTokens: { type: "integer", minimum: 1 },
     maxOutputTokens: { type: "integer", minimum: 1 },
-    temperature: { type: "number", minimum: 0, maximum: 2 },
+    temperature: {
+      type: ["number", "null"],
+      minimum: 0,
+      maximum: 2,
+      description:
+        "Per-model temperature override. Null omits temperature (reasoning models reject it).",
+    },
   },
 } as const;
 

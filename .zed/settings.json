@@ -1,43 +1,39 @@
 {
   "lsp": {
     "deno": {
-      "settings": {
-        "deno": {
-          "enable": true
-        }
-      }
+      "settings": { "deno": { "enable": true } }
     }
   },
   "languages": {
     "JavaScript": {
       "language_servers": [
         "deno",
-        "biome",
         "!typescript-language-server",
         "!vtsls",
-        "!eslint"
-      ],
-      "formatter": "language_server"
+        "!typescript-ls",
+        "!eslint",
+        "..."
+      ]
     },
     "TypeScript": {
       "language_servers": [
         "deno",
-        "biome",
         "!typescript-language-server",
         "!vtsls",
-        "!eslint"
-      ],
-      "formatter": "language_server"
+        "!typescript-ls",
+        "!eslint",
+        "..."
+      ]
     },
     "TSX": {
       "language_servers": [
         "deno",
-        "biome",
         "!typescript-language-server",
         "!vtsls",
-        "!eslint"
-      ],
-      "formatter": "language_server"
+        "!typescript-ls",
+        "!eslint",
+        "..."
+      ]
     }
   }
 }

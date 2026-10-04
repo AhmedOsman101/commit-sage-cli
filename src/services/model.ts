@@ -3,6 +3,7 @@
 import { setTimeout } from "node:timers/promises";
 import { DEFAULT_CONFIG } from "@/lib/constants.ts";
 import { classifyAIError } from "@/lib/handleAiErrors.ts";
+import { Log } from "@/lib/logger.ts";
 import { splitProviderModel } from "@/lib/modelString.ts";
 import type { CommitMessage } from "@/lib/types/commit.ts";
 import type { ApiType } from "@/lib/types/config.ts";
@@ -11,10 +12,6 @@ import ConfigService from "@/services/config.ts";
 
 abstract class ModelService {
   protected static readonly maxRetryBackoff = 10_000;
-
-  protected static cleanCommitMessage(message: string): string {
-    return message.trim();
-  }
 
   protected static calculateRetryDelay(attempt: number): number {
     return Math.min(1000 * 2 ** (attempt - 1), ModelService.maxRetryBackoff);
@@ -107,21 +104,26 @@ abstract class ModelService {
   protected static async getTemperature(
     providerName?: string,
     modelId?: string
-  ): Promise<number> {
+  ): Promise<number | null> {
     if (providerName !== undefined) {
       const preset = await ConfigService.resolveProviderValue(
         providerName,
         modelId,
         "temperature"
       );
+      // Explicit null means "do not send temperature" — it wins over the
+      // global value and the compiled default instead of falling through.
+      if (preset === null) return null;
       if (typeof preset === "number") return preset;
     }
     const result = await ConfigService.get("generation", "temperature");
     if (result.isError())
       return (DEFAULT_CONFIG.generation as unknown as Record<string, number>)
         .temperature;
+    const value = result.ok as unknown;
+    if (value === null) return null;
     return (
-      (result.ok as unknown as number) ??
+      (value as number) ??
       (DEFAULT_CONFIG.generation as unknown as Record<string, number>)
         .temperature
     );
@@ -131,10 +133,14 @@ abstract class ModelService {
     providerName?: string,
     modelId?: string
   ): Promise<{
-    temperature: number;
+    temperature?: number;
     abortSignal: AbortSignal | undefined;
   }> {
     const temperature = await ModelService.getTemperature(
+      providerName,
+      modelId
+    );
+    const reasoning = await ModelService.getReasoningLevel(
       providerName,
       modelId
     );
@@ -172,8 +178,22 @@ abstract class ModelService {
       }
     }
 
+    // Reasoning models reject temperature: omit it when explicitly nulled
+    // or when an explicit reasoning level is configured, instead of sending
+    // a value the model will warn about or refuse.
+    const omitTemperature =
+      temperature === null ||
+      temperature === undefined ||
+      reasoning !== undefined;
+    if (omitTemperature) {
+      Log.debug(
+        "[modelService.getGenerationOptions] omitting temperature " +
+          `(${temperature === null ? "explicitly disabled" : `reasoning level "${reasoning}" set`})`
+      );
+    }
+
     return {
-      temperature: temperature as number,
+      ...(omitTemperature ? {} : { temperature: temperature as number }),
       abortSignal: timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : undefined,
     };
   }

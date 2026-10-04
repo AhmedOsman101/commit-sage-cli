@@ -34,7 +34,7 @@ const modelPresetSchema = z.object({
   contextWindow: z.uint32().optional(),
   maxInputTokens: z.uint32().optional(),
   maxOutputTokens: z.uint32().optional(),
-  temperature: z.number().min(0).max(2).optional(),
+  temperature: z.number().min(0).max(2).nullable().optional(),
 });
 
 const providerEntrySchema = z.object({
@@ -62,7 +62,7 @@ const ConfigSchema = z.strictObject({
     .object({
       maxRetries: z.uint32(),
       retryDelay: z.uint32(),
-      temperature: z.number().min(0).max(2),
+      temperature: z.number().min(0).max(2).nullable(),
       maxPromptTokens: z.uint32().min(1),
       diffStrategy: z.enum(DIFF_STRATEGIES),
     })
@@ -146,6 +146,8 @@ const ConfigValidationService = {
     }
     if ("temperature" in generation) {
       const temp = (generation as Record<string, unknown>).temperature;
+      // Null means "do not send temperature" (reasoning models reject it).
+      if (temp === null) return Ok(true);
       if (typeof temp !== "number" || Number.isNaN(temp)) {
         throw Log.error(
           "Error at key generation.temperature => must be a number."
@@ -444,23 +446,26 @@ const ConfigValidationService = {
             }
           }
           if ("temperature" in g) {
-            if (
-              typeof g.temperature !== "number" ||
-              Number.isNaN(g.temperature)
-            ) {
-              return ErrFromText(
-                "Error at key generation.temperature => must be a number."
-              );
-            }
-            if (g.temperature < 0) {
-              return ErrFromText(
-                "Error at key generation.temperature => must be at least 0."
-              );
-            }
-            if (g.temperature > 2) {
-              return ErrFromText(
-                "Error at key generation.temperature => must not exceed 2."
-              );
+            // Null means "do not send temperature" (reasoning models reject it).
+            if (g.temperature !== null) {
+              if (
+                typeof g.temperature !== "number" ||
+                Number.isNaN(g.temperature)
+              ) {
+                return ErrFromText(
+                  "Error at key generation.temperature => must be a number."
+                );
+              }
+              if (g.temperature < 0) {
+                return ErrFromText(
+                  "Error at key generation.temperature => must be at least 0."
+                );
+              }
+              if (g.temperature > 2) {
+                return ErrFromText(
+                  "Error at key generation.temperature => must not exceed 2."
+                );
+              }
             }
           }
           if ("maxPromptTokens" in g) {

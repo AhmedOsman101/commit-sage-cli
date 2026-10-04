@@ -5,7 +5,6 @@ import { Command } from "@cliffy/command";
 import { renderMarkdown } from "@littletof/charmd";
 import { bold } from "@std/fmt/colors";
 import { resolveOptions, validateOptions } from "@/cli/flags.ts";
-import { runEditor } from "@/cli/handlers/editor.ts";
 import { runOffline } from "@/cli/handlers/offline.ts";
 import { confirmPrompt, selectFilesToStage } from "@/cli/prompts.ts";
 import { Log } from "@/lib/logger.ts";
@@ -178,38 +177,23 @@ class CommitCommand extends Command {
         if (opts.offline) {
           const offlineResult = await runOffline({
             maxLength: opts.maxLength as number | undefined,
-            edit: opts.edit as boolean | undefined,
+            edit: false,
           });
           if (offlineResult.isError()) {
             throw Log.error(offlineResult.error.message).exit();
           }
           message = offlineResult.ok;
         } else {
+          // Prevents the generate handler from triggering the runEditor function
+          runOptions.edit = false;
           const result = await AiService.generateMessage(runOptions);
           if (result.isError()) throw Log.error(result.error.message).exit();
           message = (result.ok?.message ?? "").trim();
           if (!message) throw Log.error("Generated message is empty.").exit();
         }
 
-        // --edit: open in $EDITOR, re-read, print final
-        if (opts.edit) {
-          const editResult = await runEditor(message);
-          if (editResult.isError()) {
-            throw Log.error(editResult.error.message).exit();
-          }
-          message = editResult.ok as string;
-        }
-
-        // ── Markdown preview ─────────────────────────────────────────────
-        console.log(`\n${renderPreview(message)}\n`);
-
-        // ── Confirm dialog ───────────────────────────────────────────────
-        if (!autoCommit && !yes) {
-          const confirmed = await confirmPrompt("Commit changes?", true);
-          if (!confirmed) throw Log.info("Aborted.").exit(0);
-        }
-
         // ── git commit ───────────────────────────────────────────────────
+        let isPrinted = false;
         const { subject, body } = splitMessage(message);
         const commitArgs: string[] = ["commit"];
         if (body) {
@@ -218,12 +202,40 @@ class CommitCommand extends Command {
           commitArgs.push("-m", subject);
         }
 
+        // --edit: open in $EDITOR
+        if (opts.edit) commitArgs.push("--edit");
+        else {
+          // ── Markdown preview ─────────────────────────────────────────────
+          console.log(`\n${renderPreview(message)}\n`);
+          isPrinted = true;
+
+          // ── Confirm dialog ───────────────────────────────────────────────
+          if (!autoCommit && !yes) {
+            const confirmed = await confirmPrompt("Commit changes?", true);
+            if (!confirmed) throw Log.info("Aborted.").exit(0);
+          }
+        }
+
         // Streams live: commit summary + pre-commit hook output go straight
         // to the terminal instead of being captured.
         const commitResult = await GitService.runStreaming(commitArgs);
         if (commitResult.isError()) {
           throw Log.error(commitResult.error.message).exit();
         }
+
+        if (!isPrinted) {
+          const commitMsg = await GitService.execGit([
+            "show",
+            "-s",
+            "--format=%B",
+            "HEAD",
+          ]);
+          if (commitMsg.isOk()) {
+            console.log(`\n${renderPreview(commitMsg.ok.stdout)}\n`);
+            isPrinted = true;
+          }
+        }
+
         // ── git push ───────────────────────────────────────────────────────
         if (pushValue === false) {
           // --no-push: explicitly keep local, even if remote exists
