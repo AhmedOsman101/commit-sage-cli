@@ -212,7 +212,7 @@ class CommitCommand extends Command {
           // ── Confirm dialog ───────────────────────────────────────────────
           if (!autoCommit && !yes) {
             const confirmed = await confirmPrompt("Commit changes?", true);
-            if (!confirmed) throw Log.info("Aborted.").exit(0);
+            if (!confirmed) throw Log.info("Commit Aborted.").exit(0);
           }
         }
 
@@ -283,7 +283,7 @@ async function push(
   // Confirm dialog (skipped when --yes or commit.autoPush is set)
   if (!skipConfirm) {
     const confirmed = await confirmPrompt(`Push to ${branch}?`, true);
-    if (!confirmed) throw Log.error("Push aborted.").exit();
+    if (!confirmed) throw Log.info("Push aborted.").exit(0);
   }
 
   // Decide -u vs plain push
