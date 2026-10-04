@@ -8,6 +8,7 @@ import { resolveOptions, validateOptions } from "@/cli/flags.ts";
 import { runOffline } from "@/cli/handlers/offline.ts";
 import { confirmPrompt, selectFilesToStage } from "@/cli/prompts.ts";
 import { Log } from "@/lib/logger.ts";
+import { Spinner } from "@/lib/spinner.ts";
 import { COMMIT_FORMATS, SUPPORTED_LANGUAGES } from "@/lib/types/commit.ts";
 import AiService from "@/services/ai.ts";
 import ConfigService from "@/services/config.ts";
@@ -186,7 +187,12 @@ class CommitCommand extends Command {
         } else {
           // Prevents the generate handler from triggering the runEditor function
           runOptions.edit = false;
+          const spinner = new Spinner({
+            message: "Generating commit message...",
+          });
+          spinner.start();
           const result = await AiService.generateMessage(runOptions);
+          spinner.stop();
           if (result.isError()) throw Log.error(result.error.message).exit();
           message = (result.ok?.message ?? "").trim();
           if (!message) throw Log.error("Generated message is empty.").exit();

@@ -8,6 +8,7 @@ import { runOffline } from "@/cli/handlers/offline.ts";
 import { selectFilesToStage } from "@/cli/prompts.ts";
 import { Log } from "@/lib/logger.ts";
 import { splitProviderModel } from "@/lib/modelString.ts";
+import { Spinner } from "@/lib/spinner.ts";
 import { COMMIT_FORMATS, SUPPORTED_LANGUAGES } from "@/lib/types/commit.ts";
 import type { ProviderType } from "@/lib/types/config.ts";
 import AiService from "@/services/ai.ts";
@@ -148,7 +149,12 @@ class GenerateCommand extends Command {
 
         Log.debug(`[generate] runOptions=${JSON.stringify(runOptions)}`);
 
+        const spinner = new Spinner({
+          message: "Generating commit message...",
+        });
+        spinner.start();
         const result = await AiService.generateMessage(runOptions);
+        spinner.stop();
         if (result.isError()) throw Log.error(result.error.message).exit();
 
         let message = result.ok?.message.trim() as string;
