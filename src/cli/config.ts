@@ -139,6 +139,7 @@ function coerceValue(section: string, key: string, raw: string) {
     );
   }
   if (expected === "number") {
+    if (raw.toLowerCase() === "null" && key === "temperature") return Ok(null);
     const num = Number(raw);
     if (raw.trim() === "" || Number.isNaN(num) || !Number.isFinite(num)) {
       return ErrFromText(

@@ -6,7 +6,8 @@ type DiffStrategy = (typeof DIFF_STRATEGIES)[number];
 type GenerationConfig = {
   maxRetries: number;
   retryDelay: number;
-  temperature: number;
+  /** `null` means "do not send temperature" (reasoning models reject it). */
+  temperature: number | null;
   maxPromptTokens: number;
   diffStrategy: DiffStrategy;
 };
@@ -31,11 +32,14 @@ type CommitConfig = {
 
 const SUPPORTED_REASONING_LEVELS = [
   "off",
+  "none",
   "default",
   "low",
+  "minimal",
   "medium",
   "high",
   "xhigh",
+  "max",
   "ultra",
 ] as const;
 
@@ -73,7 +77,8 @@ type ModelPreset = {
   contextWindow?: number;
   maxInputTokens?: number;
   maxOutputTokens?: number;
-  temperature?: number;
+  /** `null` means "do not send temperature" (reasoning models reject it). */
+  temperature?: number | null;
 };
 
 type ProviderDefaults = {
