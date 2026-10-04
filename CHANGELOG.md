@@ -1,4 +1,17 @@
 # Changelog
+## [2.1.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v2.0.1...v2.1.0) (2026-10-04)
+
+
+### Features
+
+* **ai:** add message sanitizer to remove reasoning tags ([50d9cac](https://github.com/AhmedOsman101/commit-sage-cli/commit/50d9cac3c01642de69631b9913432492975c7029))
+* support null temperature and auto-omit it for reasoning models ([c2249a1](https://github.com/AhmedOsman101/commit-sage-cli/commit/c2249a1f28a64f454fdee4cfcb3e264e002c4b03))
+
+
+### Bug Fixes
+
+* harden prompt against duplicated commit messages ([ef6ce6e](https://github.com/AhmedOsman101/commit-sage-cli/commit/ef6ce6e296323099e7649caab9fc3d931b2bd7d9))
+
 ## [2.0.1](https://github.com/AhmedOsman101/commit-sage-cli/compare/v2.0.0...v2.0.1) (2026-09-29)
 
 
