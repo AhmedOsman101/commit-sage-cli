@@ -12,10 +12,6 @@ import ConfigService from "@/services/config.ts";
 abstract class ModelService {
   protected static readonly maxRetryBackoff = 10_000;
 
-  protected static cleanCommitMessage(message: string): string {
-    return message.trim();
-  }
-
   protected static calculateRetryDelay(attempt: number): number {
     return Math.min(1000 * 2 ** (attempt - 1), ModelService.maxRetryBackoff);
   }

@@ -2,6 +2,7 @@ import { Err, ErrFromText, ErrFromUnknown, Ok, type Result } from "lib-result";
 import type { GenerateOptions } from "@/cli/types/generateOptions.ts";
 import { ERROR_MESSAGES } from "@/lib/constants.ts";
 import { Log } from "@/lib/logger.ts";
+import { sanitizeCommitMessage } from "@/lib/messageSanitizer.ts";
 import { splitProviderModel } from "@/lib/modelString.ts";
 import { truncateToTokens } from "@/lib/tokenCounter.ts";
 import type { CommitMessage } from "@/lib/types/commit.ts";
@@ -123,10 +124,11 @@ const AiService = {
         effectiveModel
       );
 
+      const sanitized = sanitizeCommitMessage(commitMessage.message);
       Log.debug(
-        `[aiService.generateCommitMessage] EXIT message="${commitMessage.message.substring(0, 50)}..."`
+        `[aiService.generateCommitMessage] EXIT message="${sanitized.substring(0, 50)}..."`
       );
-      return Ok(commitMessage);
+      return Ok({ ...commitMessage, message: sanitized });
     } catch (error) {
       Log.debug(`[aiService.generateCommitMessage] ERROR ${error}`);
       return ErrFromUnknown(error);
