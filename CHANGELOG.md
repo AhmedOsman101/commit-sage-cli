@@ -1,23 +1,21 @@
 # Changelog
-## [2.1.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v2.0.1...v2.1.0) (2026-10-04)
 
+## [2.1.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v2.0.1...v2.1.0) (2026-10-04)
 
 ### Features
 
-* **ai:** add message sanitizer to remove reasoning tags ([50d9cac](https://github.com/AhmedOsman101/commit-sage-cli/commit/50d9cac3c01642de69631b9913432492975c7029))
-* support null temperature and auto-omit it for reasoning models ([c2249a1](https://github.com/AhmedOsman101/commit-sage-cli/commit/c2249a1f28a64f454fdee4cfcb3e264e002c4b03))
-
+- **ai:** add message sanitizer to remove reasoning tags ([50d9cac](https://github.com/AhmedOsman101/commit-sage-cli/commit/50d9cac3c01642de69631b9913432492975c7029))
+- support null temperature and auto-omit it for reasoning models ([c2249a1](https://github.com/AhmedOsman101/commit-sage-cli/commit/c2249a1f28a64f454fdee4cfcb3e264e002c4b03))
 
 ### Bug Fixes
 
-* harden prompt against duplicated commit messages ([ef6ce6e](https://github.com/AhmedOsman101/commit-sage-cli/commit/ef6ce6e296323099e7649caab9fc3d931b2bd7d9))
+- harden prompt against duplicated commit messages ([ef6ce6e](https://github.com/AhmedOsman101/commit-sage-cli/commit/ef6ce6e296323099e7649caab9fc3d931b2bd7d9))
 
 ## [2.0.1](https://github.com/AhmedOsman101/commit-sage-cli/compare/v2.0.0...v2.0.1) (2026-09-29)
 
-
 ### Bug Fixes
 
-* correct edit workflow and temp file extension ([5c245bf](https://github.com/AhmedOsman101/commit-sage-cli/commit/5c245bf27416fbffb632ca187c6e9e7d67d11753))
+- correct edit workflow and temp file extension ([5c245bf](https://github.com/AhmedOsman101/commit-sage-cli/commit/5c245bf27416fbffb632ca187c6e9e7d67d11753))
 
 ## [2.0.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v1.8.0...v2.0.0) (2026-09-18)
 
@@ -29,21 +27,20 @@
 >
 > - `commit-sage generate [flags]` — generate a message from the staged diff
 >   and print it to stdout (pipe-able, hook-callable).
-> - `commit-sage commit [flags]` — interactive flow: stage files → generate →
->   preview → commit → optional push.
+> - `commit-sage commit [flags]` — interactive flow: stage files -> generate ->
+>   preview -> commit -> optional push.
 > - `commit-sage config get|set|list|path|open|edit` — inspect and modify config.
 > - Bare `commit-sage` now prints help (git/npm convention) — it no longer
 >   silently generates.
 >
-> Config shape also changed (Config V2): `provider: {type, model}` →
-> `model: "provider/model"`, `general` → `generation`,
-> `maxSubjectLength` → `maxLength`, `initialRetryDelayMs` → `retryDelay`,
-> `maxInputChars` → `maxPromptTokens` (token-counted via `gpt-tokenizer`),
-> top-level `ollama`/`openai`/`openrouter` sections → `providers` registry,
-> `apiKeyEnvVar` → `apiKey` (`$`-prefix reads env, else literal),
-> `useChatCompletions` → `apiType`. **Existing v1 config files are migrated
+> Config shape also changed (Config V2): `provider: {type, model}` ->
+> `model: "provider/model"`, `general` -> `generation`,
+> `maxSubjectLength` -> `maxLength`, `initialRetryDelayMs` -> `retryDelay`,
+> `maxInputChars` -> `maxPromptTokens` (token-counted via `gpt-tokenizer`),
+> top-level `ollama`/`openai`/`openrouter` sections -> `providers` registry,
+> `apiKeyEnvVar` -> `apiKey` (`$`-prefix reads env, else literal),
+> `useChatCompletions` -> `apiType`. **Existing v1 config files are migrated
 > automatically on first run with printed warnings — no manual edits needed.**
-
 
 ### Features
 
