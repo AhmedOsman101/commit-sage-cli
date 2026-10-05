@@ -30,7 +30,7 @@ Elige la superficie según el momento: `generate` imprime un mensaje a stdout
 
 ## Instalación
 
-Tres formas — todas instalan el mismo binario `commit-sage`.
+Cuatro formas — todas instalan el mismo binario `commit-sage`.
 
 ### Binario precompilado (Releases)
 
@@ -73,6 +73,16 @@ INSTALL_DIR=~/bin VERSION=1.8.0 bash <(curl -fsSL https://raw.githubusercontent.
 ```
 
 Ver [`installer/README.md`](installer/README.md) para el curl manual + configuración de PATH.
+
+### AUR (Arch Linux)
+
+```shell
+paru -S commit-sage-bin
+# yay -S commit-sage-bin
+```
+
+Instala el paquete [`commit-sage-bin`](https://aur.archlinux.org/packages/commit-sage-bin),
+que sigue las versiones de GitHub.
 
 ### Windows
 
