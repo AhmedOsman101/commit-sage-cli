@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.2.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v2.1.0...v2.2.0) (2026-10-05)
+
+
+### Features
+
+* **cli:** add spinner for commit message generation ([99779d7](https://github.com/AhmedOsman101/commit-sage-cli/commit/99779d7a6511d3d85dbdc27b436bb29185f210b5))
+
+
+### Bug Fixes
+
+* **cli:** update abort log messages to use consistent Log.info ([3cb67e2](https://github.com/AhmedOsman101/commit-sage-cli/commit/3cb67e26d7bf45e3f88076d6fc26315c1944dd35))
+* **installer:** repair detection logic and per-arch macOS DMGs ([ca732d0](https://github.com/AhmedOsman101/commit-sage-cli/commit/ca732d08a75efff85065893a261b611fe004faf5))
+
 ## [2.1.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v2.0.1...v2.1.0) (2026-10-04)
 
 ### Features
