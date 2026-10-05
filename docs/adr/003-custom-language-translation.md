@@ -1,0 +1,3 @@
+# 0003 — Unknown languages translate on demand, abort on decline
+
+`commit.commitLanguage` accepts any string; recognized native languages use their built-in template. For a string with no native template and no cached entry, the CLI asks once whether to translate via the AI provider; yes caches the translation; no (or a non-TTY run, which counts as no) warns and exits 0. A cached entry is used silently with no prompt. `customLanguageName` is dropped: `commitLanguage` alone drives this. The translation cache is user-owned; deleting an entry re-triggers translation on next run. Chosen over silent English fallback because silent fallback masks a typo'd or unsupported language, and over hard failure because an unknown language is not an error.

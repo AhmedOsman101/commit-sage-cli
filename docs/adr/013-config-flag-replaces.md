@@ -1,0 +1,3 @@
+# 0013 — `--config` replaces the whole config, no overlay
+
+`generate --config <path>` and `commit --config <path>` load that file as the entire configuration: no global file, no project overlay. Missing path is exit 2; invalid file is exit 1 with the validation errors. Non-required keys still fall back to compiled defaults through the existing `get()` chain. Chosen because a user pointing at a file expects that file to be the config, not one layer in a merge they cannot see. The project overlay stays the default precisely so checked-out repos behave without flags; explicit `--config` is the automation path (it also bypasses the trust gate, since pointing at a file is itself consent).

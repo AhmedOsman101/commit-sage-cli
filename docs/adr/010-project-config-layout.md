@@ -1,0 +1,3 @@
+# 0010 — Project config lives in `.commitsage/` directory only
+
+The repo-local config is `.commitsage/config.json` (a directory containing a file), discovered by walking up from CWD to the git root. The legacy single-file `.commitsage` is not read, migrated, or maintained: it was the extension's past, not ours. No `templates/` directory ships in M4 either: the named-template loader designs both the user-level and project-level template directories in its own round. Chosen because a directory scales (config now, templates and translations later) while a bare file does not, and because owning a migration for a file we never wrote buys nothing.

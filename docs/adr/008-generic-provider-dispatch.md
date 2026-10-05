@@ -1,0 +1,3 @@
+# 0008 — Unknown provider names dispatch generically
+
+A `model` string naming a provider with no built-in class (e.g. `omniroute/<model>`) resolves through the user's `providers.<name>` entry: `baseUrl` (required; missing it is a configuration error naming the key) plus optional `apiType` (default `openai-chat`) and `headers`. No `chatCompletionsPath`: `baseUrl` plus `apiType` fully identify an OpenAI-compatible endpoint. Chosen over a single `custom` provider entry because users run several gateways at once, and over config-only registry entries because those fail at dispatch time today. The `useApiKey: false` (or absent key on a local host) sends no auth header.

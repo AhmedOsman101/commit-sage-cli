@@ -1,0 +1,3 @@
+# 0014 — Commitlint validates but never blocks
+
+When `commit.commitlint.enabled` is true, rule sets are injected into the generation prompt and the message is checked after generation (mechanical auto-fix, then LLM refine up to `maxRetries`). If validation still fails, the CLI warns and uses the message as-is. The commit is never blocked on validation. Chosen because a validator false-positive must not eat a user's staged work or break scripts; the refinement loop already biases output toward compliance, and the warning names the violated rules so the user can fix or disable. Skipped entirely for `custom` and `previous` formats, matching upstream.

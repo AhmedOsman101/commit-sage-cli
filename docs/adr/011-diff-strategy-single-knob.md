@@ -1,0 +1,3 @@
+# 0011 — `onlyStagedChanges` folds into `diffStrategy`
+
+`commit.onlyStagedChanges` is deleted; `generation.diffStrategy` (`staged|unstaged|auto`) becomes the single knob, with `auto` meaning staged-iff-staged-exists. Migration: `auto` + `onlyStagedChanges: false` rewrites to `unstaged`; every other combination just drops the key. The `commit` gate keys off the resolved mode instead of re-reading config. Chosen because two keys steering one decision produced the one behavior cell nobody could explain (`auto` + `false` + staged present), and the migration preserves its intent (`unstaged`) rather than silently changing it. This is the single breaking change that forces the v3.0.0 umbrella.
