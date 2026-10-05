@@ -35,7 +35,10 @@ jobs:
       image: archlinux:base-devel
     steps:
       - name: Install tooling
-        run: pacman -Sy --noconfirm git openssh namcap
+        # updpkgsums is NOT in namcap — it lives in pacman-contrib. base-devel
+        # covers makepkg; git/openssh/namcap are in the image but installing
+        # them explicitly is cheap insurance against base-image drift.
+        run: pacman -Sy --noconfirm git openssh namcap pacman-contrib
 
       - name: Create unprivileged builder
         # makepkg refuses to run as root, so all packaging happens as `builder`.
