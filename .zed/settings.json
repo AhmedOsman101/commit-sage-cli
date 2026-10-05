@@ -8,31 +8,17 @@
     "JavaScript": {
       "language_servers": [
         "deno",
-        "!typescript-language-server",
-        "!vtsls",
-        "!typescript-ls",
-        "!eslint",
-        "..."
+        "json-language-server",
+        "import-cost-lsp",
+        "biome"
       ]
     },
     "TypeScript": {
       "language_servers": [
         "deno",
-        "!typescript-language-server",
-        "!vtsls",
-        "!typescript-ls",
-        "!eslint",
-        "..."
-      ]
-    },
-    "TSX": {
-      "language_servers": [
-        "deno",
-        "!typescript-language-server",
-        "!vtsls",
-        "!typescript-ls",
-        "!eslint",
-        "..."
+        "json-language-server",
+        "import-cost-lsp",
+        "biome"
       ]
     }
   }
