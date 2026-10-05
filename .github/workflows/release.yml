@@ -82,9 +82,42 @@ jobs:
           path: release/*.exe
           retention-days: 7
 
+  build-dmg:
+    name: Build macOS DMGs
+    # create-dmg needs hdiutil, so this is the one job that must run on macOS.
+    # Nothing is compiled here — the ubuntu job cross-compiles both archs and
+    # this job only wraps the binaries, keeping paid macOS minutes to ~3 min.
+    needs: build-binaries
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries
+          path: bin/
+
+      - name: Install create-dmg
+        run: brew list create-dmg &>/dev/null || brew install create-dmg
+
+      - name: Build DMGs
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          mkdir -p dmg
+          bash installer/macos/build-dmg.sh "${TAG#v}" dmg
+
+      - name: Upload DMGs
+        uses: actions/upload-artifact@v4
+        with:
+          name: dmg
+          path: dmg/*.dmg
+          retention-days: 7
+
   release:
     name: Create Release
-    needs: [build-binaries, build-installer]
+    needs: [build-binaries, build-installer, build-dmg]
     runs-on: ubuntu-latest
     steps:
       - name: Download binaries
@@ -99,12 +132,20 @@ jobs:
           name: installer
           path: installer
 
+      - name: Download DMGs
+        uses: actions/download-artifact@v4
+        with:
+          name: dmg
+          path: dmg
+
       - name: List files
         run: |
           echo "=== Binaries ==="
           ls -la binaries/
           echo "=== Installer ==="
           ls -la installer/
+          echo "=== DMGs ==="
+          ls -la dmg/
 
       - name: Create Release
         uses: softprops/action-gh-release@v2.0.0
@@ -116,6 +157,7 @@ jobs:
             binaries/commit-sage-windows-arm64.exe
             binaries/commit-sage-macos-x64
             binaries/commit-sage-macos-arm64
+            dmg/*.dmg
             installer/*.exe
           generate_release_notes: true
         env:

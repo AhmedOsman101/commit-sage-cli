@@ -170,17 +170,19 @@ $MASK compile --target aarch64-apple-darwin "${path}"
 
 ### compile windows-x64 [path]
 
-> Compile for Windows-x64 at `~/.local/bin/commit-sage` or any given path
+> Compile for Windows-x64 at `~/.local/bin/commit-sage.exe` or any given path
 
 ```bash
+[[ "${path}" != *".exe" ]] && path="${path}.exe"
 $MASK compile --target x86_64-pc-windows-msvc "${path}"
 ```
 
 ### compile windows-arm64 [path]
 
-> Compile for Windows-arm64 at `~/.local/bin/commit-sage` or any given path
+> Compile for Windows-arm64 at `~/.local/bin/commit-sage.exe` or any given path
 
 ```bash
+[[ "${path}" != *".exe" ]] && path="${path}.exe"
 $MASK compile --target aarch64-pc-windows-msvc "${path}"
 ```
 
@@ -193,17 +195,14 @@ baseDir="$(git rev-parse --show-toplevel)"
 
 mkdir -p "${baseDir}/bin" &>/dev/null
 
-# --- Linux --- #
-$MASK compile linux-x64 bin/commit-sage-linux-x64
-$MASK compile linux-arm64 bin/commit-sage-linux-arm64
-
-# --- Windows --- #
-$MASK compile windows-x64 bin/commit-sage-windows-x64.exe
-$MASK compile windows-arm64 bin/commit-sage-windows-arm64.exe
-
-# --- MacOS --- #
-$MASK compile macos-x64 bin/commit-sage-macos-x64
-$MASK compile macos-arm64 bin/commit-sage-macos-arm64
+# --- Build the binaries --- #
+# Drop stale binaries.
+rm -f "${baseDir}"/bin/commit-sage-* &>/dev/null
+for os in 'linux' 'macos' 'windows'; do
+  for arch in 'x64' 'arm64'; do
+    ${MASK} compile "${os}-${arch}" "bin/commit-sage-${os}-${arch}"
+  done
+done
 ```
 
 ### pr [args]
