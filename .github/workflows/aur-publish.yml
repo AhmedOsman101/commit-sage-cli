@@ -1,0 +1,100 @@
+# Keeps the AUR `commit-sage-bin` package in lockstep with GitHub releases.
+#
+# Fires on every published release (including manual `mask release gh`
+# runs). Needs exactly one repository secret:
+#
+#   AUR_SSH_PRIVATE_KEY — private half of a DEDICATED ed25519 key whose
+#   public half is registered on the maintainer's AUR profile. Never reuse
+#   a personal key: anything holding this secret can push to the AUR account.
+#
+# Deliberately uses zero third-party actions: every step is an auditable
+# shell command, and the job runs with no GitHub permissions at all.
+
+name: Publish AUR package
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Upstream version to publish (e.g. 2.1.0, without leading v)"
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: aur-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Update commit-sage-bin
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+    steps:
+      - name: Install tooling
+        run: pacman -Sy --noconfirm git openssh namcap
+
+      - name: Create unprivileged builder
+        # makepkg refuses to run as root, so all packaging happens as `builder`.
+        run: id builder &>/dev/null || useradd -m builder
+
+      - name: Configure AUR SSH key
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          install -dm700 -o builder -g builder /home/builder/.ssh
+          printf '%s\n' "$AUR_SSH_PRIVATE_KEY" > /home/builder/.ssh/aur
+          chmod 600 /home/builder/.ssh/aur
+          chown builder:builder /home/builder/.ssh/aur
+          printf '%s\n' \
+            'Host aur.archlinux.org' \
+            '  IdentityFile /home/builder/.ssh/aur' \
+            '  User aur' \
+            '  StrictHostKeyChecking accept-new' > /home/builder/.ssh/config
+          chown builder:builder /home/builder/.ssh/config
+          test -s /home/builder/.ssh/aur || {
+            echo "::error::AUR_SSH_PRIVATE_KEY is empty or missing."
+            echo "Generate a dedicated key, register its public half on your AUR profile,"
+            echo "and store the private half as the AUR_SSH_PRIVATE_KEY repository secret."
+            exit 1
+          }
+
+      - name: Resolve version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          # Strict gate: the version ends up inside sed expressions and URLs.
+          case "$VERSION" in
+            *[!0-9.]* | "" | .* | *.) echo "::error::Invalid version: $VERSION" && exit 1 ;;
+          esac
+          printf '%s' "$VERSION" > /tmp/aur-publish-version
+
+      - name: Bump package and push to AUR
+        run: |
+          su builder -c '
+            set -euo pipefail
+            VERSION="$(cat /tmp/aur-publish-version)"
+            rm -rf /tmp/aur-publish && mkdir -p /tmp/aur-publish && cd /tmp/aur-publish
+            git clone ssh://aur@aur.archlinux.org/commit-sage-bin.git pkg
+            cd pkg
+            CURRENT="$(sed -n "s/^pkgver=//p" PKGBUILD)"
+            if [ "$CURRENT" = "$VERSION" ]; then
+              echo "AUR package already at $VERSION, nothing to do."
+              exit 0
+            fi
+            sed -i "s/^pkgver=.*/pkgver=$VERSION/; s/^pkgrel=.*/pkgrel=1/" PKGBUILD
+            updpkgsums
+            makepkg --printsrcinfo > .SRCINFO
+            namcap PKGBUILD
+            git add PKGBUILD .SRCINFO
+            git -c user.name="github-actions[bot]" \
+              -c user.email="github-actions[bot]@users.noreply.github.com" \
+              commit -m "Update to $VERSION"
+            git push origin HEAD:master
+          '

@@ -30,7 +30,7 @@ Pick the surface that fits the moment: `generate` prints a message to stdout
 
 ## Installation
 
-Three ways — all install the same `commit-sage` binary.
+Four ways — all install the same `commit-sage` binary.
 
 ### Prebuilt binary (Releases)
 
@@ -73,6 +73,16 @@ INSTALL_DIR=~/bin VERSION=1.8.0 bash <(curl -fsSL https://raw.githubusercontent.
 ```
 
 See [`installer/README.md`](installer/README.md) for manual curl + PATH setup.
+
+### AUR (Arch Linux)
+
+```shell
+paru -S commit-sage-bin
+# yay -S commit-sage-bin
+```
+
+Installs the [`commit-sage-bin`](https://aur.archlinux.org/packages/commit-sage-bin)
+package, which tracks GitHub releases.
 
 ### Windows
 
