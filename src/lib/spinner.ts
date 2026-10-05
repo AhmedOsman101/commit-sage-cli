@@ -1,8 +1,7 @@
-import { green } from "@std/fmt/colors";
-import { Encoder } from "@/lib/utils.ts";
-
-const FRAMES = ["⢎ ", "⠎⠁", "⠊⠑", "⠈⠱", " ⡱", "⢀⡰", "⢄⡠", "⢆⡀"];
-const INTERVAL_MS = 75;
+import {
+  type SpinnerOptions,
+  Spinner as StdSpinner,
+} from "@std/cli/unstable-spinner";
 
 // Deno equivalent of `trap ... INT TERM HUP`: once any listener is
 // registered for a signal, its default "terminate immediately" behavior is
@@ -16,16 +15,16 @@ const SIGNAL_EXIT_CODES: Record<(typeof SIGNALS)[number], number> = {
   SIGHUP: 129,
 };
 
-type SpinnerOptions = {
-  /** Text next to the animation. Mutable while running. */
-  message?: string;
-  /** Frame interval in milliseconds. Defaults to 75. */
-  interval?: number;
-};
-
 /**
- * Animated spinner for long-running steps. Writes to stderr only (stdout
- * stays clean for scripting) and renders nothing when stderr is not a TTY.
+ * Animated spinner for long-running steps. Thin wrapper over the standard
+ * library spinner (`@std/cli/unstable-spinner`) that adds the two behaviors
+ * std lacks and this CLI depends on:
+ *
+ * - stderr only, and renders nothing when stderr is not a TTY (stdout stays
+ *   byte-clean for scripting, CI logs stay frame-free);
+ * - signal trap: INT/TERM/HUP clear the spinner line, then the process dies
+ *   with the conventional 130/143/129 instead of leaving a frame behind.
+ *
  * The cursor is deliberately never hidden: SIGKILL cannot be trapped by
  * anyone, and a hidden cursor would outlive the spinner in that case.
  *
@@ -37,50 +36,44 @@ type SpinnerOptions = {
  * ```
  */
 class Spinner {
-  message: string;
-  #interval: number;
-  #timer?: ReturnType<typeof setInterval>;
-  #frame = 0;
-  #active = false;
-  #isTTY: boolean;
+  #options: SpinnerOptions;
+  #inner?: StdSpinner;
   #signalHandlers: Array<{
     signal: (typeof SIGNALS)[number];
     handler: () => void;
   }> = [];
 
   constructor(options: SpinnerOptions = {}) {
-    this.message = options.message ?? "";
-    this.#interval = options.interval ?? INTERVAL_MS;
-    this.#isTTY = Deno.stderr.isTerminal();
+    this.#options = options;
+    this.#options.output = Deno.stderr;
+    this.#options.color = this.#options.color ?? "green";
+    this.#options.spinner = this.#options.spinner ?? [
+      "⢎ ",
+      "⠎⠁",
+      "⠊⠑",
+      "⠈⠱",
+      " ⡱",
+      "⢀⡰",
+      "⢄⡠",
+      "⢆⡀",
+    ];
   }
 
   start(): void {
-    if (this.#active || !this.#isTTY) return;
-    this.#active = true;
-    this.#render();
-    this.#timer = setInterval(() => {
-      this.#frame = (this.#frame + 1) % FRAMES.length;
-      this.#render();
-    }, this.#interval);
+    // std animates into any writable stream — gate on TTY here so piped
+    // runs stay silent.
+    if (this.#inner !== undefined || !Deno.stderr.isTerminal()) return;
+    this.#inner = new StdSpinner(this.#options);
+    this.#inner.start();
     this.#attachSignalHandlers();
   }
 
   /** Erase the spinner line completely. Idempotent. */
   stop(): void {
-    if (!this.#active) return;
-    this.#active = false;
-    if (this.#timer !== undefined) {
-      clearInterval(this.#timer);
-      this.#timer = undefined;
-    }
+    if (this.#inner === undefined) return;
     this.#detachSignalHandlers();
-    Deno.stderr.writeSync(Encoder.encode("\r\x1b[K"));
-  }
-
-  #render(): void {
-    Deno.stderr.writeSync(
-      Encoder.encode(green(`\r${FRAMES[this.#frame]} ${this.message}`))
-    );
+    this.#inner.stop();
+    this.#inner = undefined;
   }
 
   // Signal trap: clear the spinner line, then die with the conventional
@@ -113,5 +106,6 @@ class Spinner {
   }
 }
 
-export type { SpinnerOptions };
+// Re-exported so callers never touch the std import directly; if the
+// unstable API moves, only this module changes.
 export { Spinner };

@@ -1,28 +1,29 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@cliffy/ansi@1.2.1": "1.2.1",
-    "jsr:@cliffy/command@1": "1.2.1",
-    "jsr:@cliffy/command@^1.2.1": "1.2.1",
-    "jsr:@cliffy/flags@1.2.1": "1.2.1",
-    "jsr:@cliffy/flags@^1.2.1": "1.2.1",
-    "jsr:@cliffy/internal@1.2.1": "1.2.1",
-    "jsr:@cliffy/keycode@1.2.1": "1.2.1",
-    "jsr:@cliffy/prompt@1": "1.2.1",
-    "jsr:@cliffy/prompt@^1.2.1": "1.2.1",
-    "jsr:@cliffy/table@1.2.1": "1.2.1",
-    "jsr:@cliffy/table@^1.2.1": "1.2.1",
+    "jsr:@cliffy/ansi@^1.3.1": "1.3.1",
+    "jsr:@cliffy/command@^1.2.1": "1.3.1",
+    "jsr:@cliffy/flags@^1.2.1": "1.3.1",
+    "jsr:@cliffy/flags@^1.3.1": "1.3.1",
+    "jsr:@cliffy/internal@^1.3.1": "1.3.1",
+    "jsr:@cliffy/keycode@^1.3.1": "1.3.1",
+    "jsr:@cliffy/prompt@^1.2.1": "1.3.1",
+    "jsr:@cliffy/table@^1.2.1": "1.3.1",
+    "jsr:@cliffy/table@^1.3.1": "1.3.1",
+    "jsr:@cliffy/upgrade@^1.3.1": "1.3.1",
     "jsr:@littletof/charmd@~0.1.2": "0.1.2",
     "jsr:@std/assert@^1.0.19": "1.0.19",
-    "jsr:@std/encoding@^1.0.10": "1.0.11",
+    "jsr:@std/cli@^1.0.32": "1.0.32",
+    "jsr:@std/encoding@^1.0.11": "1.0.11",
     "jsr:@std/fmt@0.223.0": "0.223.0",
-    "jsr:@std/fmt@1.0.10": "1.0.10",
     "jsr:@std/fmt@^1.0.10": "1.0.10",
     "jsr:@std/internal@^1.0.14": "1.0.14",
     "jsr:@std/io@~0.225.3": "0.225.3",
-    "jsr:@std/path@^1.1.5": "1.1.6",
+    "jsr:@std/path@^1.1.6": "1.1.6",
     "jsr:@std/semver@^1.0.8": "1.0.8",
-    "jsr:@std/text@^1.0.19": "1.0.19",
+    "jsr:@std/streams@^1.0.17": "1.2.0",
+    "jsr:@std/tar@~0.1.10": "0.1.10",
+    "jsr:@std/text@^1.0.19": "1.1.0",
     "npm:@ai-sdk/anthropic@^3.0.104": "3.0.104_zod@4.4.3",
     "npm:@ai-sdk/deepseek@^2.0.51": "2.0.51_zod@4.4.3",
     "npm:@ai-sdk/google@^3.0.103": "3.0.103_zod@4.4.3",
@@ -43,40 +44,40 @@
     "npm:zod@^4.4.3": "4.4.3"
   },
   "jsr": {
-    "@cliffy/ansi@1.2.1": {
-      "integrity": "b8702def9c0110b6eeb2b3b71e0b26cbe0a427facbb4f9c0189da0ba19feb549",
+    "@cliffy/ansi@1.3.1": {
+      "integrity": "b6ffd9c79a42cd68fc412d4e520c6bbbdde3c74dba182d017c46790596e003d7",
       "dependencies": [
         "jsr:@cliffy/internal",
         "jsr:@std/encoding",
         "jsr:@std/io"
       ]
     },
-    "@cliffy/command@1.2.1": {
-      "integrity": "b7b017c81560d96580ea810c8564566884d8194416f6fc06bfdc8846e8fd590f",
+    "@cliffy/command@1.3.1": {
+      "integrity": "366ab6d5f68abe3ded22c09f65c151cfba600fa26690a4763f390c2f1e07ca4d",
       "dependencies": [
-        "jsr:@cliffy/flags@1.2.1",
+        "jsr:@cliffy/flags@^1.3.1",
         "jsr:@cliffy/internal",
-        "jsr:@cliffy/table@1.2.1",
+        "jsr:@cliffy/table@^1.3.1",
+        "jsr:@cliffy/upgrade",
         "jsr:@std/fmt@^1.0.10",
-        "jsr:@std/semver",
         "jsr:@std/text"
       ]
     },
-    "@cliffy/flags@1.2.1": {
-      "integrity": "10034920ef7595db586fecec5a3b10a4ec800c513cbbc368414cd748dac706fb",
+    "@cliffy/flags@1.3.1": {
+      "integrity": "12f38efa0c8c2531c09f1b9a70bae4c4dcfbe01793bac11ac8ac92dddedaa294",
       "dependencies": [
         "jsr:@cliffy/internal",
         "jsr:@std/text"
       ]
     },
-    "@cliffy/internal@1.2.1": {
-      "integrity": "e398f41c6839d3d4d249c963bfcb1058013091425926d53a3cb482b1ca70684b"
+    "@cliffy/internal@1.3.1": {
+      "integrity": "b309718fbfb8a226e74bc06f151d4459c2bdfa7ce68482decca75106bbf28816"
     },
-    "@cliffy/keycode@1.2.1": {
-      "integrity": "ce0a1e00986054da31bc767274acefdc923338a47e75ad1fc2046a11c87ace16"
+    "@cliffy/keycode@1.3.1": {
+      "integrity": "6e1b1e5f5ef2091d8228dc78dda3afd53187aa25c07a3395467ba6e1ab86cea2"
     },
-    "@cliffy/prompt@1.2.1": {
-      "integrity": "e468fae0f52093ff2099f5be0bbc7632348ab82a3b7337b12ddd888aeb5d6eed",
+    "@cliffy/prompt@1.3.1": {
+      "integrity": "00802daf9735808373b285c003085121053e7acd6d111c1df04812253b2d363f",
       "dependencies": [
         "jsr:@cliffy/ansi",
         "jsr:@cliffy/internal",
@@ -88,10 +89,21 @@
         "jsr:@std/text"
       ]
     },
-    "@cliffy/table@1.2.1": {
-      "integrity": "be333e62f2c754f8bf75a38c8177515b152040572c9f75298e9bcef1314b82ff",
+    "@cliffy/table@1.3.1": {
+      "integrity": "483c43936b9be148cbedd8bd39e5c0d098c9c87c4667fe2ad9b8acff77f79b8b",
       "dependencies": [
         "jsr:@std/fmt@^1.0.10"
+      ]
+    },
+    "@cliffy/upgrade@1.3.1": {
+      "integrity": "9407061b092de52533d291e2488df24ec0718e28e024ac208603c0e16ae6407a",
+      "dependencies": [
+        "jsr:@cliffy/internal",
+        "jsr:@cliffy/table@^1.3.1",
+        "jsr:@std/fmt@^1.0.10",
+        "jsr:@std/path",
+        "jsr:@std/semver",
+        "jsr:@std/tar"
       ]
     },
     "@littletof/charmd@0.1.2": {
@@ -102,6 +114,13 @@
     },
     "@std/assert@1.0.19": {
       "integrity": "eaada96ee120cb980bc47e040f82814d786fe8162ecc53c91d8df60b8755991e"
+    },
+    "@std/cli@1.0.32": {
+      "integrity": "188b3a100d6202d64e3f5bd3d799c7fa4f6d77f92cc65eb7f641c1fa0aa92a66",
+      "dependencies": [
+        "jsr:@std/fmt@^1.0.10",
+        "jsr:@std/internal"
+      ]
     },
     "@std/encoding@1.0.11": {
       "integrity": "e7cef2f0b3153bccc17431e7c864a1de03a4b6d9647389c43e08aaa775d37385"
@@ -127,8 +146,17 @@
     "@std/semver@1.0.8": {
       "integrity": "dc830e8b8b6a380c895d53fbfd1258dc253704ca57bbe1629ac65fd7830179b7"
     },
-    "@std/text@1.0.19": {
-      "integrity": "003a0e032d360e8c3a4e0410fb792c77a66bd6553fee9d60c6ec1bce30d29223"
+    "@std/streams@1.2.0": {
+      "integrity": "256b934254778f2bf45f5713b934209ff29e9b4b7fd4ec095219966813758c5f"
+    },
+    "@std/tar@0.1.10": {
+      "integrity": "6bf907f3a4bc8bfef42973ba132d946756a6161ef6b914a9e1c06debe664db17",
+      "dependencies": [
+        "jsr:@std/streams"
+      ]
+    },
+    "@std/text@1.1.0": {
+      "integrity": "3db511996317f63e35b76fe18fe35249723ae0ff6f8305398c78dd64ffa809a7"
     }
   },
   "npm": {
@@ -500,7 +528,8 @@
       "jsr:@cliffy/prompt@^1.2.1",
       "jsr:@cliffy/table@^1.2.1",
       "jsr:@littletof/charmd@~0.1.2",
-      "jsr:@std/fmt@1.0.10",
+      "jsr:@std/cli@^1.0.32",
+      "jsr:@std/fmt@^1.0.10",
       "npm:@ai-sdk/anthropic@^3.0.104",
       "npm:@ai-sdk/deepseek@^2.0.51",
       "npm:@ai-sdk/google@^3.0.103",
