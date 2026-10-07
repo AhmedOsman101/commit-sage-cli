@@ -106,7 +106,7 @@ async function buildPrompt(
     recentCommits.length === 0
       ? ""
       : format === "previous"
-        ? `## Recent commit examples\nMimic the style of these recent commit messages, including whether they use a body or footer.\n\n${recentCommits.map((message, index) => `${index + 1}.\n\`\`\`\n${message}\n\`\`\``).join("\n\n")}\n\n`
+        ? `## Recent commit examples\nMimic the style of these recent commit messages, including whether they use a body or footer.\n\n${recentCommits.map((message, index) => `${index + 1}.\n~~~\n${message}\n~~~`).join("\n\n")}\n\n`
         : `## Recent commit examples\n${recentCommits.map(message => `- ${message}`).join("\n")}\n\n`;
 
   return Ok(`You generate exactly one git commit message.
