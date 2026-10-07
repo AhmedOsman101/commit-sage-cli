@@ -2,6 +2,7 @@
 /** biome-ignore-all lint/correctness/noUnusedFunctionParameters: This is a base class */
 import { setTimeout } from "node:timers/promises";
 import { DEFAULT_CONFIG } from "@/lib/constants.ts";
+import { TruncatedResponseError } from "@/lib/errors.ts";
 import { classifyAIError } from "@/lib/handleAiErrors.ts";
 import { Log } from "@/lib/logger.ts";
 import { splitProviderModel } from "@/lib/modelString.ts";
@@ -12,6 +13,16 @@ import ConfigService from "@/services/config.ts";
 
 abstract class ModelService {
   protected static readonly maxRetryBackoff = 10_000;
+
+  /**
+   * Hardcoded output-budget bounds (plan Open Q #3: not configurable).
+   * A commit message is ~40-60 tokens, so the base is a runaway guard,
+   * not a length limit — generous because reasoning models bill their
+   * thinking against the same budget.
+   */
+  protected static readonly defaultMaxOutputTokens = 4096;
+  protected static readonly maxOutputTokensCeiling = 32_768;
+  protected static readonly maxBudgetDoublings = 3;
 
   protected static calculateRetryDelay(attempt: number): number {
     return Math.min(1000 * 2 ** (attempt - 1), ModelService.maxRetryBackoff);
@@ -129,11 +140,62 @@ abstract class ModelService {
     );
   }
 
+  /**
+   * Resolve the per-attempt output budget.
+   *
+   * Base precedence: model preset > provider entry > provider defaults >
+   * `generation.maxOutputTokens` > 4096. The provider chain reuses
+   * `resolveProviderValue` (preset > entry > defaults); the global value is
+   * consulted only when that chain is unset.
+   *
+   * Truncation is the one failure a retry can fix only by asking for more
+   * room — replaying the same budget would cut off at exactly the same
+   * place — so each retry doubles the budget, capped at 3 doublings and a
+   * 32768 ceiling.
+   */
+  protected static async getMaxOutputTokens(
+    providerName?: string,
+    modelId?: string,
+    attempt = 1
+  ): Promise<number> {
+    let base: number | undefined;
+    if (providerName !== undefined) {
+      const resolved = await ConfigService.resolveProviderValue(
+        providerName,
+        modelId,
+        "maxOutputTokens"
+      );
+      if (
+        typeof resolved === "number" &&
+        Number.isFinite(resolved) &&
+        resolved > 0
+      )
+        base = Math.floor(resolved);
+    }
+    if (base === undefined) {
+      const result = await ConfigService.get("generation", "maxOutputTokens");
+      if (result.isOk()) {
+        const value = result.ok as unknown;
+        if (typeof value === "number" && Number.isFinite(value) && value > 0)
+          base = Math.floor(value);
+      }
+    }
+    base ??= ModelService.defaultMaxOutputTokens;
+    base = Math.min(base, ModelService.maxOutputTokensCeiling);
+    const doublings = Math.min(
+      Math.max(attempt - 1, 0),
+      ModelService.maxBudgetDoublings
+    );
+    return Math.min(base * 2 ** doublings, ModelService.maxOutputTokensCeiling);
+  }
+
   protected static async getGenerationOptions(
     providerName?: string,
-    modelId?: string
+    modelId?: string,
+    attempt = 1
   ): Promise<{
     temperature?: number;
+    maxOutputTokens: number;
     abortSignal: AbortSignal | undefined;
   }> {
     const temperature = await ModelService.getTemperature(
@@ -143,6 +205,11 @@ abstract class ModelService {
     const reasoning = await ModelService.getReasoningLevel(
       providerName,
       modelId
+    );
+    const maxOutputTokens = await ModelService.getMaxOutputTokens(
+      providerName,
+      modelId,
+      attempt
     );
     let timeoutMs: number = (
       DEFAULT_CONFIG.providers as unknown as Record<
@@ -194,6 +261,7 @@ abstract class ModelService {
 
     return {
       ...(omitTemperature ? {} : { temperature: temperature as number }),
+      maxOutputTokens,
       abortSignal: timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : undefined,
     };
   }
@@ -360,6 +428,39 @@ abstract class ModelService {
         reasoningEffort: reasoning === "medium" ? "high" : reasoning,
       },
     };
+  }
+
+  /**
+   * True when the model stopped because the output budget ran out. The AI
+   * SDK normalizes every provider to `"length"`; the `"max_tokens"`
+   * spellings cover raw provider payloads that leak through unwrapped.
+   */
+  protected static isTruncationFinishReason(reason: unknown): boolean {
+    if (typeof reason !== "string") return false;
+    const normalized = reason.toLowerCase().replace(/[-_]/g, "");
+    return normalized === "length" || normalized === "maxtokens";
+  }
+
+  /**
+   * Turn a length-truncated response into a retryable failure. The throw
+   * funnels into `handleGenerationError`, whose retry re-enters
+   * `generateCommitMessage` with `attempt + 1` — and therefore a doubled
+   * budget via `getMaxOutputTokens`.
+   */
+  protected static throwIfTruncated(
+    finishReason: unknown,
+    providerLabel: string,
+    model: string
+  ): void {
+    if (ModelService.isTruncationFinishReason(finishReason)) {
+      Log.debug(
+        `[modelService] truncated response detected (finishReason=${finishReason}), retrying with doubled budget`
+      );
+      throw new TruncatedResponseError(
+        providerLabel,
+        `${model} exhausted its output budget`
+      );
+    }
   }
 
   protected static async handleGenerationError(

@@ -9,6 +9,7 @@ type GenerationConfig = {
   /** `null` means "do not send temperature" (reasoning models reject it). */
   temperature: number | null;
   maxPromptTokens: number;
+  maxOutputTokens: number;
   diffStrategy: DiffStrategy;
 };
 

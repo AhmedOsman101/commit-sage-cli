@@ -36,7 +36,8 @@ class OllamaService extends ModelService {
       await ModelService.resolveProviderAndModel(modelOverride);
     const generationOptions = await ModelService.getGenerationOptions(
       provider,
-      modelId
+      modelId,
+      attempt
     );
 
     Log.debug(
@@ -56,6 +57,8 @@ class OllamaService extends ModelService {
         prompt,
         ...generationOptions,
       });
+
+      ModelService.throwIfTruncated(response.finishReason, provider, model);
 
       return { message: response.text, model };
     } catch (error) {

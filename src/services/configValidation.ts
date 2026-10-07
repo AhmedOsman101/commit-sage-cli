@@ -65,6 +65,7 @@ const ConfigSchema = z.strictObject({
       retryDelay: z.uint32(),
       temperature: z.number().min(0).max(2).nullable(),
       maxPromptTokens: z.uint32().min(1),
+      maxOutputTokens: z.uint32().min(1),
       diffStrategy: z.enum(DIFF_STRATEGIES),
     })
     .optional(),
@@ -183,6 +184,17 @@ const ConfigValidationService = {
       if (validation.isError()) {
         throw Log.error(
           `Error at key generation.maxPromptTokens => ${validation.error.message}`
+        ).exit();
+      }
+    }
+    if ("maxOutputTokens" in generation) {
+      const validation = this.validateInt(
+        (generation as Record<string, unknown>).maxOutputTokens,
+        1
+      );
+      if (validation.isError()) {
+        throw Log.error(
+          `Error at key generation.maxOutputTokens => ${validation.error.message}`
         ).exit();
       }
     }
@@ -497,6 +509,14 @@ const ConfigValidationService = {
             if (r.isError()) {
               return ErrFromText(
                 `Error at key generation.maxPromptTokens => ${r.error.message}`
+              );
+            }
+          }
+          if ("maxOutputTokens" in g) {
+            const r = this.validateInt(g.maxOutputTokens, 1);
+            if (r.isError()) {
+              return ErrFromText(
+                `Error at key generation.maxOutputTokens => ${r.error.message}`
               );
             }
           }

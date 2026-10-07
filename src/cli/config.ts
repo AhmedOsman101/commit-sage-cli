@@ -22,6 +22,7 @@ const TYPE_MAP: Record<
     retryDelay: "number",
     temperature: "number",
     maxPromptTokens: "number",
+    maxOutputTokens: "number",
     diffStrategy: "string",
   },
   commit: {

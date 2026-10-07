@@ -36,7 +36,8 @@ class OpenRouterService extends ModelService {
 
       const generationOptions = await ModelService.getGenerationOptions(
         provider,
-        modelId
+        modelId,
+        attempt
       );
 
       const rawBaseUrl = await ConfigService.resolveProviderValue(
@@ -72,11 +73,13 @@ class OpenRouterService extends ModelService {
         middleware: extractReasoningMiddleware({ tagName: "think" }),
       });
 
-      const { text } = await generateText({
+      const { text, finishReason } = await generateText({
         model: wrappedModel,
         prompt,
         ...generationOptions,
       });
+
+      ModelService.throwIfTruncated(finishReason, provider, model);
 
       Log.debug(
         `[openrouterService.generateCommitMessage] EXIT message="${text.substring(0, 50)}..."`

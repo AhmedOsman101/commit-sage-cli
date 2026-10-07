@@ -48,6 +48,11 @@
           "minimum": 1,
           "description": "Maximum diff size sent to the model before truncation (token-counted)"
         },
+        "maxOutputTokens": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Global default output budget per attempt; per-provider and per-model overrides win. Doubled on truncation retries up to a hardcoded ceiling."
+        },
         "diffStrategy": {
           "type": "string",
           "enum": [

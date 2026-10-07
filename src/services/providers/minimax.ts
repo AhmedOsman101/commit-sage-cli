@@ -25,7 +25,8 @@ class MinimaxService extends ModelService {
         (await ConfigService.getProviderApiKey(provider)) ?? undefined;
       const generationOptions = await ModelService.getGenerationOptions(
         provider,
-        modelId
+        modelId,
+        attempt
       );
       Log.debug(
         `[minimaxService.generateCommitMessage] CALL API model=${model}`
@@ -38,11 +39,13 @@ class MinimaxService extends ModelService {
         middleware: extractReasoningMiddleware({ tagName: "think" }),
       });
 
-      const { text } = await generateText({
+      const { text, finishReason } = await generateText({
         model: wrappedModel,
         prompt,
         ...generationOptions,
       });
+
+      ModelService.throwIfTruncated(finishReason, provider, model);
 
       Log.debug(
         `[minimaxService.generateCommitMessage] EXIT message="${text.substring(0, 50)}..."`

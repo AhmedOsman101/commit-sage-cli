@@ -26,7 +26,7 @@ import {
 } from "ai";
 import type { AxiosError } from "axios";
 import { ERROR_MESSAGES } from "@/lib/constants.ts";
-import { ConfigurationError } from "@/lib/errors.ts";
+import { ConfigurationError, TruncatedResponseError } from "@/lib/errors.ts";
 
 type NormalizedAIError = {
   message: string;
@@ -233,7 +233,15 @@ function classifyAIError(error: unknown): UnifiedError {
     };
   }
 
-  // 2. Handle AI SDK errors in one place
+  // 2. Truncated output is the one failure a retry can fix — but only with
+  // a larger budget, which the caller's attempt counter supplies via
+  // `getGenerationOptions`. Always retryable here; the attempt gate lives
+  // in `ModelService.handleGenerationError`.
+  if (error instanceof TruncatedResponseError) {
+    return { message: error.message, shouldRetry: true };
+  }
+
+  // 3. Handle AI SDK errors in one place
   const normalizedAiError = handleAIError(error);
   if (normalizedAiError) {
     return {
@@ -242,7 +250,7 @@ function classifyAIError(error: unknown): UnifiedError {
     };
   }
 
-  // 3. Handle Axios errors
+  // 4. Handle Axios errors
   if (isAxiosError(error)) {
     const status = error.response?.status;
     // biome-ignore lint/suspicious/noExplicitAny: For error handling
@@ -288,7 +296,7 @@ function classifyAIError(error: unknown): UnifiedError {
     }
   }
 
-  // 4. Fallback: unknown error
+  // 5. Fallback: unknown error
   return {
     message: error instanceof Error ? error.message : "Unknown error occurred",
     shouldRetry: false,
