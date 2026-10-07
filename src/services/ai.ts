@@ -1,11 +1,12 @@
 import { Err, ErrFromText, ErrFromUnknown, Ok, type Result } from "lib-result";
 import type { GenerateOptions } from "@/cli/types/generateOptions.ts";
-import { ERROR_MESSAGES } from "@/lib/constants.ts";
+import { DEFAULT_CONFIG, ERROR_MESSAGES } from "@/lib/constants.ts";
 import { Log } from "@/lib/logger.ts";
 import { sanitizeCommitMessage } from "@/lib/messageSanitizer.ts";
 import { splitProviderModel } from "@/lib/modelString.ts";
 import { truncateToTokens } from "@/lib/tokenCounter.ts";
 import type { CommitMessage } from "@/lib/types/commit.ts";
+import type { RecentCommitsConfig } from "@/lib/types/config.ts";
 import ConfigService from "@/services/config.ts";
 import GitService from "@/services/git.ts";
 import GitBlameAnalyzer from "@/services/gitBlameAnalyzer.ts";
@@ -74,6 +75,36 @@ const AiService = {
       `[aiService.generateCommitMessage] STEP truncated diff, length=${truncatedDiff.length}`
     );
 
+    const formatResult =
+      runOptions.format !== undefined
+        ? Ok(runOptions.format)
+        : await ConfigService.get("commit", "commitFormat");
+    if (formatResult.isError()) return Err(formatResult.error);
+    const effectiveFormat = formatResult.ok as unknown as string;
+
+    const recentConfigResult = await ConfigService.get(
+      "commit",
+      "recentCommits"
+    );
+    const recentConfig = (recentConfigResult.isOk() && recentConfigResult.ok
+      ? recentConfigResult.ok
+      : DEFAULT_CONFIG.commit.recentCommits) as unknown as RecentCommitsConfig;
+
+    let recentCommits: string[] = [];
+    if (effectiveFormat === "previous" || recentConfig.enabled === true) {
+      const messagesResult = await GitService.getRecentCommitMessages(
+        recentConfig.count,
+        recentConfig.scope
+      );
+      if (messagesResult.isError()) {
+        Log.warning(
+          `Could not gather recent commits (${messagesResult.error.message}) — continuing without examples`
+        );
+      } else {
+        recentCommits = messagesResult.ok;
+      }
+    }
+
     const promptResult = await PromptService.buildPrompt(
       truncatedDiff,
       blameAnalysis,
@@ -82,6 +113,7 @@ const AiService = {
         maxLength: runOptions.maxLength,
         language: runOptions.language,
         context: runOptions.context,
+        recentCommits,
       }
     );
     if (promptResult.isError()) return Err(promptResult.error);

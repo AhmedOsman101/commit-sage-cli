@@ -7,6 +7,7 @@ import {
   BODY_STYLES,
   type Config,
   DIFF_STRATEGIES,
+  RECENT_COMMITS_SCOPES,
   SUPPORTED_API_TYPES,
   SUPPORTED_REASONING_LEVELS,
 } from "@/lib/types/config.ts";
@@ -82,6 +83,13 @@ const ConfigSchema = z.strictObject({
     promptForRefs: z.boolean().optional(),
     maxLength: z.uint32().optional(),
     bodyStyle: z.enum(BODY_STYLES).optional(),
+    recentCommits: z
+      .object({
+        enabled: z.boolean(),
+        count: z.uint32().min(1).max(20),
+        scope: z.enum(RECENT_COMMITS_SCOPES),
+      })
+      .optional(),
   }),
 });
 
@@ -190,6 +198,22 @@ const ConfigValidationService = {
         throw Log.error(
           `Error at key commit.maxLength => ${validation.error.message}`
         ).exit();
+      }
+    }
+    if ("recentCommits" in commit) {
+      const rc = (commit as Record<string, unknown>).recentCommits as Record<
+        string,
+        unknown
+      > | null;
+      if (rc !== null && typeof rc === "object") {
+        if ("count" in rc) {
+          const validation = this.validateInt(rc.count, 1, 20);
+          if (validation.isError()) {
+            throw Log.error(
+              `Error at key commit.recentCommits.count => ${validation.error.message}`
+            ).exit();
+          }
+        }
       }
     }
 
@@ -495,6 +519,19 @@ const ConfigValidationService = {
               return ErrFromText(
                 `Error at key commit.maxLength => ${r.error.message}`
               );
+            }
+          }
+          if ("recentCommits" in c) {
+            const rc = c.recentCommits as Record<string, unknown> | null;
+            if (rc !== null && typeof rc === "object") {
+              if ("count" in rc) {
+                const r = this.validateInt(rc.count, 1, 20);
+                if (r.isError()) {
+                  return ErrFromText(
+                    `Error at key commit.recentCommits.count => ${r.error.message}`
+                  );
+                }
+              }
             }
           }
         }

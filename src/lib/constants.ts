@@ -65,6 +65,11 @@ const DEFAULT_CONFIG: Readonly<Config> = {
     promptForRefs: false,
     maxLength: 80,
     bodyStyle: "subject-body",
+    recentCommits: {
+      enabled: false,
+      count: 5,
+      scope: "all",
+    },
   },
 };
 

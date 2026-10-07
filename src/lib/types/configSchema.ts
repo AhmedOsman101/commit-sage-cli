@@ -11,6 +11,7 @@ import { COMMIT_FORMATS } from "@/lib/types/commit.ts";
 import {
   BODY_STYLES,
   DIFF_STRATEGIES,
+  RECENT_COMMITS_SCOPES,
   SUPPORTED_API_TYPES,
   SUPPORTED_REASONING_LEVELS,
 } from "@/lib/types/config.ts";
@@ -211,6 +212,30 @@ const COMMIT_CONFIG_SCHEMA = {
       enum: [...BODY_STYLES],
       description:
         "Controls whether the generated commit message includes only a subject, a subject and body, or a subject, body, and optional footer",
+    },
+    recentCommits: {
+      type: "object",
+      additionalProperties: false,
+      description:
+        "Recent commit messages injected as style examples. Managed via config edit; get/set stays shallow.",
+      properties: {
+        enabled: {
+          type: "boolean",
+          description:
+            "Inject recent commit messages as style examples into the prompt",
+        },
+        count: {
+          type: "integer",
+          minimum: 1,
+          maximum: 20,
+          description: "Max examples injected; hard cap 20",
+        },
+        scope: {
+          type: "string",
+          enum: [...RECENT_COMMITS_SCOPES],
+          description: "mine filters to the current user's commits",
+        },
+      },
     },
   },
 } as const;

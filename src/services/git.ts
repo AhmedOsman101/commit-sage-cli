@@ -12,6 +12,10 @@ import type { CommandOutput } from "@/lib/types/index.ts";
 import CommandService from "@/services/command.ts";
 import FileSystemService from "@/services/fileSystem.ts";
 
+const RECENT_COMMITS_MAX_COUNT = 20;
+const RECENT_COMMITS_MIN_LENGTH = 20;
+const RECENT_COMMITS_DEFAULT_COUNT = 5;
+
 const GIT_STATUS_CODES = {
   modified: "M",
   added: "A",
@@ -110,6 +114,49 @@ class GitService {
     // git returns "HEAD" when there are no commits yet
     if (!branch || branch === "HEAD") return null;
     return branch;
+  }
+  /**
+   * Fetch recent commit subjects for style mimicry. Never hard-fails:
+   * empty history, missing author, or git errors degrade to `Ok([])`.
+   * Messages shorter than 20 chars are treated as noise and dropped.
+   */
+  static async getRecentCommitMessages(
+    count: number,
+    scope: "all" | "mine"
+  ): Promise<Result<string[], Error>> {
+    try {
+      const safeCount = Number.isFinite(count)
+        ? Math.min(Math.max(1, Math.floor(count)), RECENT_COMMITS_MAX_COUNT)
+        : RECENT_COMMITS_DEFAULT_COUNT;
+
+      const args = ["log", `--max-count=${safeCount}`, "--pretty=format:%s"];
+
+      if (scope === "mine") {
+        const nameResult = await GitService.execGit(["config", "user.name"]);
+        const emailResult = await GitService.execGit(["config", "user.email"]);
+        const author = nameResult.isOk() ? nameResult.ok.stdout.trim() : "";
+        const email = emailResult.isOk() ? emailResult.ok.stdout.trim() : "";
+        const pattern = author || email;
+        if (!pattern) {
+          Log.warning(
+            "Recent commits scope is 'mine' but git user.name/user.email is unset — skipping examples"
+          );
+          return Ok([]);
+        }
+        args.push(`--author=${pattern}`);
+      }
+
+      const result = await GitService.execGit(args);
+      if (result.isError()) return Ok([]);
+
+      const messages = result.ok.stdout
+        .split("\n")
+        .map(line => line.trim())
+        .filter(line => line.length >= RECENT_COMMITS_MIN_LENGTH);
+      return Ok(messages);
+    } catch (error) {
+      return ErrFromUnknown(error);
+    }
   }
   /**
    * Whether any git remote is configured.

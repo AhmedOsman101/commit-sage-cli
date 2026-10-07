@@ -18,6 +18,8 @@ type PromptOptions = {
   language?: CommitLanguage;
   /** AI-only. Injects `## External Context\n<text>` into the prompt. */
   context?: string;
+  /** Recent commit subjects injected as `## Recent commit examples`. */
+  recentCommits?: string[];
 };
 
 /**
@@ -80,6 +82,16 @@ async function buildPrompt(
   const contextSection = options.context?.trim()
     ? `## Additional Context\n${options.context.trim()}\n\n`
     : "";
+  const recentCommits = options.recentCommits ?? [];
+  if (format === "previous" && recentCommits.length === 0) {
+    Log.warning(
+      "No recent commit examples found, falling back to conventional format"
+    );
+  }
+  const examplesSection =
+    recentCommits.length > 0
+      ? `## Recent commit examples\n${recentCommits.map(message => `- ${message}`).join("\n")}\n\n`
+      : "";
 
   return Ok(`You generate exactly one git commit message.
 
@@ -110,7 +122,7 @@ ${diff}
 Git blame analysis:
 ${blameSection}
 
-Final instruction: return only the commit message, a single time, and then stop. No second copy.`);
+${examplesSection}Final instruction: return only the commit message, a single time, and then stop. No second copy.`);
 }
 
 /**

@@ -15,7 +15,7 @@ import FileSystemService from "@/services/fileSystem.ts";
 
 const TYPE_MAP: Record<
   string,
-  Record<string, "boolean" | "number" | "string">
+  Record<string, "boolean" | "number" | "string" | "object">
 > = {
   generation: {
     maxRetries: "number",
@@ -33,6 +33,7 @@ const TYPE_MAP: Record<
     promptForRefs: "boolean",
     maxLength: "number",
     bodyStyle: "string",
+    recentCommits: "object",
   },
 };
 
@@ -66,6 +67,11 @@ function parseDotPath(arg: string) {
     );
   }
   if (arg.indexOf(".", dot + 1) !== -1) {
+    if (arg.startsWith("commit.recentCommits.")) {
+      return ErrFromText(
+        `Key "${arg}" targets nested recentCommits fields, which stay shallow by design — use "config set commit.recentCommits '{...}'" or "config edit" to manage enabled/count/scope.`
+      );
+    }
     return ErrFromText(
       `Invalid key "${arg}". Usage: config get/set <section>.<key> (e.g. generation.maxRetries)`
     );
@@ -147,6 +153,15 @@ function coerceValue(section: string, key: string, raw: string) {
       );
     }
     return Ok(num);
+  }
+  if (expected === "object") {
+    const parsed = JsonParse(raw);
+    if (parsed.isError()) {
+      return ErrFromText(
+        `Invalid JSON for ${section}.${key}: "${raw}" — expected an object like '{"enabled":true,"count":5,"scope":"all"}' (per-field edits via "config edit")`
+      );
+    }
+    return Ok(parsed.ok);
   }
   return Ok(raw);
 }
