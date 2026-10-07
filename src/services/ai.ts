@@ -4,12 +4,19 @@ import { DEFAULT_CONFIG, ERROR_MESSAGES } from "@/lib/constants.ts";
 import { Log } from "@/lib/logger.ts";
 import { sanitizeCommitMessage } from "@/lib/messageSanitizer.ts";
 import { splitProviderModel } from "@/lib/modelString.ts";
-import { truncateToTokens } from "@/lib/tokenCounter.ts";
+import {
+  countTokens,
+  splitDiffByFile,
+  truncateDiffByFile,
+  truncateToTokens,
+} from "@/lib/tokenCounter.ts";
 import type { CommitMessage } from "@/lib/types/commit.ts";
 import type { RecentCommitsConfig } from "@/lib/types/config.ts";
 import ConfigService from "@/services/config.ts";
 import GitService from "@/services/git.ts";
-import GitBlameAnalyzer from "@/services/gitBlameAnalyzer.ts";
+import GitBlameAnalyzer, {
+  MAX_BLAME_LINES_PER_FILE,
+} from "@/services/gitBlameAnalyzer.ts";
 import { PromptService } from "@/services/prompt.ts";
 import { getProviderService } from "@/services/providerRegistry.ts";
 
@@ -70,11 +77,6 @@ const AiService = {
     if (maxPromptResult.isError()) return Err(maxPromptResult.error);
     const maxPromptTokens = maxPromptResult.ok as unknown as number;
 
-    const truncatedDiff = truncateToTokens(diff, maxPromptTokens);
-    Log.debug(
-      `[aiService.generateCommitMessage] STEP truncated diff, length=${truncatedDiff.length}`
-    );
-
     const formatResult =
       runOptions.format !== undefined
         ? Ok(runOptions.format)
@@ -106,21 +108,130 @@ const AiService = {
       }
     }
 
-    const promptResult = await PromptService.buildPrompt(
-      truncatedDiff,
-      blameAnalysis,
-      {
+    // Per-file line cap on blame before tokenization, so one huge file
+    // cannot eat the whole budget. Warn once when capping kicks in.
+    let activeBlame = blameAnalysis;
+    if (blameAnalysis) {
+      const chunks = blameAnalysis.split("\n\n");
+      const capped = chunks.map(chunk => GitBlameAnalyzer.capBlameLines(chunk));
+      if (capped.some((chunk, index) => chunk !== chunks[index])) {
+        activeBlame = capped.join("\n\n");
+        Log.warning(
+          `Blame analysis truncated to ${MAX_BLAME_LINES_PER_FILE} lines per file to fit the prompt budget`
+        );
+      }
+    }
+
+    // `maxPromptTokens` budgets the whole prompt (diff + blame +
+    // examples), not just the diff. Reduction order on overrun:
+    // examples first, then blame, then the diff — one warning each.
+    const diffBlocks = splitDiffByFile(diff);
+    let activeDiff = diff;
+    let activeExamples = recentCommits;
+
+    const buildPromptResult = async (
+      diffText: string,
+      blameText: string,
+      examples: string[]
+    ): Promise<Result<string, Error>> => {
+      return await PromptService.buildPrompt(diffText, blameText, {
         format: runOptions.format,
         maxLength: runOptions.maxLength,
         language: runOptions.language,
         context: runOptions.context,
-        recentCommits,
-      }
+        recentCommits: examples,
+      });
+    };
+
+    let promptResult = await buildPromptResult(
+      activeDiff,
+      activeBlame,
+      activeExamples
     );
     if (promptResult.isError()) return Err(promptResult.error);
-    const prompt = promptResult.ok;
+    let prompt = promptResult.ok;
+
+    if (countTokens(prompt) > maxPromptTokens) {
+      if (activeExamples.length > 0) {
+        const dropped = activeExamples.length;
+        activeExamples = [];
+        Log.warning(
+          `Dropped ${dropped} recent commit examples to fit maxPromptTokens budget (${maxPromptTokens} tokens)`
+        );
+        promptResult = await buildPromptResult(
+          activeDiff,
+          activeBlame,
+          activeExamples
+        );
+        if (promptResult.isError()) return Err(promptResult.error);
+        prompt = promptResult.ok;
+      }
+
+      if (countTokens(prompt) > maxPromptTokens && activeBlame) {
+        const overhead =
+          countTokens(prompt) -
+          countTokens(activeDiff) -
+          countTokens(activeBlame) -
+          countTokens(activeExamples.join("\n"));
+        const blameBudget = Math.max(
+          0,
+          maxPromptTokens -
+            overhead -
+            countTokens(activeDiff) -
+            countTokens(activeExamples.join("\n"))
+        );
+        const truncatedBlame = truncateToTokens(activeBlame, blameBudget);
+        if (truncatedBlame !== activeBlame) {
+          activeBlame = truncatedBlame;
+          Log.warning(
+            `Truncated blame analysis to fit maxPromptTokens budget (${maxPromptTokens} tokens)`
+          );
+          promptResult = await buildPromptResult(
+            activeDiff,
+            activeBlame,
+            activeExamples
+          );
+          if (promptResult.isError()) return Err(promptResult.error);
+          prompt = promptResult.ok;
+        }
+      }
+
+      if (countTokens(prompt) > maxPromptTokens) {
+        const overhead =
+          countTokens(prompt) -
+          countTokens(activeDiff) -
+          countTokens(activeBlame) -
+          countTokens(activeExamples.join("\n"));
+        const diffBudget = Math.max(
+          0,
+          maxPromptTokens -
+            overhead -
+            countTokens(activeBlame) -
+            countTokens(activeExamples.join("\n"))
+        );
+        const truncatedDiff =
+          diffBlocks.length > 0
+            ? truncateDiffByFile(diffBlocks, diffBudget)
+            : truncateToTokens(activeDiff, diffBudget);
+        if (truncatedDiff !== activeDiff) {
+          activeDiff = truncatedDiff;
+          Log.warning(
+            diffBlocks.length > 0
+              ? `Truncated diff to fit maxPromptTokens budget (${maxPromptTokens} tokens, ${diffBlocks.length} files preserved)`
+              : `Truncated diff to fit maxPromptTokens budget (${maxPromptTokens} tokens)`
+          );
+          promptResult = await buildPromptResult(
+            activeDiff,
+            activeBlame,
+            activeExamples
+          );
+          if (promptResult.isError()) return Err(promptResult.error);
+          prompt = promptResult.ok;
+        }
+      }
+    }
     Log.debug(
-      `[aiService.generateCommitMessage] STEP prompt generated, length=${prompt.length}`
+      `[aiService.generateCommitMessage] STEP prompt within budget, length=${prompt.length}`
     );
 
     // Resolve provider from the effective model string: `--model
@@ -208,12 +319,22 @@ const AiService = {
     const blameResults = await Promise.all(analysesPromises);
 
     const blameAnalysis: string[] = [];
-    for (const result of blameResults) {
+    const cappedBlamePaths: string[] = [];
+    for (const [index, result] of blameResults.entries()) {
       if (result.isError()) continue;
       const analysis = result.ok;
       if (analysis && !analysis.startsWith("No changes detected")) {
-        blameAnalysis.push(analysis);
+        const capped = GitBlameAnalyzer.capBlameLines(analysis);
+        if (capped !== analysis) {
+          cappedBlamePaths.push(changedFiles[index] as string);
+        }
+        blameAnalysis.push(capped);
       }
+    }
+    if (cappedBlamePaths.length > 0) {
+      Log.warning(
+        `Blame analysis truncated to ${MAX_BLAME_LINES_PER_FILE} lines per file for: ${cappedBlamePaths.join(", ")}`
+      );
     }
 
     Log.debug(

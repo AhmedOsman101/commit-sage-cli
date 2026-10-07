@@ -239,10 +239,10 @@ class GitService {
 
     return cmd.isOk() && cmd.ok.stdout.includes("160000");
   }
-  static async getDiff(
+  static async getDiffBlocks(
     diffMode: "staged" | "unstaged"
-  ): Promise<Result<string, Error>> {
-    Log.debug(`[gitService.getDiff] ENTRY diffMode=${diffMode}`);
+  ): Promise<Result<string[], Error>> {
+    Log.debug(`[gitService.getDiffBlocks] ENTRY diffMode=${diffMode}`);
     try {
       const hasStagedChanges = GitService.hasChanges("staged");
 
@@ -284,7 +284,7 @@ class GitService {
             if (fileDiff.trim()) diffs.push(fileDiff);
           }
         }
-        return Ok(diffs.join("\n\n").trim());
+        return Ok(diffs);
       }
 
       if (!hasUnstagedChanges && !hasUntrackedFiles) {
@@ -356,15 +356,22 @@ class GitService {
         }
       }
 
-      const combinedDiff = diffs.join("\n\n").trim();
-      if (!combinedDiff) {
+      if (diffs.length === 0) {
         return Err(new NoChangesDetectedError("No changes detected."));
       }
 
-      return Ok(combinedDiff);
+      return Ok(diffs);
     } catch (error) {
       return ErrFromUnknown(error);
     }
+  }
+  static async getDiff(
+    diffMode: "staged" | "unstaged"
+  ): Promise<Result<string, Error>> {
+    Log.debug(`[gitService.getDiff] ENTRY diffMode=${diffMode}`);
+    const blocksResult = await GitService.getDiffBlocks(diffMode);
+    if (blocksResult.isError()) return Err(blocksResult.error);
+    return Ok(blocksResult.ok.join("\n\n").trim());
   }
   static async getChangedFiles(
     diffMode: "staged" | "unstaged" = "unstaged"
