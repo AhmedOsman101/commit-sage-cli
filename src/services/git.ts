@@ -15,6 +15,9 @@ import FileSystemService from "@/services/fileSystem.ts";
 const RECENT_COMMITS_MAX_COUNT = 20;
 const RECENT_COMMITS_MIN_LENGTH = 20;
 const RECENT_COMMITS_DEFAULT_COUNT = 5;
+const RECENT_COMMITS_FULL_MAX_CHARS = 500;
+
+type RecentCommitDetail = "subject" | "full";
 
 const GIT_STATUS_CODES = {
   modified: "M",
@@ -116,20 +119,29 @@ class GitService {
     return branch;
   }
   /**
-   * Fetch recent commit subjects for style mimicry. Never hard-fails:
+   * Fetch recent commit messages for style mimicry. Never hard-fails:
    * empty history, missing author, or git errors degrade to `Ok([])`.
-   * Messages shorter than 20 chars are treated as noise and dropped.
+   * `subject` returns one-line subjects (`%s`).
+   * `full` returns whole messages (`%B`, record-separated) truncated to
+   * 500 chars each, so `previous` can learn body/footer habits.
+   * Entries shorter than 20 chars total are treated as noise and dropped.
    */
   static async getRecentCommitMessages(
     count: number,
-    scope: "all" | "mine"
+    scope: "all" | "mine",
+    detail: RecentCommitDetail = "subject"
   ): Promise<Result<string[], Error>> {
     try {
       const safeCount = Number.isFinite(count)
         ? Math.min(Math.max(1, Math.floor(count)), RECENT_COMMITS_MAX_COUNT)
         : RECENT_COMMITS_DEFAULT_COUNT;
 
-      const args = ["log", `--max-count=${safeCount}`, "--pretty=format:%s"];
+      const pretty = detail === "full" ? "%B%x1e" : "%s";
+      const args = [
+        "log",
+        `--max-count=${safeCount}`,
+        `--pretty=format:${pretty}`,
+      ];
 
       if (scope === "mine") {
         const nameResult = await GitService.execGit(["config", "user.name"]);
@@ -148,6 +160,15 @@ class GitService {
 
       const result = await GitService.execGit(args);
       if (result.isError()) return Ok([]);
+
+      if (detail === "full") {
+        const messages = result.ok.stdout
+          .split("\x1e")
+          .map(entry => entry.trim())
+          .filter(entry => entry.length >= RECENT_COMMITS_MIN_LENGTH)
+          .map(entry => entry.slice(0, RECENT_COMMITS_FULL_MAX_CHARS).trim());
+        return Ok(messages);
+      }
 
       const messages = result.ok.stdout
         .split("\n")

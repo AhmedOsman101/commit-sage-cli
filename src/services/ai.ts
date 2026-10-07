@@ -94,7 +94,8 @@ const AiService = {
     if (effectiveFormat === "previous" || recentConfig.enabled === true) {
       const messagesResult = await GitService.getRecentCommitMessages(
         recentConfig.count,
-        recentConfig.scope
+        recentConfig.scope,
+        effectiveFormat === "previous" ? "full" : "subject"
       );
       if (messagesResult.isError()) {
         Log.warning(

@@ -18,8 +18,13 @@ type PromptOptions = {
   language?: CommitLanguage;
   /** AI-only. Injects `## External Context\n<text>` into the prompt. */
   context?: string;
-  /** Recent commit subjects injected as `## Recent commit examples`. */
+  /** Recent commit examples injected as `## Recent commit examples`. */
   recentCommits?: string[];
+  /**
+   * Override `commit.bodyStyle`. Only a future CLI flag would set this;
+   * `previous` skips the config value unless this is present.
+   */
+  bodyStyle?: "subject-only" | "subject-body" | "subject-body-footer";
 };
 
 /**
@@ -61,7 +66,12 @@ async function buildPrompt(
       : await ConfigService.get("commit", "maxLength");
   if (lengthResult.isError()) return Err(lengthResult.error);
 
-  const bodyStyleResult = await ConfigService.get("commit", "bodyStyle");
+  const bodyStyleResult =
+    options.bodyStyle !== undefined
+      ? Ok(options.bodyStyle)
+      : formatResult.ok === "previous"
+        ? Ok(null)
+        : await ConfigService.get("commit", "bodyStyle");
   if (bodyStyleResult.isError()) return Err(bodyStyleResult.error);
 
   const format = formatResult.ok as unknown as CommitFormat;
@@ -71,14 +81,18 @@ async function buildPrompt(
   const bodyStyle = bodyStyleResult.ok as unknown as
     | "subject-only"
     | "subject-body"
-    | "subject-body-footer";
+    | "subject-body-footer"
+    | null;
 
   const languagePrompt = PromptService.getLanguagePrompt(language);
   const template = getTemplate(format, language);
   const blameSection = blameAnalysis.trim()
     ? blameAnalysis
     : "No git blame analysis available.";
-  const bodyStylePrompt = PromptService.getBodyStylePrompt(bodyStyle);
+  const bodyStylePrompt =
+    bodyStyle === null
+      ? "Match the structure of the recent examples: include a body only when the examples typically do, and a footer only when the examples typically do."
+      : PromptService.getBodyStylePrompt(bodyStyle);
   const contextSection = options.context?.trim()
     ? `## Additional Context\n${options.context.trim()}\n\n`
     : "";
@@ -89,9 +103,11 @@ async function buildPrompt(
     );
   }
   const examplesSection =
-    recentCommits.length > 0
-      ? `## Recent commit examples\n${recentCommits.map(message => `- ${message}`).join("\n")}\n\n`
-      : "";
+    recentCommits.length === 0
+      ? ""
+      : format === "previous"
+        ? `## Recent commit examples\nMimic the style of these recent commit messages, including whether they use a body or footer.\n\n${recentCommits.map((message, index) => `${index + 1}.\n\`\`\`\n${message}\n\`\`\``).join("\n\n")}\n\n`
+        : `## Recent commit examples\n${recentCommits.map(message => `- ${message}`).join("\n")}\n\n`;
 
   return Ok(`You generate exactly one git commit message.
 
