@@ -287,6 +287,26 @@ class GitService {
 
     return cmd.isOk() && cmd.ok.stdout.includes("160000");
   }
+  /**
+   * Rename targets by new path (`old -> new`) from `--name-status`.
+   * A path-limited `git diff` disables rename detection, so callers diff
+   * renamed pairs with both paths to keep the `rename from/to` headers.
+   */
+  static async getRenameMap(staged: boolean): Promise<Map<string, string>> {
+    const renames = new Map<string, string>();
+    const args = staged
+      ? ["diff", "--cached", "--name-status"]
+      : ["diff", "--name-status"];
+    const result = await GitService.execGit(args);
+    if (result.isError()) return renames;
+    for (const line of result.ok.stdout.split("\n")) {
+      const [code, oldPath, newPath] = line.split("\t");
+      if (code?.startsWith("R") && oldPath?.trim() && newPath?.trim()) {
+        renames.set(newPath.trim(), oldPath.trim());
+      }
+    }
+    return renames;
+  }
   static async getDiffBlocks(
     diffMode: "staged" | "unstaged"
   ): Promise<Result<string[], Error>> {
@@ -318,14 +338,17 @@ class GitService {
           .split("\n")
           .filter(file => file.trim());
 
+        // Path-limited diffs disable rename detection, so renamed pairs
+        // are diffed with both paths to preserve `rename from/to`.
+        const renames = await GitService.getRenameMap(true);
+
         for (const file of stagedFilesArray) {
           if (!(await GitService.isSubmodule(file))) {
-            const fileDiffResult = await GitService.execGit([
-              "diff",
-              "--cached",
-              "--",
-              file,
-            ]);
+            const oldPath = renames.get(file);
+            const args = oldPath
+              ? ["diff", "--cached", "-M", "--", oldPath, file]
+              : ["diff", "--cached", "--", file];
+            const fileDiffResult = await GitService.execGit(args);
             if (fileDiffResult.isError()) return Err(fileDiffResult.error);
 
             const { stdout: fileDiff } = fileDiffResult.ok;
@@ -352,13 +375,15 @@ class GitService {
           .split("\n")
           .filter(file => file.trim());
 
+        const unstagedRenames = await GitService.getRenameMap(false);
+
         for (const file of unstagedFilesArray) {
           if (!(await GitService.isSubmodule(file))) {
-            const fileDiffResult = await GitService.execGit([
-              "diff",
-              "--",
-              file,
-            ]);
+            const oldPath = unstagedRenames.get(file);
+            const args = oldPath
+              ? ["diff", "-M", "--", oldPath, file]
+              : ["diff", "--", file];
+            const fileDiffResult = await GitService.execGit(args);
             if (fileDiffResult.isError()) return Err(fileDiffResult.error);
 
             const { stdout: fileDiff } = fileDiffResult.ok;
@@ -469,12 +494,34 @@ class GitService {
   }
   static async isNewFile(filePath: string): Promise<boolean> {
     const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
+
+    // Full porcelain (not path-limited): a path-limited status reports a
+    // rename target as `A `, which would mislabel renames as new files.
     const { stdout } = (
-      await GitService.execGit(["status", "--porcelain", normalizedPath])
+      await GitService.execGit(["status", "--porcelain"])
     ).unwrap();
 
-    const status = stdout.slice(0, 2);
-    return status.startsWith("??") || status.startsWith("A ");
+    if (!stdout.trim()) return false;
+
+    const renameTargets = new Set<string>();
+    let isAdded = false;
+    for (const line of stdout.split("\n")) {
+      const status = line.substring(0, 2);
+      if (status.startsWith("R")) {
+        const target = line.split(" -> ")[1]?.trim();
+        if (target) renameTargets.add(target);
+        continue;
+      }
+      const listed = line.slice(3).trim();
+      if (
+        (status.startsWith("??") || status.startsWith("A ")) &&
+        listed === normalizedPath
+      ) {
+        isAdded = true;
+      }
+    }
+
+    return isAdded && !renameTargets.has(normalizedPath);
   }
   static async isFileDeleted(filePath: string): Promise<boolean> {
     const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
