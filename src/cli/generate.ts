@@ -6,6 +6,7 @@ import { resolveOptions, validateOptions } from "@/cli/flags.ts";
 import { runEditor } from "@/cli/handlers/editor.ts";
 import { handleGenerationResult } from "@/cli/handlers/generationResult.ts";
 import { runOffline } from "@/cli/handlers/offline.ts";
+import { applyRefs } from "@/cli/handlers/refs.ts";
 import { selectFilesToStage } from "@/cli/prompts.ts";
 import { Log } from "@/lib/logger.ts";
 import { splitProviderModel } from "@/lib/modelString.ts";
@@ -104,6 +105,15 @@ class GenerateCommand extends Command {
         "--edit",
         "Open the generated message in $EDITOR/$VISUAL before printing."
       )
+      .option(
+        "--ref <token:string>",
+        "Override the configured refs source for this run with explicit tokens. Repeatable: --ref PROJ-1 --ref PROJ-2 renders both.",
+        { collect: true }
+      )
+      .option(
+        "--refs",
+        "Force a single interactive refs prompt for this run, even when commit.refs.source is branch or input."
+      )
       .action(async (opts: Record<string, unknown>) => {
         const runOptions = resolveOptions(opts);
 
@@ -160,6 +170,15 @@ class GenerateCommand extends Command {
 
         let message = result.ok?.message.trim() as string;
         if (!message) throw Log.error("Generated message is empty.").exit();
+
+        // Refs attach post-generation, pre-preview and pre-`--edit`, so the
+        // editor sees the final text. Skipped for --offline (early return
+        // above): formats and refs are AI-only.
+        const refsResult = await applyRefs(message, runOptions);
+        if (refsResult.isError()) {
+          throw Log.error(refsResult.error.message).exit();
+        }
+        message = refsResult.ok;
 
         // --edit: open in $EDITOR, re-read, print final
         if (opts.edit) {

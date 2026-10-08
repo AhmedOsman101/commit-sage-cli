@@ -80,6 +80,13 @@ const DEFAULT_CONFIG: Readonly<Config> = {
     commitLanguage: "english",
     promptForRefs: false,
     customInstructions: "",
+    refs: {
+      enabled: false,
+      source: "prompt",
+      value: "",
+      placement: "end",
+      branchPattern: "[A-Z][A-Z0-9]*-[0-9]+",
+    },
     maxLength: 80,
     bodyStyle: "subject-body",
     recentCommits: {

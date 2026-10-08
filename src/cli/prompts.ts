@@ -1,7 +1,7 @@
 // Copyright (C) 2025 Ahmad Othman
 // Licensed under the GNU General Public License v3.0. See LICENSE for details.
 
-import { Checkbox, Confirm } from "@cliffy/prompt";
+import { Checkbox, Confirm, Input } from "@cliffy/prompt";
 import { Log } from "@/lib/logger.ts";
 import GitService from "@/services/git.ts";
 
@@ -100,9 +100,25 @@ async function confirmPrompt(
   return await Confirm.prompt({ message, default: defaultValue });
 }
 
+/**
+ * Single text input for refs (issue/ticket IDs).
+ *
+ * TTY-guarded. Cancellation (Esc/Ctrl-C) is NOT caught — Cliffy's
+ * `CancelError` propagates to `main.ts`, which exits 130, the same abort
+ * path as every other dismissed prompt. An empty answer is NOT an abort:
+ * it resolves to `""` and the caller omits refs silently.
+ */
+async function promptForRef(): Promise<string> {
+  guardTTY();
+  return await Input.prompt({
+    message: "Enter a ref (e.g. issue or ticket number) to add to the message:",
+  });
+}
+
 export {
   confirmPrompt,
   guardTTY,
+  promptForRef,
   selectFilesToStage,
   selectFormatsToTranslate,
 };

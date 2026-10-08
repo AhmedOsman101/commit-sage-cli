@@ -25,6 +25,14 @@ type GenerateOptions = {
   offline?: boolean;
   /** Open the generated message in `$EDITOR`/`$VISUAL` before printing (from `--edit` flag). */
   edit?: boolean;
+  /**
+   * Explicit ref tokens for this run (from repeatable `--ref`). Wins over
+   * `--refs` and the configured refs source, and implies refs for the run
+   * even when `commit.refs.enabled` is false.
+   */
+  ref?: string[];
+  /** Force a single interactive refs prompt for this run (from `--refs`). Implies refs for the run even when `commit.refs.enabled` is false. */
+  refs?: boolean;
 };
 
 export type { GenerateOptions };

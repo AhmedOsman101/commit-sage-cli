@@ -30,6 +30,8 @@ type CommitConfig = {
   promptForRefs: boolean;
   /** Inline instruction text, or a path to an `.md` file (ADR 005). */
   customInstructions: string;
+  /** Issue/ticket refs footer (ADR 004). */
+  refs: RefsConfig;
   maxLength: number;
   bodyStyle: BodyStyles;
   recentCommits: RecentCommitsConfig;
@@ -46,6 +48,20 @@ type RecentCommitsConfig = {
   enabled: boolean;
   count: number;
   scope: RecentCommitsScope;
+};
+
+const REFS_SOURCES = ["prompt", "branch", "input"] as const;
+type RefsSource = (typeof REFS_SOURCES)[number];
+
+const REFS_PLACEMENTS = ["end", "start", "prefix"] as const;
+type RefsPlacement = (typeof REFS_PLACEMENTS)[number];
+
+type RefsConfig = {
+  enabled: boolean;
+  source: RefsSource;
+  value: string;
+  placement: RefsPlacement;
+  branchPattern: string;
 };
 
 const SUPPORTED_REASONING_LEVELS = [
@@ -175,12 +191,17 @@ export type {
   ProviderType,
   RecentCommitsConfig,
   RecentCommitsScope,
+  RefsConfig,
+  RefsPlacement,
+  RefsSource,
 };
 
 export {
   BODY_STYLES,
   DIFF_STRATEGIES,
   RECENT_COMMITS_SCOPES,
+  REFS_PLACEMENTS,
+  REFS_SOURCES,
   SUPPORTED_API_TYPES,
   SUPPORTED_PROVIDERS,
   SUPPORTED_REASONING_LEVELS,
