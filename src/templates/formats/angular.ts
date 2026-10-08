@@ -130,6 +130,72 @@ refactor(core): データベースクエリを最適化
 - クエリキャッシュを実装
 - コネクションプーリングを追加
 - エラー処理を更新`,
+
+  german: `Erstellen Sie eine Commit-Nachricht im Angular-Format:
+<Typ>(<Bereich>): <Kurzbeschreibung>
+
+[optionaler Textkörper mit Aufzählungspunkten]
+
+Regeln:
+1. Erste Zeile: Typ(Bereich): Zusammenfassung (max. 50 Zeichen)
+2. Bei kleinen Änderungen nur die erste Zeile verwenden
+3. Bei komplexen Änderungen Kernpunkte im Textkörper auflisten:
+   - Jede Zeile beginnt mit "- "
+   - Jede Zeile max. 50 Zeichen
+
+Typen:
+build: Build/Abhängigkeiten
+ci: CI-Konfiguration
+docs: Dokumentation
+feat: Neue Funktion
+fix: Fehlerbehebung
+perf: Leistung
+refactor: Codeänderung
+test: Tests
+
+Beispiele:
+Kleine Änderung:
+feat(api): Datenvalidierungsmethode hinzufügen
+
+Komplexe Änderung:
+refactor(core): Datenbankabfragen optimieren
+
+- Query-Caching implementieren
+- Connection Pooling hinzufügen
+- Fehlerbehandlung aktualisieren`,
+
+  french: `Générez un message de commit au format Angular :
+<type>(<portée>): <résumé court>
+
+[corps optionnel avec liste à puces]
+
+Règles :
+1. Première ligne : type(portée): résumé (max 50 caractères)
+2. Pour les petits changements, utiliser uniquement la première ligne
+3. Pour les changements complexes, lister les points clés dans le corps :
+   - Chaque ligne commence par "- "
+   - Chaque ligne max 50 caractères
+
+Types :
+build: Build/dépendances
+ci: Configuration CI
+docs: Documentation
+feat: Nouvelle fonctionnalité
+fix: Correction de bug
+perf: Performance
+refactor: Modification de code
+test: Tests
+
+Exemples :
+Petit changement :
+feat(api): ajouter méthode de validation des données
+
+Changement complexe :
+refactor(core): optimiser les requêtes base de données
+
+- Implémenter le cache de requêtes
+- Ajouter le pool de connexions
+- Mettre à jour la gestion des erreurs`,
 };
 
 export { angularTemplate };

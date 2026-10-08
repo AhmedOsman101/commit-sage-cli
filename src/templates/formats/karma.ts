@@ -58,6 +58,36 @@ chore(ci): 更新部署脚本至 Node 16`,
 
 例：
 chore(ci): デプロイスクリプトをNode 16に更新`,
+
+  german: `Erstellen Sie eine Commit-Nachricht im Karma-Format:
+<Typ>(<Bereich>): <Nachricht>
+
+Typen:
+- feat: Neue Funktion
+- fix: Fehlerbehebung
+- docs: Dokumentationsänderung
+- style: Formatierung, fehlende Semikolons usw.
+- refactor: Code-Refactoring
+- test: Tests hinzufügen
+- chore: Wartung
+
+Beispiel:
+chore(ci): Deployment-Skript auf Node 16 aktualisieren`,
+
+  french: `Générez un message de commit au format Karma :
+<type>(<portée>): <message>
+
+Types :
+- feat: Nouvelle fonctionnalité
+- fix: Correction de bug
+- docs: Modification de documentation
+- style: Formatage, points-virgules manquants, etc.
+- refactor: Refactorisation de code
+- test: Ajout de tests
+- chore: Maintenance
+
+Exemple :
+chore(ci): mettre à jour le script de déploiement vers Node 16`,
 };
 
 export { karmaTemplate };

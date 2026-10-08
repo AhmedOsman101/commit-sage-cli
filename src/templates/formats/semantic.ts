@@ -58,6 +58,36 @@ feat: 添加用户头像上传功能`,
 
 例：
 feat: ユーザーアバターのアップロード機能を追加`,
+
+  german: `Erstellen Sie eine Commit-Nachricht im semantischen Format:
+Typ: Nachricht
+
+Typen:
+- feat: Neue Funktion
+- fix: Fehlerbehebung
+- docs: Dokumentationsänderungen
+- style: Änderungen am Codestil
+- refactor: Code-Refactoring
+- test: Test-Aktualisierungen
+- chore: Änderungen am Build-Prozess oder Hilfswerkzeugen
+
+Beispiel:
+feat: Benutzer-Avatar-Upload-Funktion hinzufügen`,
+
+  french: `Générez un message de commit au format sémantique :
+type: message
+
+Types :
+- feat: Nouvelle fonctionnalité
+- fix: Correction de bug
+- docs: Modifications de documentation
+- style: Changements de style de code
+- refactor: Refactorisation de code
+- test: Mises à jour des tests
+- chore: Changements du processus de build ou des outils auxiliaires
+
+Exemple :
+feat: ajouter la fonctionnalité de téléchargement d'avatar utilisateur`,
 };
 
 export { semanticTemplate };

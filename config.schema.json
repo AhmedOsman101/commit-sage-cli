@@ -264,6 +264,10 @@
             "emoji",
             "semantic",
             "freeform",
+            "emojiKarma",
+            "google",
+            "atom",
+            "detailed",
             "previous"
           ],
           "description": "Commit message style. Applicable in AI mode only."

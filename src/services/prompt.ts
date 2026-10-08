@@ -156,6 +156,12 @@ const LANGUAGE_ALIASES: Record<string, CommitLanguage> = {
   ja: "japanese",
   jp: "japanese",
   japanese: "japanese",
+  de: "german",
+  german: "german",
+  deutsch: "german",
+  fr: "french",
+  french: "french",
+  francais: "french",
 };
 
 const PromptService = {
@@ -199,6 +205,10 @@ const PromptService = {
         return "请用中文写提交信息。";
       case "japanese":
         return "コミットメッセージを日本語で書いてください。";
+      case "german":
+        return "Bitte schreibe die Commit-Nachricht auf Deutsch.";
+      case "french":
+        return "Veuillez rédiger le message de commit en français.";
       default:
         return "Please write the commit message in English.";
     }
