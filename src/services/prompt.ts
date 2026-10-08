@@ -3,8 +3,9 @@ import { selectFormatsToTranslate } from "@/cli/prompts.ts";
 import { LanguageTranslationDeclinedError } from "@/lib/errors.ts";
 import { Log } from "@/lib/logger.ts";
 import type { CommitFormat, CommitLanguage } from "@/lib/types/commit.ts";
+import { COMMIT_FORMATS } from "@/lib/types/commit.ts";
 import ConfigService from "@/services/config.ts";
-import { CustomInstructionsService } from "@/services/customInstructions.ts";
+import CustomInstructionsService from "@/services/customInstructions.ts";
 import { TemplateTranslationService } from "@/services/templateTranslation.ts";
 import TranslationsService from "@/services/translations.ts";
 import { getTemplate } from "@/templates/index.ts";
@@ -33,22 +34,13 @@ type PromptOptions = {
 };
 
 /**
- * Formats whose instructions can be translated. `previous` is excluded: it
- * has no template of its own (it defers to recent examples), so there is
- * nothing to translate.
+ * Every `COMMIT_FORMATS` member except `previous`, which has no template of
+ * its own (it defers to recent examples) and so has nothing to translate.
+ * Derived rather than hand-listed so a future format can't be forgotten.
  */
-const TRANSLATABLE_FORMATS: readonly CommitFormat[] = [
-  "conventional",
-  "angular",
-  "karma",
-  "semantic",
-  "emoji",
-  "freeform",
-  "emojiKarma",
-  "google",
-  "atom",
-  "detailed",
-];
+const TRANSLATABLE_FORMATS = COMMIT_FORMATS.filter(
+  (format): format is Exclude<CommitFormat, "previous"> => format !== "previous"
+);
 
 /**
  * Translate and cache whichever formats the user ticks, then return the
@@ -68,19 +60,15 @@ async function resolveCustomLanguageTemplate(
     return Err(
       new LanguageTranslationDeclinedError(
         language,
-        "this run is not interactive. Set a native language, or re-run in a terminal to translate it."
+        "this run is not interactive.",
+        "Set commit.commitLanguage to a native language, or re-run in a terminal to translate and cache it."
       )
     );
   }
 
-  // `previous` has no template of its own; it falls back to conventional
-  // both here and in getTemplate, so translate and cache conventional.
-  const requested = format === "previous" ? "conventional" : format;
-  const candidates = TRANSLATABLE_FORMATS.filter(
-    candidate => candidate !== requested
-  );
+  const requested = effectiveFormat(format);
   const selection = await selectFormatsToTranslate(
-    [requested, ...candidates],
+    TRANSLATABLE_FORMATS,
     requested
   );
 
@@ -89,20 +77,32 @@ async function resolveCustomLanguageTemplate(
     return Err(
       new LanguageTranslationDeclinedError(
         language,
-        "no formats were selected."
+        "no formats were selected.",
+        "Re-run and select the format to translate."
       )
     );
   }
 
-  // Fill the cache for everything ticked, in the requested format first so a
-  // later failure still leaves the run with what it needs.
+  // Honour the checkbox exactly: un-ticking the requested format is a decline,
+  // not a request to translate it anyway. Requested format goes first so a
+  // failure on a bonus format can't cost the run what it actually needs.
   const ordered = [
     requested,
     ...selection.filter(candidate => candidate !== requested),
   ];
+  if (!selection.includes(requested)) {
+    return Err(
+      new LanguageTranslationDeclinedError(
+        language,
+        "the requested format was not selected.",
+        "Re-run and leave the requested format ticked to translate it."
+      )
+    );
+  }
+
   let requestedTemplate: string | null = null;
 
-  for (const target of ordered as CommitFormat[]) {
+  for (const target of ordered) {
     const cached = await TranslationsService.getCachedTemplate(
       language,
       target
@@ -116,7 +116,17 @@ async function resolveCustomLanguageTemplate(
       language,
       target
     );
-    if (translated.isError()) return Err(translated.error);
+    if (translated.isError()) {
+      // A bonus format failing is not fatal — the run may still succeed on
+      // the requested one, and the user can retry the extra later.
+      if (target !== requested) {
+        Log.warning(
+          `Skipping "${target}" for ${language}: ${translated.error.message}`
+        );
+        continue;
+      }
+      return Err(translated.error);
+    }
 
     const saved = await TranslationsService.saveCachedTemplate(
       language,
@@ -140,22 +150,23 @@ async function resolveCustomLanguageTemplate(
 }
 
 /**
- * Build the full prompt that will be sent to the model.
+ * `previous` has no template of its own — it defers to recent examples and
+ * `getTemplate` resolves it to `conventional`. Translation and the cache must
+ * agree on that resolution, so both go through here.
+ */
+function effectiveFormat(
+  format: CommitFormat
+): Exclude<CommitFormat, "previous"> {
+  return format === "previous" ? "conventional" : format;
+}
+
+/**
+ * Resolved-template cache for the run, keyed `language|format`.
  *
- * Resolution chain for each setting:
- *   `options.X ?? ConfigService.get(...)`
- * (ConfigService.get already falls back to DEFAULT_CONFIG when the user
- * never set the key.)
- *
- * `commitLanguage` resolves in three steps (ADR 003):
- *   1. native template (english, russian, …) → used directly
- *   2. cached `[language][format]` entry in translations.json → used silently
- *   3. neither → offer to translate once; decline or non-TTY surfaces as
- *      `LanguageTranslationDeclinedError` and the caller exits 0.
- *
- * Memoized on `language|format` because the token-budget trim loop rebuilds
- * this prompt up to four times per run — without it, one run could prompt
- * and pay for the same translation several times over.
+ * Memoized because the token-budget trim loop in `ai.ts` rebuilds the prompt
+ * up to four times per run — without this, one run could prompt the user and
+ * pay for the same translation several times over. Rejections are cached too:
+ * a declined translation must not re-prompt mid-run.
  */
 const templateMemo = new Map<string, Promise<Result<string>>>();
 
@@ -167,23 +178,25 @@ async function resolveTemplate(
   if (native !== null) return Ok(getTemplate(format, native));
 
   // Custom language: cache first (silent), then offer to translate.
-  const effectiveFormat = format === "previous" ? "conventional" : format;
-  const memoKey = `${rawLanguage}|${effectiveFormat}`;
+  const effective = effectiveFormat(format);
+  const memoKey = `${rawLanguage}|${effective}`;
   const memoized = templateMemo.get(memoKey);
   if (memoized !== undefined) return await memoized;
 
   const pending = (async (): Promise<Result<string>> => {
+    // resolveCustomLanguageTemplate re-checks the cache per format; this
+    // early read is the silent-hit fast path that skips the prompt entirely.
     const cached = await TranslationsService.getCachedTemplate(
       rawLanguage,
-      effectiveFormat
+      effective
     );
     if (cached !== null) {
       Log.debug(
-        `[prompt] Using cached translation ${rawLanguage}/${effectiveFormat}`
+        `[prompt] Using cached translation ${rawLanguage}/${effective}`
       );
       return Ok(cached);
     }
-    return await resolveCustomLanguageTemplate(rawLanguage, effectiveFormat);
+    return await resolveCustomLanguageTemplate(rawLanguage, effective);
   })();
 
   // Cache rejections too: a decline must not re-prompt within the same run.
@@ -409,9 +422,11 @@ const PromptService = {
         return "Bitte schreibe die Commit-Nachricht auf Deutsch.";
       case "french":
         return "Veuillez rédiger le message de commit en français.";
+      case "english":
+        return "Please write the commit message in English.";
       default:
-        // Custom language: the format template is translated, so ask for the
-        // message itself in the same language by name.
+        // Custom language (normalizeLanguage returned null): the format
+        // template is translated, so ask for the message itself by name.
         return rawLanguage
           ? `Please write the commit message in ${rawLanguage}.`
           : "Please write the commit message in English.";

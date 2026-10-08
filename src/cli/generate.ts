@@ -4,9 +4,9 @@
 import { Command } from "@cliffy/command";
 import { resolveOptions, validateOptions } from "@/cli/flags.ts";
 import { runEditor } from "@/cli/handlers/editor.ts";
+import { handleGenerationResult } from "@/cli/handlers/generationResult.ts";
 import { runOffline } from "@/cli/handlers/offline.ts";
 import { selectFilesToStage } from "@/cli/prompts.ts";
-import { LanguageTranslationDeclinedError } from "@/lib/errors.ts";
 import { Log } from "@/lib/logger.ts";
 import { splitProviderModel } from "@/lib/modelString.ts";
 import { Spinner } from "@/lib/spinner.ts";
@@ -156,12 +156,7 @@ class GenerateCommand extends Command {
         spinner.start();
         const result = await AiService.generateMessage(runOptions);
         spinner.stop();
-        // Declining to translate an unknown language is a choice, not a
-        // failure (ADR 003) — warn and exit 0 so pipes and CI stay happy.
-        if (result.error instanceof LanguageTranslationDeclinedError) {
-          throw Log.warning(result.error.message).exit(0);
-        }
-        if (result.isError()) throw Log.error(result.error.message).exit();
+        handleGenerationResult(result);
 
         let message = result.ok?.message.trim() as string;
         if (!message) throw Log.error("Generated message is empty.").exit();

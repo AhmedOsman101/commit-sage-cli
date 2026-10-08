@@ -62,19 +62,16 @@ async function selectFilesToStage(): Promise<string[]> {
  * TTY-guarded. Returns `null` when the user cancels (Ctrl-C) — callers treat
  * that as declining the whole translation.
  */
-async function selectFormatsToTranslate(
-  available: readonly string[],
-  preselected: string
-): Promise<string[] | null> {
+async function selectFormatsToTranslate<T extends string>(
+  available: readonly T[],
+  preselected: T
+): Promise<T[] | null> {
   if (available.length === 0) return [];
 
   guardTTY();
 
-  // One format means no choice to make — skip the UI entirely.
-  if (available.length === 1) return [available[0] as string];
-
   try {
-    const selected = await Checkbox.prompt<string>({
+    const selected = await Checkbox.prompt<T>({
       message:
         "Translate these format instructions too (space = toggle, enter = confirm):",
       options: available.map(format => ({
@@ -83,7 +80,9 @@ async function selectFormatsToTranslate(
         checked: format === preselected,
       })),
     });
-    return selected ?? null;
+    // Cliffy widens T to string internally; the values came from
+    // `available`, so narrowing back is safe.
+    return (selected ?? null) as T[] | null;
   } catch {
     // Cliffy throws on cancel; a cancel is a decline, not a crash.
     return null;

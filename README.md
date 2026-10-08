@@ -351,7 +351,7 @@ Ollama needs no key. Keys stored in the JSON file follow the same `provider/mode
 }
 ```
 
-The file wins only when the value ends in `.md` **and** that file is readable; anything else is treated as literal text. That includes a `.md` path that doesn't exist — the value is used verbatim rather than failing the run, so a typo degrades to literal instructions instead of an error.
+The file wins only when the value ends in `.md` **and** that file is readable; anything else is treated as literal text. A leading `~` expands to your home directory. That includes a `.md` path that doesn't exist — the value is used verbatim rather than failing the run, so a typo degrades to literal instructions instead of an error.
 
 Empty (the default) means the section is omitted entirely, at zero prompt cost. Custom instructions are standing guidance you set once; `--context` is the one-shot equivalent for a single run.
 
@@ -365,7 +365,9 @@ AI-only, like `--context` and `--format` — ignored under `--offline`.
 
 Tags that normalize to one of those work too — `en`, `en-US`, `jp`, `deutsch`, `francais`.
 
-Anything else is a **custom language**. The first run with an untranslated language asks whether to translate the format instructions, showing a checkbox list with the format you asked for pre-selected — press Enter to translate just that one, or tick more to fill the cache in the same pass. Translate uses your configured provider and costs one call per selected format.
+Anything else is a **custom language**. The first run with an untranslated language asks whether to translate the format instructions, showing a checkbox list with the format you asked for pre-selected — press Enter to translate just that one, or tick more to fill the cache in the same pass. Translate uses your configured provider and costs one call per selected format. Formats you tick beyond the requested one are best-effort: if one fails to translate, it's skipped with a warning and the run continues on the requested format.
+
+Un-ticking the pre-selected format counts as declining, same as cancelling.
 
 Declining the prompt, cancelling it, or running without a TTY all count as declined: commit-sage warns and exits 0, so pipes and CI are never blocked by an unsupported language.
 
@@ -381,7 +383,7 @@ Translations are cached in `translations.json` beside your config file, keyed by
 
 Cached entries are used silently — no prompt on later runs. **To invalidate one, delete it:** edit `translations.json` and remove the entry (the language/format pair, or the whole language), then the next run re-translates. There is no expiry and no refresh flag; a cached translation stays until you remove it.
 
-`previous` has no template of its own, so it is never translated — it mimics your recent commit history instead.
+`previous` has no template of its own — it mimics your recent commit history — so it is never offered for translation. It reuses the `conventional` template when a custom language is active.
 
 ## Contributing
 

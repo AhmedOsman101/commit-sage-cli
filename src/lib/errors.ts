@@ -32,10 +32,9 @@ class EmptyCommitMessageError extends Error {
  * layer stays silent and the CLI prints exactly once.
  */
 class LanguageTranslationDeclinedError extends Error {
-  constructor(language: string, detail: string, options: ErrorOptions = {}) {
+  constructor(language: string, reason: string, nextStep: string) {
     super(
-      `Not translating commit format instructions into "${language}": ${detail} Using the english template instead.`,
-      options
+      `Not translating commit format instructions into "${language}": ${reason} No message was generated. ${nextStep}`
     );
     this.name = new.target.name;
   }

@@ -1,8 +1,22 @@
+import { join } from "node:path";
 import { Ok, type Result } from "lib-result";
+import { HOME_DIR } from "@/lib/constants.ts";
 import { Log } from "@/lib/logger.ts";
 import FileSystemService from "@/services/fileSystem.ts";
 
 const MARKDOWN_SUFFIX = ".md";
+
+/**
+ * Expand a leading `~` to the home directory. Config files are hand-edited,
+ * so `~/.config/...` is the path people actually write; without this the
+ * whole tilde path would be injected as literal instruction text.
+ */
+function expandHome(path: string): string {
+  if (path !== "~" && !path.startsWith("~/") && !path.startsWith("~\\")) {
+    return path;
+  }
+  return join(HOME_DIR, path.slice(1));
+}
 
 /**
  * Decide whether `customInstructions` is a path or literal text (ADR 005).
@@ -20,9 +34,10 @@ async function isInstructionFile(
 ): Promise<{ isFile: true; path: string } | { isFile: false }> {
   if (!value.endsWith(MARKDOWN_SUFFIX)) return { isFile: false };
 
-  const exists = await FileSystemService.fileExists(value);
+  const path = expandHome(value);
+  const exists = await FileSystemService.fileExists(path);
   return exists.isOk() && exists.ok
-    ? { isFile: true, path: value }
+    ? { isFile: true, path }
     : {
         isFile: false,
       };
@@ -60,8 +75,7 @@ async function resolveCustomInstructions(
 }
 
 const CustomInstructionsService = {
-  isInstructionFile,
   resolveCustomInstructions,
 };
 
-export { CustomInstructionsService };
+export { CustomInstructionsService as default, CustomInstructionsService };

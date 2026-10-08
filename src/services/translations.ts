@@ -24,11 +24,13 @@ type TranslationsFile = Record<string, Partial<Record<CommitFormat, string>>>;
  * generation, and the rewrite that follows will repair the file.
  */
 async function readTranslations(): Promise<TranslationsFile> {
+  // Probe existence first so "no cache yet" is a silent normal case rather
+  // than an error message we then have to string-match to recognize.
+  const exists = await FileSystemService.fileExists(TRANSLATIONS_PATH);
+  if (!exists.isOk() || !exists.ok) return {};
+
   const readResult = await FileSystemService.readFile(TRANSLATIONS_PATH);
   if (readResult.isError()) {
-    // Not-found is expected; anything else is worth surfacing but still
-    // non-fatal.
-    if (readResult.error.message.includes("doesn't exist")) return {};
     Log.warning(
       `Could not read ${TRANSLATIONS_PATH} (${readResult.error.message}) — treating the translation cache as empty`
     );
@@ -112,9 +114,7 @@ async function saveCachedTemplate(
 }
 
 const TranslationsService = {
-  TRANSLATIONS_PATH,
   getCachedTemplate,
-  readTranslations,
   saveCachedTemplate,
 };
 

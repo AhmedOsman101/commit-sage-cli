@@ -123,8 +123,7 @@ async function translateFormatTemplate(
 }
 
 const TemplateTranslationService = {
-  buildTranslationPrompt,
   translateFormatTemplate,
 };
 
-export { TemplateTranslationService };
+export { TemplateTranslationService as default, TemplateTranslationService };
