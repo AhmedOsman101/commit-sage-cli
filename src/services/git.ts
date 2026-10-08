@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import * as path from "node:path";
 import { Err, ErrFromText, ErrFromUnknown, Ok, type Result } from "lib-result";
+import { DEFAULT_CONFIG } from "@/lib/constants.ts";
 import {
   CommandError,
   NoChangesDetectedError,
@@ -9,7 +10,8 @@ import {
 import { Log } from "@/lib/logger.ts";
 
 import type { CommandOutput } from "@/lib/types/index.ts";
-import CommandService from "@/services/command.ts";
+import CommandService, { isCommandTimeout } from "@/services/command.ts";
+import ConfigService from "@/services/config.ts";
 import FileSystemService from "@/services/fileSystem.ts";
 
 const RECENT_COMMITS_MAX_COUNT = 20;
@@ -49,11 +51,49 @@ class GitService {
     Log.debug(`[gitService.initialize] EXIT repoPath=${repoPath.ok}`);
     return repoPath.ok;
   }
+  /**
+   * Resolve `git.timeoutMs` (0 disables the timeout). Falls back to the
+   * compiled default when unset or invalid.
+   */
+  static async getTimeoutMs(): Promise<number> {
+    const fallback = (DEFAULT_CONFIG.git as unknown as Record<string, number>)
+      .timeoutMs;
+    const result = await ConfigService.get("git", "timeoutMs");
+    if (result.isError()) return fallback;
+    const value = result.ok as unknown;
+    if (typeof value === "number" && Number.isFinite(value) && value >= 0)
+      return Math.floor(value);
+    return fallback;
+  }
   static async execGit(
-    args: string[]
+    args: string[],
+    options: { timeoutMs?: number } = {}
   ): Promise<Result<CommandOutput, CommandError>> {
-    const cmd = await CommandService.execute("git", args, GitService.repoPath);
-    if (cmd.isError()) return Err(cmd.error);
+    const timeoutMs = options.timeoutMs ?? (await GitService.getTimeoutMs());
+    const cmd = await CommandService.execute("git", args, GitService.repoPath, {
+      timeoutMs,
+    });
+    if (cmd.isError()) {
+      if (isCommandTimeout(cmd.error)) {
+        return Err(
+          new CommandError(
+            `${cmd.error.message} (increase git.timeoutMs if this is a slow operation)`,
+            cmd.error.command,
+            cmd.error.stdout !== undefined ||
+              cmd.error.stderr !== undefined ||
+              cmd.error.code !== undefined
+              ? {
+                  stdout: cmd.error.stdout ?? "",
+                  stderr: cmd.error.stderr ?? "",
+                  code: cmd.error.code ?? 0,
+                }
+              : undefined,
+            { cause: { timedOut: true, timeoutMs } }
+          )
+        );
+      }
+      return Err(cmd.error);
+    }
 
     const { stderr, code } = cmd.ok;
 
@@ -159,7 +199,15 @@ class GitService {
       }
 
       const result = await GitService.execGit(args);
-      if (result.isError()) return Ok([]);
+      if (result.isError()) {
+        if (isCommandTimeout(result.error)) {
+          const timeoutMs = await GitService.getTimeoutMs();
+          Log.warning(
+            `Recent commits timed out after ${timeoutMs}ms — continuing without examples (increase git.timeoutMs if this keeps happening)`
+          );
+        }
+        return Ok([]);
+      }
 
       if (detail === "full") {
         const messages = result.ok.stdout
@@ -450,12 +498,21 @@ class GitService {
     return false;
   }
   static async isGitRepo(): Promise<boolean> {
-    const cmd = await CommandService.execute("git", [
-      "rev-parse",
-      "--is-inside-work-tree",
-    ]);
+    const cmd = await CommandService.execute(
+      "git",
+      ["rev-parse", "--is-inside-work-tree"],
+      Deno.cwd(),
+      { timeoutMs: await GitService.getTimeoutMs() }
+    );
 
-    if (cmd.isError()) return false;
+    if (cmd.isError()) {
+      if (isCommandTimeout(cmd.error)) {
+        Log.warning(
+          `Git repo check timed out after ${await GitService.getTimeoutMs()}ms — treating as not a repo (increase git.timeoutMs if this keeps happening)`
+        );
+      }
+      return false;
+    }
 
     const { stdout, stderr, code } = cmd.ok;
     return code === 0 && !stderr && stdout.startsWith("true");

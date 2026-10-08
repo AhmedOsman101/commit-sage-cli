@@ -255,6 +255,21 @@ const MODEL_SCHEMA = {
     'Canonical model string "provider/model" (first slash splits provider from model id)',
 } as const;
 
+// ----- Section: git -----
+
+const GIT_CONFIG_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    timeoutMs: {
+      type: "integer",
+      minimum: 0,
+      description:
+        "Timeout in milliseconds for git subprocesses (diff, status, blame, log). Set to 0 to disable the timeout.",
+    },
+  },
+} as const;
+
 // ----- Root (assembled last so section refs resolve) -----
 
 const ROOT_SCHEMA = {
@@ -271,6 +286,7 @@ const ROOT_SCHEMA = {
     generation: GENERATION_CONFIG_SCHEMA,
     providers: PROVIDERS_CONFIG_SCHEMA,
     commit: COMMIT_CONFIG_SCHEMA,
+    git: GIT_CONFIG_SCHEMA,
   },
 } as const;
 

@@ -319,6 +319,21 @@ class ConfigService {
         DEFAULT_CONFIG.commit as unknown as Record<string, unknown>
       ) || changed;
 
+    if (
+      !("git" in config) ||
+      typeof config.git !== "object" ||
+      config.git === null
+    ) {
+      config.git = {};
+      changed = true;
+    }
+    const git = config.git as Record<string, unknown>;
+    changed =
+      ConfigService.migrateSectionDefaults(
+        git,
+        DEFAULT_CONFIG.git as unknown as Record<string, unknown>
+      ) || changed;
+
     changed =
       ConfigService.migrateSectionDefaults(
         defaults,

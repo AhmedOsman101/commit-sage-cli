@@ -36,6 +36,9 @@ const TYPE_MAP: Record<
     bodyStyle: "string",
     recentCommits: "object",
   },
+  git: {
+    timeoutMs: "number",
+  },
 };
 
 const PROVIDER_ENTRY_MAP: Record<string, "boolean" | "number" | "string"> = {

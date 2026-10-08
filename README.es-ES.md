@@ -306,6 +306,7 @@ No confundas el string `model` guardado con el flag por ejecución
 | `generation` | `retryDelay`         | `number`  | `1000`              | Backoff de reintento                                                                                              |
 | `generation` | `temperature`        | `number`  | `0.7`               | Temperatura del modelo (default global; presets por modelo pueden sobrescribir)                                   |
 | `generation` | `maxPromptTokens`    | `number`  | `100000`            | Tokens de diff enviados a la IA (truncado contado por tokens)                                                     |
+| `generation` | `maxOutputTokens`    | `number`  | `4096`              | Presupuesto de salida por intento; overrides por proveedor/modelo ganan; se duplica en reintentos por truncado (techo 32768) |
 | `generation` | `diffStrategy`       | `string`  | `"auto"`            | `staged` / `unstaged` / `auto`                                                                                    |
 | `providers`  | `defaults.timeoutMs` | `number`  | `60000`             | Timeout compartido                                                                                                |
 | `providers`  | `defaults.reasoning` | `string`  | `"off"`             | Default compartido de reasoning                                                                                   |
@@ -315,12 +316,14 @@ No confundas el string `model` guardado con el flag por ejecución
 | `providers`  | `<name>.apiType`     | `string`  | hereda              | `openai-chat`, `openai-responses`, `anthropic`                                                                    |
 | `commit`     | `autoCommit`         | `boolean` | `false`             | Omite confirmación `Commit changes?` (o usa `-y/--yes`)                                                           |
 | `commit`     | `autoPush`           | `boolean` | `false`             | Omite confirmación `Push to <branch>?` (o usa `-y/--yes`)                                                         |
-| `commit`     | `commitFormat`       | `string`  | `"conventional"`    | `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform` (`freeform` solo IA)                          |
+| `commit`     | `commitFormat`       | `string`  | `"conventional"`    | `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform` (`freeform` solo IA), `previous` (estilo del historial) |
 | `commit`     | `onlyStagedChanges`  | `boolean` | `true`              | Cuando es true y nada staged tras el selector, `commit` sale con `No staged changes`; si no, cae a `diffStrategy` |
 | `commit`     | `commitLanguage`     | `string`  | `"english"`         | BCP-47, guardado tal cual (`en`, `en-US`, `jp` …); `--lang` sobrescribe                                           |
 | `commit`     | `promptForRefs`      | `boolean` | `false`             | Reservado (preparado para futuro prompt de refs)                                                                  |
 | `commit`     | `maxLength`          | `number`  | `80`                | Límite de subject; `--max-length` por ejecución                                                                   |
 | `commit`     | `bodyStyle`          | `string`  | `"subject-body"`    | `subject-only`, `subject-body`, `subject-body-footer`                                                             |
+| `commit`     | `recentCommits`      | `object`  | `{enabled:false,count:5,scope:"all"}` | Mensajes recientes como ejemplos de estilo (`enabled`, `count` 1–20, `scope` `all`/`mine`); vía `config edit`, `get/set` superficial |
+| `git`        | `timeoutMs`          | `number`  | `30000`             | Timeout de subprocesos git (diff, status, blame, log); `0` desactiva; blame/log degradan a vacío con aviso, diff es error duro |
 
 Las variables de entorno siguen siendo alternativa para la clave: define `GEMINI_API_KEY`,
 `OPENAI_API_KEY`, etc. antes de ejecutar. Para una sola ejecución:

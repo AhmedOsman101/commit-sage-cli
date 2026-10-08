@@ -306,6 +306,7 @@ Don't confuse the stored `model` string with the per-run
 | `generation` | `retryDelay`         | `number`  | `1000`              | Retry backoff                                                                                                              |
 | `generation` | `temperature`        | `number`  | `0.7`               | Model temperature (global default; per-model presets may override)                                                         |
 | `generation` | `maxPromptTokens`    | `number`  | `100000`            | Diff tokens sent to AI (token-counted truncation)                                                                          |
+| `generation` | `maxOutputTokens`    | `number`  | `4096`              | Output budget per attempt; per-provider/model overrides win; doubled on truncation retries (cap 32768)                      |
 | `generation` | `diffStrategy`       | `string`  | `"auto"`            | `staged` / `unstaged` / `auto`                                                                                             |
 | `providers`  | `defaults.timeoutMs` | `number`  | `60000`             | Shared request timeout                                                                                                     |
 | `providers`  | `defaults.reasoning` | `string`  | `"off"`             | Shared reasoning default                                                                                                   |
@@ -315,12 +316,14 @@ Don't confuse the stored `model` string with the per-run
 | `providers`  | `<name>.apiType`     | `string`  | inherits            | `openai-chat`, `openai-responses`, `anthropic`                                                                             |
 | `commit`     | `autoCommit`         | `boolean` | `false`             | Skip `Commit changes?` confirm (or use `-y/--yes`)                                                                         |
 | `commit`     | `autoPush`           | `boolean` | `false`             | Skip `Push to <branch>?` confirm (or use `-y/--yes`)                                                                       |
-| `commit`     | `commitFormat`       | `string`  | `"conventional"`    | `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform` (`freeform` AI-only)                                   |
+| `commit`     | `commitFormat`       | `string`  | `"conventional"`    | `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform` (`freeform` AI-only), `previous` (recent-history style) |
 | `commit`     | `onlyStagedChanges`  | `boolean` | `true`              | When true and nothing staged after picker, `commit` exits 0 with `No staged changes`; else falls through to `diffStrategy` |
 | `commit`     | `commitLanguage`     | `string`  | `"english"`         | BCP-47, stored as-given (`en`, `en-US`, `jp` …); `--lang` overrides                                                        |
 | `commit`     | `promptForRefs`      | `boolean` | `false`             | Reserved (wired for future refs prompt)                                                                                    |
 | `commit`     | `maxLength`          | `number`  | `80`                | Subject truncation limit; `--max-length` per-run                                                                           |
 | `commit`     | `bodyStyle`          | `string`  | `"subject-body"`    | `subject-only`, `subject-body`, `subject-body-footer`                                                                      |
+| `commit`     | `recentCommits`      | `object`  | `{enabled:false,count:5,scope:"all"}` | Recent commit messages as style examples (`enabled`, `count` 1–20, `scope` `all`/`mine`); managed via `config edit`, `get/set` stays shallow |
+| `git`        | `timeoutMs`          | `number`  | `30000`             | Git subprocess timeout (diff, status, blame, log); `0` disables; blame/log degrade to empty with a warning, diff is a hard error |
 
 Environment variables remain an alternative for the key: set `GEMINI_API_KEY`,
 `OPENAI_API_KEY`, etc. before running. Single-run:

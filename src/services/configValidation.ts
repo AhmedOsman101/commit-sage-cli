@@ -92,6 +92,11 @@ const ConfigSchema = z.strictObject({
       })
       .optional(),
   }),
+  git: z
+    .object({
+      timeoutMs: z.uint32(),
+    })
+    .optional(),
 });
 
 type ConfigSchema = z.infer<typeof ConfigSchema>;
@@ -271,6 +276,20 @@ const ConfigValidationService = {
     }
     return Ok(true);
   },
+  validateGit(git: object): Result<boolean> {
+    if ("timeoutMs" in git) {
+      const validation = this.validateInt(
+        (git as Record<string, unknown>).timeoutMs,
+        0
+      );
+      if (validation.isError()) {
+        throw Log.error(
+          `Error at key git.timeoutMs => ${validation.error.message}`
+        ).exit();
+      }
+    }
+    return Ok(true);
+  },
   validate(config: unknown): Result<Config> {
     let configContent: unknown;
 
@@ -380,6 +399,17 @@ const ConfigValidationService = {
         ) {
           this.validateProviders(
             (configContent as Record<string, unknown>).providers as object
+          );
+        }
+      }
+
+      if ("git" in configContent) {
+        if (
+          typeof (configContent as Record<string, unknown>).git === "object" &&
+          (configContent as Record<string, unknown>).git !== null
+        ) {
+          this.validateGit(
+            (configContent as Record<string, unknown>).git as object
           );
         }
       }
@@ -599,6 +629,26 @@ const ConfigValidationService = {
                   `Error at key providers.${name}.timeoutMs => ${r.error.message}`
                 );
               }
+            }
+          }
+        }
+      }
+
+      if ("git" in configContent) {
+        if (
+          typeof (configContent as Record<string, unknown>).git === "object" &&
+          (configContent as Record<string, unknown>).git !== null
+        ) {
+          const g = (configContent as Record<string, unknown>).git as Record<
+            string,
+            unknown
+          >;
+          if ("timeoutMs" in g) {
+            const r = this.validateInt(g.timeoutMs, 0);
+            if (r.isError()) {
+              return ErrFromText(
+                `Error at key git.timeoutMs => ${r.error.message}`
+              );
             }
           }
         }

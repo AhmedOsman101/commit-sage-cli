@@ -7,17 +7,57 @@ const CommandService = {
   async execute(
     cmd: string,
     args: string[] = [],
-    cwd = Deno.cwd()
+    cwd = Deno.cwd(),
+    options: Deno.CommandOptions & { timeoutMs?: number } = {}
   ): Promise<Result<CommandOutput, CommandError>> {
+    const fullCommand = `${cmd} ${args.join(" ")}`.trim();
+    const timeoutMs = options.timeoutMs;
+    const timeoutEnabled =
+      typeof timeoutMs === "number" &&
+      Number.isFinite(timeoutMs) &&
+      timeoutMs > 0;
+    const timeoutSignal = timeoutEnabled
+      ? AbortSignal.timeout(timeoutMs as number)
+      : undefined;
+    const signal =
+      timeoutSignal !== undefined
+        ? options.signal !== undefined
+          ? AbortSignal.any([options.signal, timeoutSignal])
+          : timeoutSignal
+        : options.signal;
+    const isTimeout = () => timeoutSignal?.aborted === true;
+    const timeoutError = (output?: {
+      stdout: string;
+      stderr: string;
+      code: number;
+    }) =>
+      new CommandError(
+        `Command timed out after ${timeoutMs}ms: ${fullCommand}`,
+        fullCommand,
+        output,
+        { cause: { timedOut: true, timeoutMs } }
+      );
+
     try {
       const command = new Deno.Command(cmd, {
         args,
         stdout: "piped",
         stderr: "piped",
         cwd,
+        ...(signal !== undefined ? { signal } : {}),
       });
 
       const output = await command.output();
+
+      if (isTimeout()) {
+        return Err(
+          timeoutError({
+            stdout: Decoder.decode(output.stdout),
+            stderr: Decoder.decode(output.stderr),
+            code: output.code,
+          })
+        );
+      }
 
       const stdout = Decoder.decode(output.stdout);
       const stderr = Decoder.decode(output.stderr);
@@ -37,6 +77,10 @@ const CommandService = {
 
       return Ok({ stdout, stderr, code });
     } catch (error) {
+      if (isTimeout()) {
+        return Err(timeoutError());
+      }
+
       let errorMessage = "An unknown error occurred";
 
       if (error instanceof Deno.errors.NotFound) {
@@ -125,4 +169,25 @@ const CommandService = {
   },
 };
 
+/**
+ * True when a `CommandService.execute` failure was a timeout (the
+ * `AbortSignal.timeout` guard fired). Checks the structured
+ * `timedOut` cause first, falling back to the timeout message so
+ * callers stay robust if the cause is ever dropped.
+ */
+function isCommandTimeout(error: unknown): boolean {
+  if (error instanceof CommandError) {
+    if (
+      typeof error.context === "object" &&
+      error.context !== null &&
+      (error.context as Record<string, unknown>).timedOut === true
+    ) {
+      return true;
+    }
+    return error.message.includes("timed out after");
+  }
+  return false;
+}
+
 export default CommandService;
+export { isCommandTimeout };

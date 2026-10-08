@@ -319,6 +319,17 @@
           }
         }
       }
+    },
+    "git": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Timeout in milliseconds for git subprocesses (diff, status, blame, log). Set to 0 to disable the timeout."
+        }
+      }
     }
   }
 }

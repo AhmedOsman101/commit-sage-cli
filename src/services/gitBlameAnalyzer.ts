@@ -2,7 +2,7 @@ import * as path from "node:path";
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
 import { ERROR_MESSAGES } from "@/lib/constants.ts";
 import { Log } from "@/lib/logger.ts";
-import CommandService from "@/services/command.ts";
+import CommandService, { isCommandTimeout } from "@/services/command.ts";
 import FileSystemService from "@/services/fileSystem.ts";
 import GitService from "@/services/git.ts";
 
@@ -92,10 +92,20 @@ class GitBlameAnalyzer {
     const cmdResult = await CommandService.execute(
       "git",
       ["blame", "--line-porcelain", filePath.replaceAll('"', "")],
-      await GitService.initialize()
+      await GitService.initialize(),
+      { timeoutMs: await GitService.getTimeoutMs() }
     );
 
-    if (cmdResult.isError()) return Err(cmdResult.error);
+    if (cmdResult.isError()) {
+      if (isCommandTimeout(cmdResult.error)) {
+        const timeoutMs = await GitService.getTimeoutMs();
+        Log.warning(
+          `Git blame timed out after ${timeoutMs}ms for ${filePath} — continuing without blame (increase git.timeoutMs if this keeps happening)`
+        );
+        return Ok("");
+      }
+      return Err(cmdResult.error);
+    }
     return Ok(cmdResult.ok.stdout);
   }
 

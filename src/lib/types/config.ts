@@ -32,6 +32,10 @@ type CommitConfig = {
   recentCommits: RecentCommitsConfig;
 };
 
+type GitConfig = {
+  timeoutMs: number;
+};
+
 const RECENT_COMMITS_SCOPES = ["all", "mine"] as const;
 type RecentCommitsScope = (typeof RECENT_COMMITS_SCOPES)[number];
 
@@ -123,6 +127,7 @@ type Config = {
   generation: GenerationConfig;
   providers: ProvidersConfig;
   commit: CommitConfig;
+  git: GitConfig;
 };
 
 type ApiService =
@@ -156,6 +161,7 @@ export type {
   ConfigValue,
   DiffStrategy,
   GenerationConfig,
+  GitConfig,
   KnownProvider,
   ModelPreset,
   ProviderDefaults,

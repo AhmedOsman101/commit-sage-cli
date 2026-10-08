@@ -72,6 +72,9 @@ const DEFAULT_CONFIG: Readonly<Config> = {
       scope: "all",
     },
   },
+  git: {
+    timeoutMs: 30_000,
+  },
 };
 
 const ERROR_MESSAGES = {
