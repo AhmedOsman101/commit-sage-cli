@@ -1,3 +1,5 @@
+[English](README.md) | [Español](docs/readme/README.es-ES.md)
+
 # Commit Sage
 
 Generate meaningful git commit messages with AI — or offline static analysis

@@ -1,3 +1,5 @@
+[English](../../README.md) | [Español](README.es-ES.md)
+
 # Commit Sage
 
 Genera mensajes de commit significativos con IA — o análisis estático offline
@@ -6,7 +8,7 @@ Genera mensajes de commit significativos con IA — o análisis estático offlin
 > **v2.0.0** — `commit-sage` es una CLI completa y multiplataforma
 > (`generate`, `commit`, `config`) con sobrescrituras por flags, flujo interactivo de staging
 > y respaldo `--offline`. Cambio incompatible desde v1: `commit-sage` sin argumentos ahora
-> muestra ayuda en lugar de generar silenciosamente. Ver [CHANGELOG](./CHANGELOG.md).
+> muestra ayuda en lugar de generar silenciosamente. Ver [CHANGELOG](../../CHANGELOG.md).
 
 ## Descripción
 
@@ -61,7 +63,7 @@ Los instaladores DMG de macOS y NSIS de Windows también se publican — ver aba
 curl -fsSL https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/main/installer/unix.sh | bash
 ```
 
-Esto ejecuta [`installer/unix.sh`](installer/unix.sh): detecta `linux`/`macos` +
+Esto ejecuta [`installer/unix.sh`](../../installer/unix.sh): detecta `linux`/`macos` +
 `x86_64`/`arm64`, obtiene la última `vX.Y.Z` de la API de GitHub, instala
 en `~/.local/bin/commit-sage` (sobrescribe con `INSTALL_DIR`), opcionalmente
 añade `~/.local/bin` a tu config de shell y verifica con `commit-sage --version`.
@@ -72,7 +74,7 @@ Personaliza:
 INSTALL_DIR=~/bin VERSION=1.8.0 bash <(curl -fsSL https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/main/installer/unix.sh)
 ```
 
-Ver [`installer/README.md`](installer/README.md) para el curl manual + configuración de PATH.
+Ver [`installer/README.md`](../../installer/README.md) para el curl manual + configuración de PATH.
 
 ### AUR (Arch Linux)
 
@@ -89,7 +91,7 @@ que sigue las versiones de GitHub.
 - **Instalador (recomendado):** descarga `commit-sage-setup.exe` desde
   Releases y ejecuta el asistente. Instala en `C:\Program Files\commitSage`,
   añade a `PATH`, crea accesos de Menú Inicio + Escritorio. Construido con
-  [`installer/windows/commit-sage.nsi`](installer/windows/commit-sage.nsi); ver
+  [`installer/windows/commit-sage.nsi`](../../installer/windows/commit-sage.nsi); ver
   `installer/windows/build-installer.ps1`.
 - **Portable:** descarga `commit-sage-windows-x64.exe`, renombra a `commit-sage.exe`,
   colócalo donde quieras en `PATH`.
@@ -420,7 +422,7 @@ Los refs se adjuntan tras generar, antes de la vista previa y del handoff a `--e
 
 ## Contribuciones
 
-¡Contribuciones bienvenidas! Lee [`CONTRIBUTING.md`](CONTRIBUTING.md) primero.
+¡Contribuciones bienvenidas! Lee [`CONTRIBUTING.md`](../../CONTRIBUTING.md) primero.
 
 Formatea antes de hacer commit.
 
@@ -436,7 +438,7 @@ Inspirado por la extensión [CommitSage para VS Code](https://marketplace.visual
 
 ## Licencia
 
-GPLv3 — ver [`LICENSE`](LICENSE).
+GPLv3 — ver [`LICENSE`](../../LICENSE).
 
 ## Contacto
 
