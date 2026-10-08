@@ -1,7 +1,10 @@
 # Keeps the AUR `commit-sage-bin` package in lockstep with GitHub releases.
 #
-# Fires on every published release (including manual `mask release gh`
-# runs). Needs exactly one repository secret:
+# Fires when the Release workflow completes (plus manual dispatch). It must
+# NOT trigger on `release: published` directly: that races the Release
+# workflow, and updpkgsums downloads the release assets, which do not exist
+# until that workflow finishes uploading them. Needs exactly one repository
+# secret:
 #
 #   AUR_SSH_PRIVATE_KEY — private half of a DEDICATED ed25519 key whose
 #   public half is registered on the maintainer's AUR profile. Never reuse
@@ -13,8 +16,9 @@
 name: Publish AUR package
 
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
   workflow_dispatch:
     inputs:
       version:
@@ -30,6 +34,9 @@ concurrency:
 jobs:
   publish:
     name: Update commit-sage-bin
+    # Only run after a successful Release build. A completed-but-failed (or
+    # unpublished-release) run must not touch the AUR package.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     container:
       image: archlinux:base-devel
@@ -66,19 +73,37 @@ jobs:
           }
 
       - name: Resolve version
+        id: resolve
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ inputs.version }}"
           else
-            VERSION="${GITHUB_REF_NAME#v}"
+            # The Release workflow that just completed ran for a release
+            # event; its head branch is that event's tag. Fall back to the
+            # latest release if the tag lookup misses.
+            TAG="${{ github.event.workflow_run.head_branch }}"
+            JSON="$(curl -fsSL "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG" 2>/dev/null || true)"
+            if [ -z "$JSON" ]; then
+              echo "No release found for tag $TAG; falling back to latest release."
+              JSON="$(curl -fsSL "https://api.github.com/repos/${{ github.repository }}/releases/latest")"
+            fi
+            if printf '%s' "$JSON" | grep -q '"draft": *true'; then
+              echo "Release is a draft (e.g. unpublished after build); nothing to publish."
+              echo "publish=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            TAG="$(printf '%s' "$JSON" | grep -o '"tag_name": *"[^"]*"' | head -1 | cut -d'"' -f4)"
+            VERSION="${TAG#v}"
           fi
           # Strict gate: the version ends up inside sed expressions and URLs.
           case "$VERSION" in
             *[!0-9.]* | "" | .* | *.) echo "::error::Invalid version: $VERSION" && exit 1 ;;
           esac
           printf '%s' "$VERSION" > /tmp/aur-publish-version
+          echo "publish=true" >> "$GITHUB_OUTPUT"
 
       - name: Bump package and push to AUR
+        if: steps.resolve.outputs.publish != 'false'
         run: |
           su builder -c '
             set -euo pipefail
