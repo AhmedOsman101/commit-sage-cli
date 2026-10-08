@@ -20,6 +20,7 @@ const COMMIT_FORMATS = [
   "emoji",
   "semantic",
   "freeform",
+  "previous",
 ] as const;
 
 type CommitFormat = (typeof COMMIT_FORMATS)[number];

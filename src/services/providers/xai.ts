@@ -21,7 +21,8 @@ class XaiService extends ModelService {
         (await ConfigService.getProviderApiKey(provider)) ?? undefined;
       const generationOptions = await ModelService.getGenerationOptions(
         provider,
-        modelId
+        modelId,
+        attempt
       );
       const providerOptions = await ModelService.getXaiProviderOptions(
         provider,
@@ -34,12 +35,14 @@ class XaiService extends ModelService {
         middleware: extractReasoningMiddleware({ tagName: "think" }),
       });
 
-      const { text } = await generateText({
+      const { text, finishReason } = await generateText({
         model: wrappedModel,
         prompt,
         ...generationOptions,
         providerOptions,
       });
+
+      ModelService.throwIfTruncated(finishReason, provider, model);
 
       return { message: text, model };
     } catch (error) {

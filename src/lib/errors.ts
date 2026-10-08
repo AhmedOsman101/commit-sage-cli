@@ -21,6 +21,16 @@ class EmptyCommitMessageError extends Error {
   }
 }
 
+class TruncatedResponseError extends Error {
+  constructor(provider: string, detail: string, options: ErrorOptions = {}) {
+    super(
+      `${provider} stopped before the message was complete (${detail}). Raise generation.maxOutputTokens if this keeps happening.`,
+      options
+    );
+    this.name = new.target.name;
+  }
+}
+
 class OpenAiError extends Error {
   constructor(message: string, options: ErrorOptions = {}) {
     super(message, options);
@@ -75,4 +85,5 @@ export {
   NoChangesDetectedError,
   NoRepositoriesFoundError,
   OpenAiError,
+  TruncatedResponseError,
 };

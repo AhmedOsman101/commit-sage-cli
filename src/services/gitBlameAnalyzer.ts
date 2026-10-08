@@ -2,7 +2,7 @@ import * as path from "node:path";
 import { Err, ErrFromText, Ok, type Result } from "lib-result";
 import { ERROR_MESSAGES } from "@/lib/constants.ts";
 import { Log } from "@/lib/logger.ts";
-import CommandService from "@/services/command.ts";
+import CommandService, { isCommandTimeout } from "@/services/command.ts";
 import FileSystemService from "@/services/fileSystem.ts";
 import GitService from "@/services/git.ts";
 
@@ -14,6 +14,15 @@ type BlameInfo = {
   timestamp: number;
   line: string;
 };
+
+/**
+ * Per-file line cap applied to blame text before tokenization, so one
+ * huge file cannot eat the whole `maxPromptTokens` budget. Callers
+ * truncate the rest and warn once naming the affected paths.
+ */
+const MAX_BLAME_LINES_PER_FILE = 50;
+
+const BLAME_TRUNCATION_MARKER = "\n...(truncated)";
 
 class GitBlameAnalyzer {
   static async getGitBlame(
@@ -83,10 +92,20 @@ class GitBlameAnalyzer {
     const cmdResult = await CommandService.execute(
       "git",
       ["blame", "--line-porcelain", filePath.replaceAll('"', "")],
-      await GitService.initialize()
+      await GitService.initialize(),
+      { timeoutMs: await GitService.getTimeoutMs() }
     );
 
-    if (cmdResult.isError()) return Err(cmdResult.error);
+    if (cmdResult.isError()) {
+      if (isCommandTimeout(cmdResult.error)) {
+        const timeoutMs = await GitService.getTimeoutMs();
+        Log.warning(
+          `Git blame timed out after ${timeoutMs}ms for ${filePath} — continuing without blame (increase git.timeoutMs if this keeps happening)`
+        );
+        return Ok("");
+      }
+      return Err(cmdResult.error);
+    }
     return Ok(cmdResult.ok.stdout);
   }
 
@@ -195,6 +214,19 @@ class GitBlameAnalyzer {
       )
       .join("\n");
   }
+  /**
+   * Cap one file's blame text to `maxLines` lines (line-count cap,
+   * applied before tokenization). Returns the input unchanged when it
+   * already fits; otherwise cuts on a line boundary with a marker.
+   */
+  static capBlameLines(
+    analysis: string,
+    maxLines: number = MAX_BLAME_LINES_PER_FILE
+  ): string {
+    const lines = analysis.split("\n");
+    if (lines.length <= maxLines) return analysis;
+    return `${lines.slice(0, maxLines).join("\n")}${BLAME_TRUNCATION_MARKER}`;
+  }
   static async getBlameInfo(
     filePath: string
   ): Promise<Result<BlameInfo[], Error>> {
@@ -231,3 +263,4 @@ class GitBlameAnalyzer {
 }
 
 export default GitBlameAnalyzer;
+export { BLAME_TRUNCATION_MARKER, MAX_BLAME_LINES_PER_FILE };

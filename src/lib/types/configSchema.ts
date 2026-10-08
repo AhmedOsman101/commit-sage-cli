@@ -11,6 +11,7 @@ import { COMMIT_FORMATS } from "@/lib/types/commit.ts";
 import {
   BODY_STYLES,
   DIFF_STRATEGIES,
+  RECENT_COMMITS_SCOPES,
   SUPPORTED_API_TYPES,
   SUPPORTED_REASONING_LEVELS,
 } from "@/lib/types/config.ts";
@@ -50,6 +51,12 @@ const GENERATION_CONFIG_SCHEMA = {
       minimum: 1,
       description:
         "Maximum diff size sent to the model before truncation (token-counted)",
+    },
+    maxOutputTokens: {
+      type: "integer",
+      minimum: 1,
+      description:
+        "Global default output budget per attempt; per-provider and per-model overrides win. Doubled on truncation retries up to a hardcoded ceiling.",
     },
     diffStrategy: {
       type: "string",
@@ -212,6 +219,30 @@ const COMMIT_CONFIG_SCHEMA = {
       description:
         "Controls whether the generated commit message includes only a subject, a subject and body, or a subject, body, and optional footer",
     },
+    recentCommits: {
+      type: "object",
+      additionalProperties: false,
+      description:
+        "Recent commit messages injected as style examples. Managed via config edit; get/set stays shallow.",
+      properties: {
+        enabled: {
+          type: "boolean",
+          description:
+            "Inject recent commit messages as style examples into the prompt",
+        },
+        count: {
+          type: "integer",
+          minimum: 1,
+          maximum: 20,
+          description: "Max examples injected; hard cap 20",
+        },
+        scope: {
+          type: "string",
+          enum: [...RECENT_COMMITS_SCOPES],
+          description: "mine filters to the current user's commits",
+        },
+      },
+    },
   },
 } as const;
 
@@ -222,6 +253,21 @@ const MODEL_SCHEMA = {
   pattern: "^.+/.+$",
   description:
     'Canonical model string "provider/model" (first slash splits provider from model id)',
+} as const;
+
+// ----- Section: git -----
+
+const GIT_CONFIG_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    timeoutMs: {
+      type: "integer",
+      minimum: 0,
+      description:
+        "Timeout in milliseconds for git subprocesses (diff, status, blame, log). Set to 0 to disable the timeout.",
+    },
+  },
 } as const;
 
 // ----- Root (assembled last so section refs resolve) -----
@@ -240,6 +286,7 @@ const ROOT_SCHEMA = {
     generation: GENERATION_CONFIG_SCHEMA,
     providers: PROVIDERS_CONFIG_SCHEMA,
     commit: COMMIT_CONFIG_SCHEMA,
+    git: GIT_CONFIG_SCHEMA,
   },
 } as const;
 

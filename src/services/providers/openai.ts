@@ -27,7 +27,8 @@ class OpenAiService extends ModelService {
       const apiType = await ModelService.getApiType(provider, modelId);
       const generationOptions = await ModelService.getGenerationOptions(
         provider,
-        modelId
+        modelId,
+        attempt
       );
       const providerOptions = await ModelService.getOpenAIProviderOptions({
         forceReasoning: baseURL !== "https://api.openai.com/v1",
@@ -50,12 +51,14 @@ class OpenAiService extends ModelService {
         middleware: extractReasoningMiddleware({ tagName: "think" }),
       });
 
-      const { text } = await generateText({
+      const { text, finishReason } = await generateText({
         model: wrappedModel,
         prompt,
         ...generationOptions,
         providerOptions,
       });
+
+      ModelService.throwIfTruncated(finishReason, provider, model);
 
       return { message: text, model };
     } catch (error) {

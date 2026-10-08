@@ -48,6 +48,11 @@
           "minimum": 1,
           "description": "Maximum diff size sent to the model before truncation (token-counted)"
         },
+        "maxOutputTokens": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Global default output budget per attempt; per-provider and per-model overrides win. Doubled on truncation retries up to a hardcoded ceiling."
+        },
         "diffStrategy": {
           "type": "string",
           "enum": [
@@ -258,7 +263,8 @@
             "karma",
             "emoji",
             "semantic",
-            "freeform"
+            "freeform",
+            "previous"
           ],
           "description": "Commit message style. Applicable in AI mode only."
         },
@@ -286,6 +292,42 @@
             "subject-body-footer"
           ],
           "description": "Controls whether the generated commit message includes only a subject, a subject and body, or a subject, body, and optional footer"
+        },
+        "recentCommits": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Recent commit messages injected as style examples. Managed via config edit; get/set stays shallow.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Inject recent commit messages as style examples into the prompt"
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "description": "Max examples injected; hard cap 20"
+            },
+            "scope": {
+              "type": "string",
+              "enum": [
+                "all",
+                "mine"
+              ],
+              "description": "mine filters to the current user's commits"
+            }
+          }
+        }
+      }
+    },
+    "git": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Timeout in milliseconds for git subprocesses (diff, status, blame, log). Set to 0 to disable the timeout."
         }
       }
     }

@@ -36,6 +36,7 @@ const DEFAULT_CONFIG: Readonly<Config> = {
     retryDelay: 1000,
     temperature: 0.7,
     maxPromptTokens: 100_000,
+    maxOutputTokens: 4096,
     diffStrategy: "auto",
   },
   providers: {
@@ -65,6 +66,14 @@ const DEFAULT_CONFIG: Readonly<Config> = {
     promptForRefs: false,
     maxLength: 80,
     bodyStyle: "subject-body",
+    recentCommits: {
+      enabled: false,
+      count: 5,
+      scope: "all",
+    },
+  },
+  git: {
+    timeoutMs: 30_000,
   },
 };
 

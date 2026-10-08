@@ -13,7 +13,7 @@ import { semanticTemplate } from "@/templates/formats/semantic.ts";
 
 type CommitTemplate = Record<CommitLanguage, string>;
 
-const templates: Record<CommitFormat, CommitTemplate> = {
+const templates: Record<Exclude<CommitFormat, "previous">, CommitTemplate> = {
   conventional: conventionalTemplate,
   angular: angularTemplate,
   karma: karmaTemplate,
@@ -23,7 +23,7 @@ const templates: Record<CommitFormat, CommitTemplate> = {
 } as const;
 
 const isValidFormat = (format: string): format is CommitFormat =>
-  Object.keys(templates).includes(format);
+  format === "previous" || Object.keys(templates).includes(format);
 
 const isValidLanguage = (language: string): language is CommitLanguage =>
   (SUPPORTED_LANGUAGES as readonly string[]).includes(language);
@@ -31,7 +31,9 @@ const isValidLanguage = (language: string): language is CommitLanguage =>
 function getTemplate(format: CommitFormat, language: CommitLanguage): string {
   let template: CommitTemplate;
 
-  if (!isValidFormat(format)) {
+  if (format === "previous") {
+    template = templates.conventional;
+  } else if (!isValidFormat(format)) {
     Log.warning(`Invalid format "${format}", falling back to conventional`);
     template = templates.conventional;
   } else template = templates[format];

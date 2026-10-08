@@ -9,6 +9,7 @@ type GenerationConfig = {
   /** `null` means "do not send temperature" (reasoning models reject it). */
   temperature: number | null;
   maxPromptTokens: number;
+  maxOutputTokens: number;
   diffStrategy: DiffStrategy;
 };
 
@@ -28,6 +29,20 @@ type CommitConfig = {
   promptForRefs: boolean;
   maxLength: number;
   bodyStyle: BodyStyles;
+  recentCommits: RecentCommitsConfig;
+};
+
+type GitConfig = {
+  timeoutMs: number;
+};
+
+const RECENT_COMMITS_SCOPES = ["all", "mine"] as const;
+type RecentCommitsScope = (typeof RECENT_COMMITS_SCOPES)[number];
+
+type RecentCommitsConfig = {
+  enabled: boolean;
+  count: number;
+  scope: RecentCommitsScope;
 };
 
 const SUPPORTED_REASONING_LEVELS = [
@@ -112,6 +127,7 @@ type Config = {
   generation: GenerationConfig;
   providers: ProvidersConfig;
   commit: CommitConfig;
+  git: GitConfig;
 };
 
 type ApiService =
@@ -145,6 +161,7 @@ export type {
   ConfigValue,
   DiffStrategy,
   GenerationConfig,
+  GitConfig,
   KnownProvider,
   ModelPreset,
   ProviderDefaults,
@@ -153,11 +170,14 @@ export type {
   ProviderReasoning,
   ProvidersConfig,
   ProviderType,
+  RecentCommitsConfig,
+  RecentCommitsScope,
 };
 
 export {
   BODY_STYLES,
   DIFF_STRATEGIES,
+  RECENT_COMMITS_SCOPES,
   SUPPORTED_API_TYPES,
   SUPPORTED_PROVIDERS,
   SUPPORTED_REASONING_LEVELS,

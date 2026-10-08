@@ -7,6 +7,7 @@ import {
   BODY_STYLES,
   type Config,
   DIFF_STRATEGIES,
+  RECENT_COMMITS_SCOPES,
   SUPPORTED_API_TYPES,
   SUPPORTED_REASONING_LEVELS,
 } from "@/lib/types/config.ts";
@@ -64,6 +65,7 @@ const ConfigSchema = z.strictObject({
       retryDelay: z.uint32(),
       temperature: z.number().min(0).max(2).nullable(),
       maxPromptTokens: z.uint32().min(1),
+      maxOutputTokens: z.uint32().min(1),
       diffStrategy: z.enum(DIFF_STRATEGIES),
     })
     .optional(),
@@ -82,7 +84,19 @@ const ConfigSchema = z.strictObject({
     promptForRefs: z.boolean().optional(),
     maxLength: z.uint32().optional(),
     bodyStyle: z.enum(BODY_STYLES).optional(),
+    recentCommits: z
+      .object({
+        enabled: z.boolean(),
+        count: z.uint32().min(1).max(20),
+        scope: z.enum(RECENT_COMMITS_SCOPES),
+      })
+      .optional(),
   }),
+  git: z
+    .object({
+      timeoutMs: z.uint32(),
+    })
+    .optional(),
 });
 
 type ConfigSchema = z.infer<typeof ConfigSchema>;
@@ -178,6 +192,17 @@ const ConfigValidationService = {
         ).exit();
       }
     }
+    if ("maxOutputTokens" in generation) {
+      const validation = this.validateInt(
+        (generation as Record<string, unknown>).maxOutputTokens,
+        1
+      );
+      if (validation.isError()) {
+        throw Log.error(
+          `Error at key generation.maxOutputTokens => ${validation.error.message}`
+        ).exit();
+      }
+    }
     return Ok(true);
   },
   validateCommit(commit: object): Result<boolean> {
@@ -190,6 +215,22 @@ const ConfigValidationService = {
         throw Log.error(
           `Error at key commit.maxLength => ${validation.error.message}`
         ).exit();
+      }
+    }
+    if ("recentCommits" in commit) {
+      const rc = (commit as Record<string, unknown>).recentCommits as Record<
+        string,
+        unknown
+      > | null;
+      if (rc !== null && typeof rc === "object") {
+        if ("count" in rc) {
+          const validation = this.validateInt(rc.count, 1, 20);
+          if (validation.isError()) {
+            throw Log.error(
+              `Error at key commit.recentCommits.count => ${validation.error.message}`
+            ).exit();
+          }
+        }
       }
     }
 
@@ -231,6 +272,20 @@ const ConfigValidationService = {
             `Error at key providers.${name}.timeoutMs => ${validation.error.message}`
           ).exit();
         }
+      }
+    }
+    return Ok(true);
+  },
+  validateGit(git: object): Result<boolean> {
+    if ("timeoutMs" in git) {
+      const validation = this.validateInt(
+        (git as Record<string, unknown>).timeoutMs,
+        0
+      );
+      if (validation.isError()) {
+        throw Log.error(
+          `Error at key git.timeoutMs => ${validation.error.message}`
+        ).exit();
       }
     }
     return Ok(true);
@@ -344,6 +399,17 @@ const ConfigValidationService = {
         ) {
           this.validateProviders(
             (configContent as Record<string, unknown>).providers as object
+          );
+        }
+      }
+
+      if ("git" in configContent) {
+        if (
+          typeof (configContent as Record<string, unknown>).git === "object" &&
+          (configContent as Record<string, unknown>).git !== null
+        ) {
+          this.validateGit(
+            (configContent as Record<string, unknown>).git as object
           );
         }
       }
@@ -476,6 +542,14 @@ const ConfigValidationService = {
               );
             }
           }
+          if ("maxOutputTokens" in g) {
+            const r = this.validateInt(g.maxOutputTokens, 1);
+            if (r.isError()) {
+              return ErrFromText(
+                `Error at key generation.maxOutputTokens => ${r.error.message}`
+              );
+            }
+          }
         }
       }
 
@@ -495,6 +569,19 @@ const ConfigValidationService = {
               return ErrFromText(
                 `Error at key commit.maxLength => ${r.error.message}`
               );
+            }
+          }
+          if ("recentCommits" in c) {
+            const rc = c.recentCommits as Record<string, unknown> | null;
+            if (rc !== null && typeof rc === "object") {
+              if ("count" in rc) {
+                const r = this.validateInt(rc.count, 1, 20);
+                if (r.isError()) {
+                  return ErrFromText(
+                    `Error at key commit.recentCommits.count => ${r.error.message}`
+                  );
+                }
+              }
             }
           }
         }
@@ -542,6 +629,26 @@ const ConfigValidationService = {
                   `Error at key providers.${name}.timeoutMs => ${r.error.message}`
                 );
               }
+            }
+          }
+        }
+      }
+
+      if ("git" in configContent) {
+        if (
+          typeof (configContent as Record<string, unknown>).git === "object" &&
+          (configContent as Record<string, unknown>).git !== null
+        ) {
+          const g = (configContent as Record<string, unknown>).git as Record<
+            string,
+            unknown
+          >;
+          if ("timeoutMs" in g) {
+            const r = this.validateInt(g.timeoutMs, 0);
+            if (r.isError()) {
+              return ErrFromText(
+                `Error at key git.timeoutMs => ${r.error.message}`
+              );
             }
           }
         }

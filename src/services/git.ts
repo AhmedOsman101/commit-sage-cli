@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import * as path from "node:path";
 import { Err, ErrFromText, ErrFromUnknown, Ok, type Result } from "lib-result";
+import { DEFAULT_CONFIG } from "@/lib/constants.ts";
 import {
   CommandError,
   NoChangesDetectedError,
@@ -9,8 +10,16 @@ import {
 import { Log } from "@/lib/logger.ts";
 
 import type { CommandOutput } from "@/lib/types/index.ts";
-import CommandService from "@/services/command.ts";
+import CommandService, { isCommandTimeout } from "@/services/command.ts";
+import ConfigService from "@/services/config.ts";
 import FileSystemService from "@/services/fileSystem.ts";
+
+const RECENT_COMMITS_MAX_COUNT = 20;
+const RECENT_COMMITS_MIN_LENGTH = 20;
+const RECENT_COMMITS_DEFAULT_COUNT = 5;
+const RECENT_COMMITS_FULL_MAX_CHARS = 500;
+
+type RecentCommitDetail = "subject" | "full";
 
 const GIT_STATUS_CODES = {
   modified: "M",
@@ -42,11 +51,49 @@ class GitService {
     Log.debug(`[gitService.initialize] EXIT repoPath=${repoPath.ok}`);
     return repoPath.ok;
   }
+  /**
+   * Resolve `git.timeoutMs` (0 disables the timeout). Falls back to the
+   * compiled default when unset or invalid.
+   */
+  static async getTimeoutMs(): Promise<number> {
+    const fallback = (DEFAULT_CONFIG.git as unknown as Record<string, number>)
+      .timeoutMs;
+    const result = await ConfigService.get("git", "timeoutMs");
+    if (result.isError()) return fallback;
+    const value = result.ok as unknown;
+    if (typeof value === "number" && Number.isFinite(value) && value >= 0)
+      return Math.floor(value);
+    return fallback;
+  }
   static async execGit(
-    args: string[]
+    args: string[],
+    options: { timeoutMs?: number } = {}
   ): Promise<Result<CommandOutput, CommandError>> {
-    const cmd = await CommandService.execute("git", args, GitService.repoPath);
-    if (cmd.isError()) return Err(cmd.error);
+    const timeoutMs = options.timeoutMs ?? (await GitService.getTimeoutMs());
+    const cmd = await CommandService.execute("git", args, GitService.repoPath, {
+      timeoutMs,
+    });
+    if (cmd.isError()) {
+      if (isCommandTimeout(cmd.error)) {
+        return Err(
+          new CommandError(
+            `${cmd.error.message} (increase git.timeoutMs if this is a slow operation)`,
+            cmd.error.command,
+            cmd.error.stdout !== undefined ||
+              cmd.error.stderr !== undefined ||
+              cmd.error.code !== undefined
+              ? {
+                  stdout: cmd.error.stdout ?? "",
+                  stderr: cmd.error.stderr ?? "",
+                  code: cmd.error.code ?? 0,
+                }
+              : undefined,
+            { cause: { timedOut: true, timeoutMs } }
+          )
+        );
+      }
+      return Err(cmd.error);
+    }
 
     const { stderr, code } = cmd.ok;
 
@@ -112,6 +159,75 @@ class GitService {
     return branch;
   }
   /**
+   * Fetch recent commit messages for style mimicry. Never hard-fails:
+   * empty history, missing author, or git errors degrade to `Ok([])`.
+   * `subject` returns one-line subjects (`%s`).
+   * `full` returns whole messages (`%B`, record-separated) truncated to
+   * 500 chars each, so `previous` can learn body/footer habits.
+   * Entries shorter than 20 chars total are treated as noise and dropped.
+   */
+  static async getRecentCommitMessages(
+    count: number,
+    scope: "all" | "mine",
+    detail: RecentCommitDetail = "subject"
+  ): Promise<Result<string[], Error>> {
+    try {
+      const safeCount = Number.isFinite(count)
+        ? Math.min(Math.max(1, Math.floor(count)), RECENT_COMMITS_MAX_COUNT)
+        : RECENT_COMMITS_DEFAULT_COUNT;
+
+      const pretty = detail === "full" ? "%B%x1e" : "%s";
+      const args = [
+        "log",
+        `--max-count=${safeCount}`,
+        `--pretty=format:${pretty}`,
+      ];
+
+      if (scope === "mine") {
+        const nameResult = await GitService.execGit(["config", "user.name"]);
+        const emailResult = await GitService.execGit(["config", "user.email"]);
+        const author = nameResult.isOk() ? nameResult.ok.stdout.trim() : "";
+        const email = emailResult.isOk() ? emailResult.ok.stdout.trim() : "";
+        const pattern = author || email;
+        if (!pattern) {
+          Log.warning(
+            "Recent commits scope is 'mine' but git user.name/user.email is unset — skipping examples"
+          );
+          return Ok([]);
+        }
+        args.push(`--author=${pattern}`);
+      }
+
+      const result = await GitService.execGit(args);
+      if (result.isError()) {
+        if (isCommandTimeout(result.error)) {
+          const timeoutMs = await GitService.getTimeoutMs();
+          Log.warning(
+            `Recent commits timed out after ${timeoutMs}ms — continuing without examples (increase git.timeoutMs if this keeps happening)`
+          );
+        }
+        return Ok([]);
+      }
+
+      if (detail === "full") {
+        const messages = result.ok.stdout
+          .split("\x1e")
+          .map(entry => entry.trim())
+          .filter(entry => entry.length >= RECENT_COMMITS_MIN_LENGTH)
+          .map(entry => entry.slice(0, RECENT_COMMITS_FULL_MAX_CHARS).trim());
+        return Ok(messages);
+      }
+
+      const messages = result.ok.stdout
+        .split("\n")
+        .map(line => line.trim())
+        .filter(line => line.length >= RECENT_COMMITS_MIN_LENGTH);
+      return Ok(messages);
+    } catch (error) {
+      return ErrFromUnknown(error);
+    }
+  }
+  /**
    * Whether any git remote is configured.
    */
   static async hasAnyRemote(): Promise<boolean> {
@@ -171,10 +287,10 @@ class GitService {
 
     return cmd.isOk() && cmd.ok.stdout.includes("160000");
   }
-  static async getDiff(
+  static async getDiffBlocks(
     diffMode: "staged" | "unstaged"
-  ): Promise<Result<string, Error>> {
-    Log.debug(`[gitService.getDiff] ENTRY diffMode=${diffMode}`);
+  ): Promise<Result<string[], Error>> {
+    Log.debug(`[gitService.getDiffBlocks] ENTRY diffMode=${diffMode}`);
     try {
       const hasStagedChanges = GitService.hasChanges("staged");
 
@@ -216,7 +332,7 @@ class GitService {
             if (fileDiff.trim()) diffs.push(fileDiff);
           }
         }
-        return Ok(diffs.join("\n\n").trim());
+        return Ok(diffs);
       }
 
       if (!hasUnstagedChanges && !hasUntrackedFiles) {
@@ -288,15 +404,22 @@ class GitService {
         }
       }
 
-      const combinedDiff = diffs.join("\n\n").trim();
-      if (!combinedDiff) {
+      if (diffs.length === 0) {
         return Err(new NoChangesDetectedError("No changes detected."));
       }
 
-      return Ok(combinedDiff);
+      return Ok(diffs);
     } catch (error) {
       return ErrFromUnknown(error);
     }
+  }
+  static async getDiff(
+    diffMode: "staged" | "unstaged"
+  ): Promise<Result<string, Error>> {
+    Log.debug(`[gitService.getDiff] ENTRY diffMode=${diffMode}`);
+    const blocksResult = await GitService.getDiffBlocks(diffMode);
+    if (blocksResult.isError()) return Err(blocksResult.error);
+    return Ok(blocksResult.ok.join("\n\n").trim());
   }
   static async getChangedFiles(
     diffMode: "staged" | "unstaged" = "unstaged"
@@ -375,12 +498,21 @@ class GitService {
     return false;
   }
   static async isGitRepo(): Promise<boolean> {
-    const cmd = await CommandService.execute("git", [
-      "rev-parse",
-      "--is-inside-work-tree",
-    ]);
+    const cmd = await CommandService.execute(
+      "git",
+      ["rev-parse", "--is-inside-work-tree"],
+      Deno.cwd(),
+      { timeoutMs: await GitService.getTimeoutMs() }
+    );
 
-    if (cmd.isError()) return false;
+    if (cmd.isError()) {
+      if (isCommandTimeout(cmd.error)) {
+        Log.warning(
+          `Git repo check timed out after ${await GitService.getTimeoutMs()}ms — treating as not a repo (increase git.timeoutMs if this keeps happening)`
+        );
+      }
+      return false;
+    }
 
     const { stdout, stderr, code } = cmd.ok;
     return code === 0 && !stderr && stdout.startsWith("true");
