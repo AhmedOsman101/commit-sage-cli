@@ -7,6 +7,7 @@ import { bold } from "@std/fmt/colors";
 import { resolveOptions, validateOptions } from "@/cli/flags.ts";
 import { runOffline } from "@/cli/handlers/offline.ts";
 import { confirmPrompt, selectFilesToStage } from "@/cli/prompts.ts";
+import { LanguageTranslationDeclinedError } from "@/lib/errors.ts";
 import { Log } from "@/lib/logger.ts";
 import { Spinner } from "@/lib/spinner.ts";
 import { COMMIT_FORMATS, SUPPORTED_LANGUAGES } from "@/lib/types/commit.ts";
@@ -193,6 +194,12 @@ class CommitCommand extends Command {
           spinner.start();
           const result = await AiService.generateMessage(runOptions);
           spinner.stop();
+          // Declining to translate an unknown language is a choice, not a
+          // failure (ADR 003) — warn and exit 0, leaving the working tree
+          // untouched (nothing has been committed at this point).
+          if (result.error instanceof LanguageTranslationDeclinedError) {
+            throw Log.warning(result.error.message).exit(0);
+          }
           if (result.isError()) throw Log.error(result.error.message).exit();
           message = (result.ok?.message ?? "").trim();
           if (!message) throw Log.error("Generated message is empty.").exit();

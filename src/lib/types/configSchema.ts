@@ -202,10 +202,17 @@ const COMMIT_CONFIG_SCHEMA = {
       type: "string",
       minLength: 1,
       description:
-        "Commit language tag (BCP-47, stored as-given, e.g. en, en-US, jp). Normalized internally.",
+        "Commit language tag (BCP-47, stored as-given, e.g. en, en-US, jp). Native: english, russian, chinese, japanese, german, french. Any other value is a custom language, translated on demand and cached.",
     },
     promptForRefs: {
       type: "boolean",
+      description:
+        "Deprecated no-op, superseded by commit.refs.enabled. Kept so existing config files stay valid; never read.",
+    },
+    customInstructions: {
+      type: "string",
+      description:
+        "Extra standing guidance injected as a '## Custom Instructions' section for every format. Ends in .md and the file exists → the file is read; otherwise the value is literal instruction text.",
     },
     maxLength: {
       type: "integer",

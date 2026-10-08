@@ -32,6 +32,7 @@ const TYPE_MAP: Record<
     onlyStagedChanges: "boolean",
     commitLanguage: "string",
     promptForRefs: "boolean",
+    customInstructions: "string",
     maxLength: "number",
     bodyStyle: "string",
     recentCommits: "object",

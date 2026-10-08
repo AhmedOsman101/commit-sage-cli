@@ -21,6 +21,26 @@ class EmptyCommitMessageError extends Error {
   }
 }
 
+/**
+ * Signals that the user declined — or could not be asked — to have an
+ * unknown `commit.commitLanguage` translated. Not a failure: the CLI warns
+ * and exits 0 (ADR 003).
+ *
+ * Carried as a typed error so `PromptService.buildPrompt` can keep its
+ * `Result<string>` shape while callers distinguish "declined" from "broken"
+ * by `instanceof`. The message is the user-facing warning, so the service
+ * layer stays silent and the CLI prints exactly once.
+ */
+class LanguageTranslationDeclinedError extends Error {
+  constructor(language: string, detail: string, options: ErrorOptions = {}) {
+    super(
+      `Not translating commit format instructions into "${language}": ${detail} Using the english template instead.`,
+      options
+    );
+    this.name = new.target.name;
+  }
+}
+
 class TruncatedResponseError extends Error {
   constructor(provider: string, detail: string, options: ErrorOptions = {}) {
     super(
@@ -82,6 +102,7 @@ export {
   CommandError,
   ConfigurationError,
   EmptyCommitMessageError,
+  LanguageTranslationDeclinedError,
   NoChangesDetectedError,
   NoRepositoriesFoundError,
   OpenAiError,

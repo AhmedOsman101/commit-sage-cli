@@ -55,6 +55,42 @@ async function selectFilesToStage(): Promise<string[]> {
 }
 
 /**
+ * Multi-select over the translatable formats. The format actually requested
+ * for this run starts selected so pressing Enter translates exactly the one
+ * needed; ticking more formats fills the cache in the same pass.
+ *
+ * TTY-guarded. Returns `null` when the user cancels (Ctrl-C) — callers treat
+ * that as declining the whole translation.
+ */
+async function selectFormatsToTranslate(
+  available: readonly string[],
+  preselected: string
+): Promise<string[] | null> {
+  if (available.length === 0) return [];
+
+  guardTTY();
+
+  // One format means no choice to make — skip the UI entirely.
+  if (available.length === 1) return [available[0] as string];
+
+  try {
+    const selected = await Checkbox.prompt<string>({
+      message:
+        "Translate these format instructions too (space = toggle, enter = confirm):",
+      options: available.map(format => ({
+        name: format === preselected ? `${format} (requested)` : format,
+        value: format,
+        checked: format === preselected,
+      })),
+    });
+    return selected ?? null;
+  } catch {
+    // Cliffy throws on cancel; a cancel is a decline, not a crash.
+    return null;
+  }
+}
+
+/**
  * Yes/no confirmation. TTY-guarded so callers don't need to check manually.
  */
 async function confirmPrompt(
@@ -65,4 +101,9 @@ async function confirmPrompt(
   return await Confirm.prompt({ message, default: defaultValue });
 }
 
-export { confirmPrompt, guardTTY, selectFilesToStage };
+export {
+  confirmPrompt,
+  guardTTY,
+  selectFilesToStage,
+  selectFormatsToTranslate,
+};

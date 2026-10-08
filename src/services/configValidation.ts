@@ -81,7 +81,9 @@ const ConfigSchema = z.strictObject({
     onlyStagedChanges: z.boolean(),
     commitFormat: z.enum(COMMIT_FORMATS),
     commitLanguage: z.string().min(1),
+    // Deprecated no-op: kept so older config files still validate (ADR 004).
     promptForRefs: z.boolean().optional(),
+    customInstructions: z.string().optional(),
     maxLength: z.uint32().optional(),
     bodyStyle: z.enum(BODY_STYLES).optional(),
     recentCommits: z

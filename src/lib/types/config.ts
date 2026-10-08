@@ -26,7 +26,10 @@ type CommitConfig = {
   commitFormat: CommitFormat;
   onlyStagedChanges: boolean;
   commitLanguage: CommitLanguage;
+  /** @deprecated Superseded by `commit.refs.*` (ADR 004). Kept for compat; never read. */
   promptForRefs: boolean;
+  /** Inline instruction text, or a path to an `.md` file (ADR 005). */
+  customInstructions: string;
   maxLength: number;
   bodyStyle: BodyStyles;
   recentCommits: RecentCommitsConfig;

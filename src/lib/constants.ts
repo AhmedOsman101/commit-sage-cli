@@ -2,22 +2,27 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import type { Config } from "@/lib/types/config.ts";
 
-function getConfigPath(): string {
+/**
+ * Directory holding the user's config and caches. One helper so
+ * `config.json` and `translations.json` can never drift apart on platform
+ * paths — they must live in the same directory.
+ */
+function getConfigDir(): string {
   switch (OS) {
     case "freebsd":
     case "netbsd":
     case "darwin": // macOS
     case "linux":
-      return join(`${HOME_DIR}/.config/commitSage/config.json`);
+      return join(HOME_DIR, ".config", "commitSage");
     // biome-ignore lint/suspicious/noFallthroughSwitchClause: If no config dir is found, fall through to the default case
     case "windows": {
       const configDir = Deno.env.get("APPDATA");
       if (configDir) {
-        return join(configDir, "commitSage", "config.json");
+        return join(configDir, "commitSage");
       }
     }
     default:
-      return join(HOME_DIR, "commitSage", "config.json");
+      return join(HOME_DIR, "commitSage");
   }
 }
 
@@ -25,7 +30,17 @@ const OS: Readonly<string> = Deno.build.os;
 
 const HOME_DIR: Readonly<string> = homedir();
 
-const CONFIG_PATH: Readonly<string> = getConfigPath();
+const CONFIG_PATH: Readonly<string> = join(getConfigDir(), "config.json");
+
+/**
+ * User-owned cache of AI-translated format templates, keyed
+ * `[language][format]`. Deleting an entry re-triggers translation on the
+ * next run — that is the whole invalidation story (ADR 003).
+ */
+const TRANSLATIONS_PATH: Readonly<string> = join(
+  getConfigDir(),
+  "translations.json"
+);
 
 const DEFAULT_CONFIG: Readonly<Config> = {
   $schema:
@@ -64,6 +79,7 @@ const DEFAULT_CONFIG: Readonly<Config> = {
     onlyStagedChanges: true,
     commitLanguage: "english",
     promptForRefs: false,
+    customInstructions: "",
     maxLength: 80,
     bodyStyle: "subject-body",
     recentCommits: {
@@ -104,4 +120,11 @@ const ERROR_MESSAGES = {
   fileDeleted: "File has been deleted",
 } as const;
 
-export { CONFIG_PATH, DEFAULT_CONFIG, ERROR_MESSAGES, HOME_DIR, OS };
+export {
+  CONFIG_PATH,
+  DEFAULT_CONFIG,
+  ERROR_MESSAGES,
+  HOME_DIR,
+  OS,
+  TRANSLATIONS_PATH,
+};

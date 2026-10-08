@@ -1,7 +1,12 @@
 import { Err, Ok, type Result } from "lib-result";
+import { selectFormatsToTranslate } from "@/cli/prompts.ts";
+import { LanguageTranslationDeclinedError } from "@/lib/errors.ts";
 import { Log } from "@/lib/logger.ts";
 import type { CommitFormat, CommitLanguage } from "@/lib/types/commit.ts";
 import ConfigService from "@/services/config.ts";
+import { CustomInstructionsService } from "@/services/customInstructions.ts";
+import { TemplateTranslationService } from "@/services/templateTranslation.ts";
+import TranslationsService from "@/services/translations.ts";
 import { getTemplate } from "@/templates/index.ts";
 
 /**
@@ -28,13 +33,183 @@ type PromptOptions = {
 };
 
 /**
+ * Formats whose instructions can be translated. `previous` is excluded: it
+ * has no template of its own (it defers to recent examples), so there is
+ * nothing to translate.
+ */
+const TRANSLATABLE_FORMATS: readonly CommitFormat[] = [
+  "conventional",
+  "angular",
+  "karma",
+  "semantic",
+  "emoji",
+  "freeform",
+  "emojiKarma",
+  "google",
+  "atom",
+  "detailed",
+];
+
+/**
+ * Translate and cache whichever formats the user ticks, then return the
+ * requested one.
+ *
+ * Returns `Err(LanguageTranslationDeclinedError)` when the user declines,
+ * cancels, or the run is non-TTY — all three are declines (ADR 003). The
+ * caller turns that sentinel into warn + exit 0.
+ */
+async function resolveCustomLanguageTemplate(
+  language: string,
+  format: CommitFormat
+): Promise<Result<string>> {
+  // Non-TTY counts as declined: exit 0 rather than hang or fail. The
+  // sentinel carries the user-facing message; the CLI warns once.
+  if (!Deno.stdin.isTerminal()) {
+    return Err(
+      new LanguageTranslationDeclinedError(
+        language,
+        "this run is not interactive. Set a native language, or re-run in a terminal to translate it."
+      )
+    );
+  }
+
+  // `previous` has no template of its own; it falls back to conventional
+  // both here and in getTemplate, so translate and cache conventional.
+  const requested = format === "previous" ? "conventional" : format;
+  const candidates = TRANSLATABLE_FORMATS.filter(
+    candidate => candidate !== requested
+  );
+  const selection = await selectFormatsToTranslate(
+    [requested, ...candidates],
+    requested
+  );
+
+  // Cancelled (or nothing ticked) is a decline.
+  if (selection === null || selection.length === 0) {
+    return Err(
+      new LanguageTranslationDeclinedError(
+        language,
+        "no formats were selected."
+      )
+    );
+  }
+
+  // Fill the cache for everything ticked, in the requested format first so a
+  // later failure still leaves the run with what it needs.
+  const ordered = [
+    requested,
+    ...selection.filter(candidate => candidate !== requested),
+  ];
+  let requestedTemplate: string | null = null;
+
+  for (const target of ordered as CommitFormat[]) {
+    const cached = await TranslationsService.getCachedTemplate(
+      language,
+      target
+    );
+    if (cached !== null) {
+      if (target === requested) requestedTemplate = cached;
+      continue;
+    }
+
+    const translated = await TemplateTranslationService.translateFormatTemplate(
+      language,
+      target
+    );
+    if (translated.isError()) return Err(translated.error);
+
+    const saved = await TranslationsService.saveCachedTemplate(
+      language,
+      target,
+      translated.ok
+    );
+    if (saved.isError()) return Err(saved.error);
+
+    if (target === requested) requestedTemplate = translated.ok;
+  }
+
+  if (requestedTemplate === null) {
+    return Err(
+      new Error(
+        `Could not resolve the "${requested}" format instructions in "${language}".`
+      )
+    );
+  }
+
+  return Ok(requestedTemplate);
+}
+
+/**
  * Build the full prompt that will be sent to the model.
  *
  * Resolution chain for each setting:
  *   `options.X ?? ConfigService.get(...)`
  * (ConfigService.get already falls back to DEFAULT_CONFIG when the user
  * never set the key.)
+ *
+ * `commitLanguage` resolves in three steps (ADR 003):
+ *   1. native template (english, russian, …) → used directly
+ *   2. cached `[language][format]` entry in translations.json → used silently
+ *   3. neither → offer to translate once; decline or non-TTY surfaces as
+ *      `LanguageTranslationDeclinedError` and the caller exits 0.
+ *
+ * Memoized on `language|format` because the token-budget trim loop rebuilds
+ * this prompt up to four times per run — without it, one run could prompt
+ * and pay for the same translation several times over.
  */
+const templateMemo = new Map<string, Promise<Result<string>>>();
+
+async function resolveTemplate(
+  format: CommitFormat,
+  rawLanguage: string
+): Promise<Result<string>> {
+  const native = PromptService.normalizeLanguage(rawLanguage);
+  if (native !== null) return Ok(getTemplate(format, native));
+
+  // Custom language: cache first (silent), then offer to translate.
+  const effectiveFormat = format === "previous" ? "conventional" : format;
+  const memoKey = `${rawLanguage}|${effectiveFormat}`;
+  const memoized = templateMemo.get(memoKey);
+  if (memoized !== undefined) return await memoized;
+
+  const pending = (async (): Promise<Result<string>> => {
+    const cached = await TranslationsService.getCachedTemplate(
+      rawLanguage,
+      effectiveFormat
+    );
+    if (cached !== null) {
+      Log.debug(
+        `[prompt] Using cached translation ${rawLanguage}/${effectiveFormat}`
+      );
+      return Ok(cached);
+    }
+    return await resolveCustomLanguageTemplate(rawLanguage, effectiveFormat);
+  })();
+
+  // Cache rejections too: a decline must not re-prompt within the same run.
+  templateMemo.set(memoKey, pending);
+  return await pending;
+}
+
+/**
+ * Build the full prompt that will be sent to the model.
+ *
+ * Resolution chain for each setting:
+ *   `options.X ?? ConfigService.get(...)`
+ * (ConfigService.get already falls back to DEFAULT_CONFIG when the user
+ * never set the key.)
+ *
+ * `commitLanguage` resolves in three steps (ADR 003):
+ *   1. native template (english, russian, …) → used directly
+ *   2. cached `[language][format]` entry in translations.json → used silently
+ *   3. neither → offer to translate once; decline or non-TTY surfaces as
+ *      `LanguageTranslationDeclinedError` and the caller exits 0.
+ *
+ * Memoized on `language|format` because the token-budget trim loop rebuilds
+ * this prompt up to four times per run — without it, one run could prompt
+ * and pay for the same translation several times over.
+ */
+
 async function buildPrompt(
   diff: string,
   blameAnalysis: string,
@@ -78,14 +253,30 @@ async function buildPrompt(
   const rawLanguage = languageResult.ok as unknown as string;
   const language = PromptService.normalizeLanguage(rawLanguage);
   const maxLength = lengthResult.ok as unknown as number;
+
+  // Custom language: native → cache → offer-to-translate. Declines surface
+  // as LanguageTranslationDeclinedError for the CLI to turn into exit 0.
+  const templateResult = await resolveTemplate(format, rawLanguage);
+  if (templateResult.isError()) return Err(templateResult.error);
+  const template = templateResult.ok;
+
+  const instructionsResult = await ConfigService.get(
+    "commit",
+    "customInstructions"
+  );
+  if (instructionsResult.isError()) return Err(instructionsResult.error);
+  const customInstructions =
+    await CustomInstructionsService.resolveCustomInstructions(
+      instructionsResult.ok as unknown as string
+    );
+  if (customInstructions.isError()) return Err(customInstructions.error);
   const bodyStyle = bodyStyleResult.ok as unknown as
     | "subject-only"
     | "subject-body"
     | "subject-body-footer"
     | null;
 
-  const languagePrompt = PromptService.getLanguagePrompt(language);
-  const template = getTemplate(format, language);
+  const languagePrompt = PromptService.getLanguagePrompt(language, rawLanguage);
   const blameSection = blameAnalysis.trim()
     ? blameAnalysis
     : "No git blame analysis available.";
@@ -95,6 +286,11 @@ async function buildPrompt(
       : PromptService.getBodyStylePrompt(bodyStyle);
   const contextSection = options.context?.trim()
     ? `## Additional Context\n${options.context.trim()}\n\n`
+    : "";
+  // Standing user guidance, rendered for every format. Empty string ⇒ the
+  // section is omitted entirely, so the default config costs nothing.
+  const instructionsSection = customInstructions.ok
+    ? `## Custom Instructions\n${customInstructions.ok}\n\n`
     : "";
   const recentCommits = options.recentCommits ?? [];
   if (format === "previous" && recentCommits.length === 0) {
@@ -123,7 +319,7 @@ Rules:
 
 Commit format requirements:
 ${template}
-
+${instructionsSection}
 Language requirement:
 ${languagePrompt}
 
@@ -168,20 +364,21 @@ const PromptService = {
   buildPrompt,
 
   /**
-   * Normalize a stored-as-given language tag (BCP-47) to canonical prompt
-   * language. `ja` and `jp` both alias Japanese; region/script subtags are
-   * stripped (`en-US` → `en`). Unknown tags warn and fall back to english —
-   * the stored value is never rewritten.
+   * Map a stored-as-given language tag (BCP-47) to a canonical native
+   * language, or `null` when the tag names no native template.
+   *
+   * `ja` and `jp` both alias Japanese; region/script subtags are stripped
+   * (`en-US` → `en`). A `null` is not a failure: it routes the run into the
+   * custom-language flow (cache → offer to translate) per ADR 003, which is
+   * why this no longer warns and falls back to english. The stored value is
+   * never rewritten either way.
    */
-  normalizeLanguage(language: string): CommitLanguage {
+  normalizeLanguage(language: string): CommitLanguage | null {
     const key = language.toLowerCase();
     const direct = LANGUAGE_ALIASES[key];
     if (direct) return direct;
     const primary = key.split(/[-_]/)[0] as string;
-    const canonical = LANGUAGE_ALIASES[primary];
-    if (canonical) return canonical;
-    Log.warning(`Unknown language "${language}", falling back to english`);
-    return "english";
+    return LANGUAGE_ALIASES[primary] ?? null;
   },
 
   getBodyStylePrompt(
@@ -197,7 +394,10 @@ const PromptService = {
     }
   },
 
-  getLanguagePrompt(language: CommitLanguage): string {
+  getLanguagePrompt(
+    language: CommitLanguage | null,
+    rawLanguage?: string
+  ): string {
     switch (language) {
       case "russian":
         return "Пожалуйста, напиши сообщение коммита на русском языке.";
@@ -210,7 +410,11 @@ const PromptService = {
       case "french":
         return "Veuillez rédiger le message de commit en français.";
       default:
-        return "Please write the commit message in English.";
+        // Custom language: the format template is translated, so ask for the
+        // message itself in the same language by name.
+        return rawLanguage
+          ? `Please write the commit message in ${rawLanguage}.`
+          : "Please write the commit message in English.";
     }
   },
 };

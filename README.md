@@ -217,7 +217,7 @@ One table — both subcommands accept the same 7 flags (commit adds 3 more below
 | `--context <text>` | Inject `## External Context\n<text>` before the diff in the AI prompt.                                                                                                            | **AI-only** — ignored with `--offline`.                                                                                                     |
 | `--model <name>`   | Model for this run in `provider/model` format (e.g. `openai/gpt-5-nano`). First slash splits provider from model id; multi-segment ids preserved (`9router/kc/stealth/ox-alpha`). | Per-run override of top-level `model`; any `provider/model` string accepted — provider validates at call time.                              |
 | `--format <name>`  | Commit template: `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform`, `emojiKarma`, `google`, `atom`, `detailed`, `previous`.                                                  | **AI-only** — ignored with `--offline` (offline always conventional). Default `conventional` (see `commit.commitFormat`). `previous` mimics your recent history (bodies/footers included). |
-| `--lang <name>`    | Commit language (BCP-47, stored as-given, e.g. `en`, `en-US`, `jp`).                                                                                                              | Per-run override of `commit.commitLanguage`; normalized internally.                                                                         |
+| `--lang <name>`    | Commit language (BCP-47, stored as-given, e.g. `en`, `en-US`, `jp`). Any other value is a custom language — see [Custom languages](#custom-languages).                               | Per-run override of `commit.commitLanguage`; native tags normalized internally. An unknown tag prompts to translate once (exit 0 if declined or non-TTY). |
 | `--max-length <n>` | Override `commit.maxLength` for this message.                                                                                                                                     | Applies to **both** AI and `--offline` (offline truncation uses word boundary + `…`).                                                       |
 | `--edit`           | Open before saving.                                                                                                                                                               | `generate`: tempfile + `$EDITOR`/`$VISUAL` -> print final to stdout. `commit`: passes `-e` to `git commit` -> editor on the staged message. |
 
@@ -316,10 +316,11 @@ Don't confuse the stored `model` string with the per-run
 | `providers`  | `<name>.apiType`     | `string`  | inherits            | `openai-chat`, `openai-responses`, `anthropic`                                                                             |
 | `commit`     | `autoCommit`         | `boolean` | `false`             | Skip `Commit changes?` confirm (or use `-y/--yes`)                                                                         |
 | `commit`     | `autoPush`           | `boolean` | `false`             | Skip `Push to <branch>?` confirm (or use `-y/--yes`)                                                                       |
-| `commit`     | `commitFormat`       | `string`  | `"conventional"`    | `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform` (`freeform` AI-only), `previous` (recent-history style) |
+| `commit`     | `commitFormat`       | `string`  | `"conventional"`    | `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform` (`freeform` AI-only), `emojiKarma`, `google`, `atom`, `detailed`, `previous` (recent-history style) |
 | `commit`     | `onlyStagedChanges`  | `boolean` | `true`              | When true and nothing staged after picker, `commit` exits 0 with `No staged changes`; else falls through to `diffStrategy` |
-| `commit`     | `commitLanguage`     | `string`  | `"english"`         | BCP-47, stored as-given (`en`, `en-US`, `jp` …); `--lang` overrides                                                        |
-| `commit`     | `promptForRefs`      | `boolean` | `false`             | Reserved (wired for future refs prompt)                                                                                    |
+| `commit`     | `commitLanguage`     | `string`  | `"english"`         | BCP-47, stored as-given (`en`, `en-US`, `jp` …); `--lang` overrides. Six native languages (`english`, `russian`, `chinese`, `japanese`, `german`, `french`); any other value is a [custom language](#custom-languages) |
+| `commit`     | `customInstructions` | `string`  | `""`                | Standing guidance injected as `## Custom Instructions` for every format. Ends in `.md` and the file exists → read the file; else literal text. Empty ⇒ section omitted |
+| `commit`     | `promptForRefs`      | `boolean` | `false`             | **Deprecated**, superseded by `commit.refs.enabled`. Kept so existing configs validate; never read |
 | `commit`     | `maxLength`          | `number`  | `80`                | Subject truncation limit; `--max-length` per-run                                                                           |
 | `commit`     | `bodyStyle`          | `string`  | `"subject-body"`    | `subject-only`, `subject-body`, `subject-body-footer`                                                                      |
 | `commit`     | `recentCommits`      | `object`  | `{enabled:false,count:5,scope:"all"}` | Recent commit messages as style examples (`enabled`, `count` 1–20, `scope` `all`/`mine`); managed via `config edit`, `get/set` stays shallow |
@@ -333,6 +334,54 @@ OPENAI_API_KEY='sk-...' commit-sage generate --model openai/gpt-5
 ```
 
 Ollama needs no key. Keys stored in the JSON file follow the same `provider/model` routing.
+
+### Custom instructions
+
+`commit.customInstructions` is standing guidance applied to every format, injected as a `## Custom Instructions` section in the AI prompt. Two shapes, detected automatically:
+
+```jsonc
+{
+  "commit": {
+    // literal text, used as-is
+    "customInstructions": "Write in the imperative mood. Never reference ticket IDs in the subject.",
+
+    // or a path to a Markdown file — read when it ends in .md and exists
+    "customInstructions": "~/.config/commitSage/instructions.md"
+  }
+}
+```
+
+The file wins only when the value ends in `.md` **and** that file is readable; anything else is treated as literal text. That includes a `.md` path that doesn't exist — the value is used verbatim rather than failing the run, so a typo degrades to literal instructions instead of an error.
+
+Empty (the default) means the section is omitted entirely, at zero prompt cost. Custom instructions are standing guidance you set once; `--context` is the one-shot equivalent for a single run.
+
+AI-only, like `--context` and `--format` — ignored under `--offline`.
+
+### Custom languages
+
+`commit.commitLanguage` accepts any string. Six values have built-in format templates:
+
+`english` · `russian` · `chinese` · `japanese` · `german` · `french`
+
+Tags that normalize to one of those work too — `en`, `en-US`, `jp`, `deutsch`, `francais`.
+
+Anything else is a **custom language**. The first run with an untranslated language asks whether to translate the format instructions, showing a checkbox list with the format you asked for pre-selected — press Enter to translate just that one, or tick more to fill the cache in the same pass. Translate uses your configured provider and costs one call per selected format.
+
+Declining the prompt, cancelling it, or running without a TTY all count as declined: commit-sage warns and exits 0, so pipes and CI are never blocked by an unsupported language.
+
+Translations are cached in `translations.json` beside your config file, keyed by language then format:
+
+```jsonc
+{
+  "swahili": {
+    "conventional": "<translated format instructions>"
+  }
+}
+```
+
+Cached entries are used silently — no prompt on later runs. **To invalidate one, delete it:** edit `translations.json` and remove the entry (the language/format pair, or the whole language), then the next run re-translates. There is no expiry and no refresh flag; a cached translation stays until you remove it.
+
+`previous` has no template of its own, so it is never translated — it mimics your recent commit history instead.
 
 ## Contributing
 
