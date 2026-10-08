@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.3.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v2.2.0...v2.3.0) (2026-10-08)
+
+
+### Features
+
+* **ai:** file-aware token-budgeted diff truncation ([6cafe73](https://github.com/AhmedOsman101/commit-sage-cli/commit/6cafe73486c92a03f2d3abb96f737fd1f72f8be2))
+* **ai:** wire maxOutputTokens through generation options with truncation retry ladder ([e5ae473](https://github.com/AhmedOsman101/commit-sage-cli/commit/e5ae473461aaee04cca6ffa9fc3ffc31bfbcfa18))
+* **git:** add git subprocess timeout option ([453b018](https://github.com/AhmedOsman101/commit-sage-cli/commit/453b018c1aede43fa82671ce1da3869bc0a63fdb))
+* **prompt:** add recent commit examples and previous format ([0c68b6f](https://github.com/AhmedOsman101/commit-sage-cli/commit/0c68b6fda9d4961f8683c21d26882b3a1be47912))
+* **prompt:** delimit previous examples with tilde fences ([70b14b0](https://github.com/AhmedOsman101/commit-sage-cli/commit/70b14b0c3ec4f66f51699493abf6777abb2b3dc0))
+* **prompt:** use full bodies for previous format examples ([ccf5ef9](https://github.com/AhmedOsman101/commit-sage-cli/commit/ccf5ef9232f354c3c78a74556be7be809b7c0601))
+
 ## [2.2.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v2.1.0...v2.2.0) (2026-10-05)
 
 
