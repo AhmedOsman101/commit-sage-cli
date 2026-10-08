@@ -216,8 +216,8 @@ Una tabla — ambos subcomandos aceptan los mismos 9 flags (commit añade 3 más
 | `--offline`        | Usa generador de análisis estático (sin API). Siempre forma convencional `<type>: <desc>` o simple `<desc>`; trunca en límite de palabra `--max-length`.                                        | Ignora `--format`; sigue respetando `--max-length`; necesita filas `git diff-index` — archivos untracked no aparecerán hasta hacer stage.   |
 | `--context <text>` | Inyecta `## External Context\n<text>` antes del diff en el prompt IA.                                                                                                                           | **Solo IA** — ignorado con `--offline`.                                                                                                     |
 | `--model <name>`   | Modelo para esta ejecución en formato `proveedor/modelo` (ej. `openai/gpt-5-nano`). La primera barra separa proveedor de modelo; ids multisegmento preservados (`9router/kc/stealth/ox-alpha`). | Sobrescritura por ejecución del `model` top-level; cualquier string `proveedor/modelo` aceptado — el proveedor valida al llamar.            |
-| `--format <name>`  | Plantilla de commit: `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform`, `previous`.                                                                                           | **Solo IA** — ignorado con `--offline` (offline siempre convencional). Default `conventional` (ver `commit.commitFormat`). `previous` imita tu historial reciente (cuerpos/footers incluidos). |
-| `--lang <name>`    | Idioma del commit (BCP-47, guardado tal cual, ej. `en`, `en-US`, `jp`).                                                                                                                         | Sobrescritura por ejecución de `commit.commitLanguage`; normalizado internamente.                                                           |
+| `--format <name>`  | Plantilla de commit: `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform`, `emojiKarma`, `google`, `atom`, `detailed`, `previous`.                                                                                           | **Solo IA** — ignorado con `--offline` (offline siempre convencional). Default `conventional` (ver `commit.commitFormat`). `previous` imita tu historial reciente (cuerpos/footers incluidos). |
+| `--lang <name>`    | Idioma del commit (BCP-47, guardado tal cual, ej. `en`, `en-US`, `jp`). Cualquier otro valor es un idioma personalizado — ver [Idiomas personalizados](#idiomas-personalizados).                 | Sobrescritura por ejecución de `commit.commitLanguage`; etiquetas nativas normalizadas internamente. Una etiqueta desconocida propone traducir una vez (salida 0 si se rechaza o sin TTY). |
 | `--max-length <n>` | Sobrescribe `commit.maxLength` para este mensaje.                                                                                                                                               | Aplica a **ambos** IA y `--offline` (truncado en límite de palabra + `…`).                                                                  |
 | `--edit`           | Abrir antes de guardar.                                                                                                                                                                         | `generate`: tempfile + `$EDITOR`/`$VISUAL` -> imprime final a stdout. `commit`: pasa `-e` a `git commit` -> editor sobre el mensaje staged. |
 | `--ref <token>`    | Adjunta token(s) de ref explícitos para esta ejecución. Repetible: `--ref PROJ-1 --ref PROJ-2` renderiza ambos.                                                                                 | **Solo IA** — ignorado con `--offline`. Gana a `--refs` y a `commit.refs.source`; implica refs para la ejecución aunque `commit.refs.enabled` sea false. |
@@ -320,9 +320,10 @@ No confundas el string `model` guardado con el flag por ejecución
 | `providers`  | `<name>.apiType`     | `string`  | hereda              | `openai-chat`, `openai-responses`, `anthropic`                                                                    |
 | `commit`     | `autoCommit`         | `boolean` | `false`             | Omite confirmación `Commit changes?` (o usa `-y/--yes`)                                                           |
 | `commit`     | `autoPush`           | `boolean` | `false`             | Omite confirmación `Push to <branch>?` (o usa `-y/--yes`)                                                         |
-| `commit`     | `commitFormat`       | `string`  | `"conventional"`    | `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform` (`freeform` solo IA), `previous` (estilo del historial) |
+| `commit`     | `commitFormat`       | `string`  | `"conventional"`    | `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform` (`freeform` solo IA), `emojiKarma`, `google`, `atom`, `detailed`, `previous` (estilo del historial) |
 | `commit`     | `onlyStagedChanges`  | `boolean` | `true`              | Cuando es true y nada staged tras el selector, `commit` sale con `No staged changes`; si no, cae a `diffStrategy` |
-| `commit`     | `commitLanguage`     | `string`  | `"english"`         | BCP-47, guardado tal cual (`en`, `en-US`, `jp` …); `--lang` sobrescribe                                           |
+| `commit`     | `commitLanguage`     | `string`  | `"english"`         | BCP-47, guardado tal cual (`en`, `en-US`, `jp` …); `--lang` sobrescribe. Seis idiomas nativos (`english`, `russian`, `chinese`, `japanese`, `german`, `french`); cualquier otro valor es un [idioma personalizado](#idiomas-personalizados) |
+| `commit`     | `customInstructions` | `string`  | `""`                | Guía permanente inyectada como `## Custom Instructions` para cada formato. Termina en `.md` y el archivo existe → se lee el archivo; si no texto literal. Vacío ⇒ sección omitida |
 | `commit`     | `promptForRefs`      | `boolean` | `false`             | **Obsoleto**, reemplazado por `commit.refs`. Se conserva para que configs existentes validen; nunca se lee |
 | `commit`     | `refs`               | `object`  | `{enabled:false,source:"prompt",value:"",placement:"end",branchPattern:"[A-Z][A-Z0-9]*-[0-9]+"}` | Footer de refs de issues/tickets — ver [Issue refs](#issue-refs); vía `config edit`, `get/set` superficial |
 | `commit`     | `maxLength`          | `number`  | `80`                | Límite de subject; `--max-length` por ejecución                                                                   |
@@ -338,6 +339,56 @@ OPENAI_API_KEY='sk-...' commit-sage generate --model openai/gpt-5
 ```
 
 Ollama no necesita clave. Las claves guardadas en el archivo JSON siguen el mismo enrutado `proveedor/modelo`.
+
+### Instrucciones personalizadas
+
+`commit.customInstructions` es guía permanente aplicada a cada formato, inyectada como sección `## Custom Instructions` en el prompt IA. Dos formas, detectadas automáticamente:
+
+```jsonc
+{
+  "commit": {
+    // texto literal, usado tal cual
+    "customInstructions": "Write in the imperative mood. Never reference ticket IDs in the subject.",
+
+    // o ruta a un archivo Markdown — leído cuando termina en .md y existe
+    "customInstructions": "~/.config/commitSage/instructions.md"
+  }
+}
+```
+
+El archivo solo gana cuando el valor termina en `.md` **y** ese archivo es legible; lo demás se trata como texto literal. Una `~` inicial expande a tu home. Eso incluye una ruta `.md` que no existe — el valor se usa verbatim en lugar de fallar la ejecución, así un typo degrada a instrucciones literales en vez de un error.
+
+Vacío (el default) significa que la sección se omite del todo, con cero coste de prompt. Las instrucciones personalizadas son guía permanente que defines una vez; `--context` es el equivalente de una sola ejecución.
+
+Solo IA, como `--context` y `--format` — ignorado con `--offline`.
+
+### Idiomas personalizados
+
+`commit.commitLanguage` acepta cualquier string. Seis valores tienen plantillas de formato integradas:
+
+`english` · `russian` · `chinese` · `japanese` · `german` · `french`
+
+Las etiquetas que normalizan a una de esas también valen — `en`, `en-US`, `jp`, `deutsch`, `francais`.
+
+Lo demás es un **idioma personalizado**. La primera ejecución con un idioma sin traducir pregunta si traducir las instrucciones de formato, mostrando una lista checkbox con el formato pedido pre-seleccionado — pulsa Enter para traducir solo ese, o marca más para llenar la caché en la misma pasada. Traducir usa tu proveedor configurado y cuesta una llamada por formato seleccionado. Los formatos que marques más allá del pedido son best-effort: si uno falla al traducir, se omite con un aviso y la ejecución continúa con el formato pedido.
+
+Desmarcar el formato pre-seleccionado cuenta como rechazo, igual que cancelar.
+
+Rechazar el prompt, cancelarlo o ejecutar sin TTY cuentan como rechazo: commit-sage avisa y sale con 0, así pipes y CI nunca se bloquean por un idioma no soportado.
+
+Las traducciones se cachean en `translations.json` junto a tu archivo de config, indexadas por idioma y luego formato:
+
+```jsonc
+{
+  "swahili": {
+    "conventional": "<translated format instructions>"
+  }
+}
+```
+
+Las entradas cacheadas se usan en silencio — sin prompt en ejecuciones posteriores. **Para invalidar una, bórrala:** edita `translations.json` y elimina la entrada (el par idioma/formato, o el idioma entero), y la próxima ejecución re-traduce. No hay caducidad ni flag de refresco; una traducción cacheada queda hasta que la quites.
+
+`previous` no tiene plantilla propia — imita tu historial reciente de commits — así nunca se ofrece para traducir. Reutiliza la plantilla `conventional` cuando hay un idioma personalizado activo.
 
 ### Issue refs
 
