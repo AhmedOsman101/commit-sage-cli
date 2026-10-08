@@ -3,6 +3,8 @@ const SUPPORTED_LANGUAGES = [
   "russian",
   "chinese",
   "japanese",
+  "german",
+  "french",
 ] as const;
 /**
  * Canonical display set for help text and template keys. Config V2 stores
@@ -20,6 +22,10 @@ const COMMIT_FORMATS = [
   "emoji",
   "semantic",
   "freeform",
+  "emojiKarma",
+  "google",
+  "atom",
+  "detailed",
   "previous",
 ] as const;
 

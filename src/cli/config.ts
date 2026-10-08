@@ -32,6 +32,8 @@ const TYPE_MAP: Record<
     onlyStagedChanges: "boolean",
     commitLanguage: "string",
     promptForRefs: "boolean",
+    customInstructions: "string",
+    refs: "object",
     maxLength: "number",
     bodyStyle: "string",
     recentCommits: "object",
@@ -71,9 +73,15 @@ function parseDotPath(arg: string) {
     );
   }
   if (arg.indexOf(".", dot + 1) !== -1) {
-    if (arg.startsWith("commit.recentCommits.")) {
+    if (
+      arg.startsWith("commit.recentCommits.") ||
+      arg.startsWith("commit.refs.")
+    ) {
+      const owner = arg.startsWith("commit.recentCommits.")
+        ? "recentCommits"
+        : "refs";
       return ErrFromText(
-        `Key "${arg}" targets nested recentCommits fields, which stay shallow by design — use "config set commit.recentCommits '{...}'" or "config edit" to manage enabled/count/scope.`
+        `Key "${arg}" targets nested ${owner} fields, which stay shallow by design — use "config set commit.${owner} '{...}'" or "config edit" to manage ${owner === "refs" ? "enabled/source/value/placement/branchPattern" : "enabled/count/scope"}.`
       );
     }
     return ErrFromText(

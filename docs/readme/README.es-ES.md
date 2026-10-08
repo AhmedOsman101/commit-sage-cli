@@ -1,3 +1,5 @@
+[English](../../README.md) | [Español](README.es-ES.md)
+
 # Commit Sage
 
 Genera mensajes de commit significativos con IA — o análisis estático offline
@@ -6,7 +8,7 @@ Genera mensajes de commit significativos con IA — o análisis estático offlin
 > **v2.0.0** — `commit-sage` es una CLI completa y multiplataforma
 > (`generate`, `commit`, `config`) con sobrescrituras por flags, flujo interactivo de staging
 > y respaldo `--offline`. Cambio incompatible desde v1: `commit-sage` sin argumentos ahora
-> muestra ayuda en lugar de generar silenciosamente. Ver [CHANGELOG](./CHANGELOG.md).
+> muestra ayuda en lugar de generar silenciosamente. Ver [CHANGELOG](../../CHANGELOG.md).
 
 ## Descripción
 
@@ -61,7 +63,7 @@ Los instaladores DMG de macOS y NSIS de Windows también se publican — ver aba
 curl -fsSL https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/main/installer/unix.sh | bash
 ```
 
-Esto ejecuta [`installer/unix.sh`](installer/unix.sh): detecta `linux`/`macos` +
+Esto ejecuta [`installer/unix.sh`](../../installer/unix.sh): detecta `linux`/`macos` +
 `x86_64`/`arm64`, obtiene la última `vX.Y.Z` de la API de GitHub, instala
 en `~/.local/bin/commit-sage` (sobrescribe con `INSTALL_DIR`), opcionalmente
 añade `~/.local/bin` a tu config de shell y verifica con `commit-sage --version`.
@@ -72,7 +74,7 @@ Personaliza:
 INSTALL_DIR=~/bin VERSION=1.8.0 bash <(curl -fsSL https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/main/installer/unix.sh)
 ```
 
-Ver [`installer/README.md`](installer/README.md) para el curl manual + configuración de PATH.
+Ver [`installer/README.md`](../../installer/README.md) para el curl manual + configuración de PATH.
 
 ### AUR (Arch Linux)
 
@@ -89,7 +91,7 @@ que sigue las versiones de GitHub.
 - **Instalador (recomendado):** descarga `commit-sage-setup.exe` desde
   Releases y ejecuta el asistente. Instala en `C:\Program Files\commitSage`,
   añade a `PATH`, crea accesos de Menú Inicio + Escritorio. Construido con
-  [`installer/windows/commit-sage.nsi`](installer/windows/commit-sage.nsi); ver
+  [`installer/windows/commit-sage.nsi`](../../installer/windows/commit-sage.nsi); ver
   `installer/windows/build-installer.ps1`.
 - **Portable:** descarga `commit-sage-windows-x64.exe`, renombra a `commit-sage.exe`,
   colócalo donde quieras en `PATH`.
@@ -209,17 +211,19 @@ Más en `docs/demos/` (gifs):  -->
 
 ### Flags compartidos `generate` / `commit`
 
-Una tabla — ambos subcomandos aceptan los mismos 7 flags (commit añade 3 más abajo).
+Una tabla — ambos subcomandos aceptan los mismos 9 flags (commit añade 3 más abajo).
 
 | Flag               | Descripción                                                                                                                                                                                     | Notas                                                                                                                                       |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--offline`        | Usa generador de análisis estático (sin API). Siempre forma convencional `<type>: <desc>` o simple `<desc>`; trunca en límite de palabra `--max-length`.                                        | Ignora `--format`; sigue respetando `--max-length`; necesita filas `git diff-index` — archivos untracked no aparecerán hasta hacer stage.   |
 | `--context <text>` | Inyecta `## External Context\n<text>` antes del diff en el prompt IA.                                                                                                                           | **Solo IA** — ignorado con `--offline`.                                                                                                     |
 | `--model <name>`   | Modelo para esta ejecución en formato `proveedor/modelo` (ej. `openai/gpt-5-nano`). La primera barra separa proveedor de modelo; ids multisegmento preservados (`9router/kc/stealth/ox-alpha`). | Sobrescritura por ejecución del `model` top-level; cualquier string `proveedor/modelo` aceptado — el proveedor valida al llamar.            |
-| `--format <name>`  | Plantilla de commit: `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform`, `previous`.                                                                                           | **Solo IA** — ignorado con `--offline` (offline siempre convencional). Default `conventional` (ver `commit.commitFormat`). `previous` imita tu historial reciente (cuerpos/footers incluidos). |
-| `--lang <name>`    | Idioma del commit (BCP-47, guardado tal cual, ej. `en`, `en-US`, `jp`).                                                                                                                         | Sobrescritura por ejecución de `commit.commitLanguage`; normalizado internamente.                                                           |
+| `--format <name>`  | Plantilla de commit: `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform`, `emojiKarma`, `google`, `atom`, `detailed`, `previous`.                                                                                           | **Solo IA** — ignorado con `--offline` (offline siempre convencional). Default `conventional` (ver `commit.commitFormat`). `previous` imita tu historial reciente (cuerpos/footers incluidos). |
+| `--lang <name>`    | Idioma del commit (BCP-47, guardado tal cual, ej. `en`, `en-US`, `jp`). Cualquier otro valor es un idioma personalizado — ver [Idiomas personalizados](#idiomas-personalizados).                 | Sobrescritura por ejecución de `commit.commitLanguage`; etiquetas nativas normalizadas internamente. Una etiqueta desconocida propone traducir una vez (salida 0 si se rechaza o sin TTY). |
 | `--max-length <n>` | Sobrescribe `commit.maxLength` para este mensaje.                                                                                                                                               | Aplica a **ambos** IA y `--offline` (truncado en límite de palabra + `…`).                                                                  |
 | `--edit`           | Abrir antes de guardar.                                                                                                                                                                         | `generate`: tempfile + `$EDITOR`/`$VISUAL` -> imprime final a stdout. `commit`: pasa `-e` a `git commit` -> editor sobre el mensaje staged. |
+| `--ref <token>`    | Adjunta token(s) de ref explícitos para esta ejecución. Repetible: `--ref PROJ-1 --ref PROJ-2` renderiza ambos.                                                                                 | **Solo IA** — ignorado con `--offline`. Gana a `--refs` y a `commit.refs.source`; implica refs para la ejecución aunque `commit.refs.enabled` sea false. |
+| `--refs`           | Fuerza un único prompt interactivo de refs para esta ejecución, aunque `commit.refs.source` sea `branch` o `input`.                                                                           | **Solo IA** — ignorado con `--offline`. Solo TTY; sin TTY avisa y omite refs (salida 0). Implica refs para la ejecución aunque `commit.refs.enabled` sea false. |
 
 Flags solo de `commit`:
 
@@ -251,6 +255,8 @@ Flags solo de `commit`:
   interactivos). Usar `--offline` con `--yes` aún necesita un TTY para el flujo; para CI,
   prefiere `generate --offline | git commit -F -`.
 - `--offline` (ambos subcomandos) -> siempre no-interactivo, sin clave, sin TTY.
+- Prompts de refs (`commit.refs.source: prompt`, o `--refs`) sin TTY avisan
+  y continúan sin refs — nunca un error, para no romper pipes.
 
 ## Configuración
 
@@ -316,10 +322,12 @@ No confundas el string `model` guardado con el flag por ejecución
 | `providers`  | `<name>.apiType`     | `string`  | hereda              | `openai-chat`, `openai-responses`, `anthropic`                                                                    |
 | `commit`     | `autoCommit`         | `boolean` | `false`             | Omite confirmación `Commit changes?` (o usa `-y/--yes`)                                                           |
 | `commit`     | `autoPush`           | `boolean` | `false`             | Omite confirmación `Push to <branch>?` (o usa `-y/--yes`)                                                         |
-| `commit`     | `commitFormat`       | `string`  | `"conventional"`    | `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform` (`freeform` solo IA), `previous` (estilo del historial) |
+| `commit`     | `commitFormat`       | `string`  | `"conventional"`    | `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform` (`freeform` solo IA), `emojiKarma`, `google`, `atom`, `detailed`, `previous` (estilo del historial) |
 | `commit`     | `onlyStagedChanges`  | `boolean` | `true`              | Cuando es true y nada staged tras el selector, `commit` sale con `No staged changes`; si no, cae a `diffStrategy` |
-| `commit`     | `commitLanguage`     | `string`  | `"english"`         | BCP-47, guardado tal cual (`en`, `en-US`, `jp` …); `--lang` sobrescribe                                           |
-| `commit`     | `promptForRefs`      | `boolean` | `false`             | Reservado (preparado para futuro prompt de refs)                                                                  |
+| `commit`     | `commitLanguage`     | `string`  | `"english"`         | BCP-47, guardado tal cual (`en`, `en-US`, `jp` …); `--lang` sobrescribe. Seis idiomas nativos (`english`, `russian`, `chinese`, `japanese`, `german`, `french`); cualquier otro valor es un [idioma personalizado](#idiomas-personalizados) |
+| `commit`     | `customInstructions` | `string`  | `""`                | Guía permanente inyectada como `## Custom Instructions` para cada formato. Termina en `.md` y el archivo existe → se lee el archivo; si no texto literal. Vacío ⇒ sección omitida |
+| `commit`     | `promptForRefs`      | `boolean` | `false`             | **Obsoleto**, reemplazado por `commit.refs`. Se conserva para que configs existentes validen; nunca se lee |
+| `commit`     | `refs`               | `object`  | `{enabled:false,source:"prompt",value:"",placement:"end",branchPattern:"[A-Z][A-Z0-9]*-[0-9]+"}` | Footer de refs de issues/tickets — ver [Issue refs](#issue-refs); vía `config edit`, `get/set` superficial |
 | `commit`     | `maxLength`          | `number`  | `80`                | Límite de subject; `--max-length` por ejecución                                                                   |
 | `commit`     | `bodyStyle`          | `string`  | `"subject-body"`    | `subject-only`, `subject-body`, `subject-body-footer`                                                             |
 | `commit`     | `recentCommits`      | `object`  | `{enabled:false,count:5,scope:"all"}` | Mensajes recientes como ejemplos de estilo (`enabled`, `count` 1–20, `scope` `all`/`mine`); vía `config edit`, `get/set` superficial |
@@ -334,9 +342,87 @@ OPENAI_API_KEY='sk-...' commit-sage generate --model openai/gpt-5
 
 Ollama no necesita clave. Las claves guardadas en el archivo JSON siguen el mismo enrutado `proveedor/modelo`.
 
+### Instrucciones personalizadas
+
+`commit.customInstructions` es guía permanente aplicada a cada formato, inyectada como sección `## Custom Instructions` en el prompt IA. Dos formas, detectadas automáticamente:
+
+```jsonc
+{
+  "commit": {
+    // texto literal, usado tal cual
+    "customInstructions": "Write in the imperative mood. Never reference ticket IDs in the subject.",
+
+    // o ruta a un archivo Markdown — leído cuando termina en .md y existe
+    "customInstructions": "~/.config/commitSage/instructions.md"
+  }
+}
+```
+
+El archivo solo gana cuando el valor termina en `.md` **y** ese archivo es legible; lo demás se trata como texto literal. Una `~` inicial expande a tu home. Eso incluye una ruta `.md` que no existe — el valor se usa verbatim en lugar de fallar la ejecución, así un typo degrada a instrucciones literales en vez de un error.
+
+Vacío (el default) significa que la sección se omite del todo, con cero coste de prompt. Las instrucciones personalizadas son guía permanente que defines una vez; `--context` es el equivalente de una sola ejecución.
+
+Solo IA, como `--context` y `--format` — ignorado con `--offline`.
+
+### Idiomas personalizados
+
+`commit.commitLanguage` acepta cualquier string. Seis valores tienen plantillas de formato integradas:
+
+`english` · `russian` · `chinese` · `japanese` · `german` · `french`
+
+Las etiquetas que normalizan a una de esas también valen — `en`, `en-US`, `jp`, `deutsch`, `francais`.
+
+Lo demás es un **idioma personalizado**. La primera ejecución con un idioma sin traducir pregunta si traducir las instrucciones de formato, mostrando una lista checkbox con el formato pedido pre-seleccionado — pulsa Enter para traducir solo ese, o marca más para llenar la caché en la misma pasada. Traducir usa tu proveedor configurado y cuesta una llamada por formato seleccionado. Los formatos que marques más allá del pedido son best-effort: si uno falla al traducir, se omite con un aviso y la ejecución continúa con el formato pedido.
+
+Desmarcar el formato pre-seleccionado cuenta como rechazo, igual que cancelar.
+
+Rechazar el prompt, cancelarlo o ejecutar sin TTY cuentan como rechazo: commit-sage avisa y sale con 0, así pipes y CI nunca se bloquean por un idioma no soportado.
+
+Las traducciones se cachean en `translations.json` junto a tu archivo de config, indexadas por idioma y luego formato:
+
+```jsonc
+{
+  "swahili": {
+    "conventional": "<translated format instructions>"
+  }
+}
+```
+
+Las entradas cacheadas se usan en silencio — sin prompt en ejecuciones posteriores. **Para invalidar una, bórrala:** edita `translations.json` y elimina la entrada (el par idioma/formato, o el idioma entero), y la próxima ejecución re-traduce. No hay caducidad ni flag de refresco; una traducción cacheada queda hasta que la quites.
+
+`previous` no tiene plantilla propia — imita tu historial reciente de commits — así nunca se ofrece para traducir. Reutiliza la plantilla `conventional` cuando hay un idioma personalizado activo.
+
+### Issue refs
+
+`commit.refs` adjunta IDs de issues/tickets a los mensajes generados como línea de footer etiquetada (`Refs: PROJ-123, PROJ-456`):
+
+```jsonc
+{
+  "commit": {
+    "refs": {
+      "enabled": false, // interruptor maestro — solo condiciona el flujo por config; --ref/--refs siguen aplicando por ejecución
+      "source": "prompt", // prompt | branch | input
+      "value": "", // token(s) fijos para source input; separados por comas/espacios
+      "placement": "end", // end | start | prefix
+      "branchPattern": "[A-Z][A-Z0-9]*-[0-9]+" // regex sobre la rama para source branch
+    }
+  }
+}
+```
+
+Resolución de fuente por ejecución: `--ref` gana a `--refs`, que gana a la `source` configurada.
+
+- `prompt` pregunta una vez por ejecución (`--refs` lo fuerza aunque `source` sea `branch` o `input`). Cancelar aborta la ejecución (salida 130). Sin TTY avisa y continúa sin refs (salida 0), para no bloquear pipes ni CI.
+- `branch` extrae de la rama actual con `branchPattern` — el primer grupo de captura gana (ej. `issue-([0-9]+)` produce el número solo), si no el match completo. Un patrón inválido cae al default estilo Jira/Linear; sin match (o sin rama aún) omite refs en silencio.
+- `input` usa el `commit.refs.value` fijo, separado por comas/espacios.
+
+Colocación: `end` añade línea propia debajo del mensaje (default); `start` antepone línea propia encima; `prefix` pone la línea etiquetada en la propia línea del subject (`Refs: PROJ-123 feat: …`) — deliberadamente sin re-truncar contra `maxLength`.
+
+Los refs se adjuntan tras generar, antes de la vista previa y del handoff a `--edit`, para que el editor vea el texto final. Solo IA, como `--format` y `--context` — ignorado con `--offline`.
+
 ## Contribuciones
 
-¡Contribuciones bienvenidas! Lee [`CONTRIBUTING.md`](CONTRIBUTING.md) primero.
+¡Contribuciones bienvenidas! Lee [`CONTRIBUTING.md`](../../CONTRIBUTING.md) primero.
 
 Formatea antes de hacer commit.
 
@@ -352,7 +438,7 @@ Inspirado por la extensión [CommitSage para VS Code](https://marketplace.visual
 
 ## Licencia
 
-GPLv3 — ver [`LICENSE`](LICENSE).
+GPLv3 — ver [`LICENSE`](../../LICENSE).
 
 ## Contacto
 

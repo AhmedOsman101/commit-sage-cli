@@ -34,6 +34,24 @@ const freeformTemplate = {
 - **何が変わったのか**、**なぜ変わったのか**に焦点を当ててください。
 - 冗長なテンプレ文言や末尾の詰めは避けてください。
 `,
+
+  german: `Erstelle eine Commit-Nachricht in freier Form und natürlicher Sprache.
+
+- Kein Typ-Präfix, kein Bereich und keine bestimmte Struktur erforderlich.
+- Fasse die Änderungen klar und prägnant in einfachen Worten zusammen.
+- Verwende den **Imperativ** und die **Gegenwart** (z. B. "hinzufügen", "beheben" — nicht "hinzugefügt", "behoben").
+- Konzentriere dich darauf, **was** sich geändert hat und **warum**.
+- Vermeide redundante Floskeln und überflüssige Füllwörter.
+`,
+
+  french: `Générez un message de commit libre, en langage naturel.
+
+- Ni préfixe de type, ni portée, ni structure particulière requis.
+- Résumez les changements de façon claire et concise, en langage simple.
+- Utilisez l'**impératif** et le **présent** (par ex. "ajouter", "corriger" — pas "ajouté", "corrigé").
+- Concentrez-vous sur **ce qui** a changé et **pourquoi**.
+- Évitez les formules redondantes et le remplissage superflu.
+`,
 };
 
 export { freeformTemplate };

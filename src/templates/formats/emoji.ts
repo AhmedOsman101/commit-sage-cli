@@ -70,6 +70,56 @@ Example:
 例：
 ✨ リアルタイムコラボレーション機能を追加
 🐛 認証トークンの有効期限の問題を修正`,
+
+  german: `Erstellen Sie eine Commit-Nachricht im Emoji-Format:
+:emoji: Commit-Nachricht
+
+Häufig verwendete Emojis (Gitmoji + Conventional Emoji Commits):
+✨ :sparkles: - Neue Funktion
+🐛 :bug: - Fehlerbehebung
+📝 :memo: - Dokumentationsaktualisierung
+🎨 :art: - Codestil-/Formatierungsänderungen
+♻️ :recycle: - Refactoring ohne Funktionsänderung
+🧪 :test_tube: - Tests hinzufügen oder ändern
+🛠️ :hammer_and_wrench: - Build/Werkzeuge/Abhängigkeiten
+🤖 :robot: - CI/CD-Konfiguration
+⚡️ :zap: - Leistungsoptimierung
+🔧 :wrench: - Wartung/Diverses
+🔒 :lock: - Sicherheitskorrekturen
+🚀 :rocket: - Release/Deployment
+🔥 :fire: - Code oder Dateien entfernen
+⬆️ :arrow_up: - Abhängigkeiten aktualisieren
+⬇️ :arrow_down: - Abhängigkeiten herunterstufen
+✅ :white_check_mark: - CI-Build reparieren
+
+Beispiele:
+✨ Echtzeit-Zusammenarbeitsfunktion hinzufügen
+🐛 Ablauf des Authentifizierungstokens beheben`,
+
+  french: `Générez un message de commit au format Emoji :
+:emoji: message de commit
+
+Emojis courants (Gitmoji + Conventional Emoji Commits) :
+✨ :sparkles: - Nouvelle fonctionnalité
+🐛 :bug: - Correction de bug
+📝 :memo: - Mise à jour de documentation
+🎨 :art: - Changements de style/formatage de code
+♻️ :recycle: - Refactorisation sans changement de fonctionnalité
+🧪 :test_tube: - Ajout ou modification de tests
+🛠️ :hammer_and_wrench: - Build/outils/dépendances
+🤖 :robot: - Configuration CI/CD
+⚡️ :zap: - Optimisation des performances
+🔧 :wrench: - Maintenance/tâches diverses
+🔒 :lock: - Corrections de sécurité
+🚀 :rocket: - Release/déploiement
+🔥 :fire: - Suppression de code ou fichiers
+⬆️ :arrow_up: - Mise à jour des dépendances
+⬇️ :arrow_down: - Rétrogradation des dépendances
+✅ :white_check_mark: - Correction du build CI
+
+Exemples :
+✨ ajouter la fonctionnalité de collaboration en temps réel
+🐛 corriger l'expiration du jeton d'authentification`,
 };
 
 export { emojiTemplate };

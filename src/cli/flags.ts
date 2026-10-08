@@ -24,6 +24,8 @@ function resolveOptions(opts: Record<string, unknown>): GenerateOptions {
     context: opts.context as string,
     offline: opts.offline as boolean,
     edit: opts.edit as boolean,
+    ref: opts.ref as string[] | undefined,
+    refs: opts.refs as boolean | undefined,
   } as GenerateOptions;
 }
 

@@ -5,7 +5,9 @@ import { Command } from "@cliffy/command";
 import { renderMarkdown } from "@littletof/charmd";
 import { bold } from "@std/fmt/colors";
 import { resolveOptions, validateOptions } from "@/cli/flags.ts";
+import { handleGenerationResult } from "@/cli/handlers/generationResult.ts";
 import { runOffline } from "@/cli/handlers/offline.ts";
+import { applyRefs } from "@/cli/handlers/refs.ts";
 import { confirmPrompt, selectFilesToStage } from "@/cli/prompts.ts";
 import { Log } from "@/lib/logger.ts";
 import { Spinner } from "@/lib/spinner.ts";
@@ -49,10 +51,6 @@ function renderPreview(message: string): string {
   return renderMarkdown(`${subject}\n\n${body}`);
 }
 
-/**
- * Resolve current branch name. Returns `null` if HEAD is unborn (no commits).
- */
-
 // ─── The commit subcommand ──────────────────────────────────────────────────
 
 class CommitCommand extends Command {
@@ -93,6 +91,15 @@ class CommitCommand extends Command {
       .option(
         "--edit",
         "Open the generated message in $EDITOR/$VISUAL before saving."
+      )
+      .option(
+        "--ref <token:string>",
+        "Override the configured refs source for this run with explicit tokens. Repeatable: --ref PROJ-1 --ref PROJ-2 renders both.",
+        { collect: true }
+      )
+      .option(
+        "--refs",
+        "Force a single interactive refs prompt for this run, even when commit.refs.source is branch or input."
       )
       // Commit-specific flags.
       .option(
@@ -193,9 +200,18 @@ class CommitCommand extends Command {
           spinner.start();
           const result = await AiService.generateMessage(runOptions);
           spinner.stop();
-          if (result.isError()) throw Log.error(result.error.message).exit();
+          handleGenerationResult(result);
           message = (result.ok?.message ?? "").trim();
           if (!message) throw Log.error("Generated message is empty.").exit();
+
+          // Refs attach post-generation, before preview and the --edit
+          // handoff, so the editor sees the final text. Skipped on the
+          // --offline path above: formats and refs are AI-only.
+          const refsResult = await applyRefs(message, runOptions);
+          if (refsResult.isError()) {
+            throw Log.error(refsResult.error.message).exit();
+          }
+          message = refsResult.ok;
         }
 
         // ── git commit ───────────────────────────────────────────────────

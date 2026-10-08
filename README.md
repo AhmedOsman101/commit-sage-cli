@@ -1,3 +1,5 @@
+[English](README.md) | [Español](docs/readme/README.es-ES.md)
+
 # Commit Sage
 
 Generate meaningful git commit messages with AI — or offline static analysis
@@ -209,17 +211,19 @@ More in `docs/demos/` (gifs):  -->
 
 ### Shared `generate` / `commit` flags
 
-One table — both subcommands accept the same 7 flags (commit adds 3 more below).
+One table — both subcommands accept the same 9 flags (commit adds 3 more below).
 
 | Flag               | Description                                                                                                                                                                       | Notes                                                                                                                                       |
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--offline`        | Use static-analysis generator (no API). Always conventional-shape `<type>: <desc>` or bare `<desc>`; truncates at `--max-length` word boundary.                                   | Ignores `--format`; still respects `--max-length`; needs `git diff-index` status rows — untracked files won't appear until staged.          |
 | `--context <text>` | Inject `## External Context\n<text>` before the diff in the AI prompt.                                                                                                            | **AI-only** — ignored with `--offline`.                                                                                                     |
 | `--model <name>`   | Model for this run in `provider/model` format (e.g. `openai/gpt-5-nano`). First slash splits provider from model id; multi-segment ids preserved (`9router/kc/stealth/ox-alpha`). | Per-run override of top-level `model`; any `provider/model` string accepted — provider validates at call time.                              |
-| `--format <name>`  | Commit template: `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform`, `previous`.                                                                                  | **AI-only** — ignored with `--offline` (offline always conventional). Default `conventional` (see `commit.commitFormat`). `previous` mimics your recent history (bodies/footers included). |
-| `--lang <name>`    | Commit language (BCP-47, stored as-given, e.g. `en`, `en-US`, `jp`).                                                                                                              | Per-run override of `commit.commitLanguage`; normalized internally.                                                                         |
+| `--format <name>`  | Commit template: `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform`, `emojiKarma`, `google`, `atom`, `detailed`, `previous`.                                                  | **AI-only** — ignored with `--offline` (offline always conventional). Default `conventional` (see `commit.commitFormat`). `previous` mimics your recent history (bodies/footers included). |
+| `--lang <name>`    | Commit language (BCP-47, stored as-given, e.g. `en`, `en-US`, `jp`). Any other value is a custom language — see [Custom languages](#custom-languages).                               | Per-run override of `commit.commitLanguage`; native tags normalized internally. An unknown tag prompts to translate once (exit 0 if declined or non-TTY). |
 | `--max-length <n>` | Override `commit.maxLength` for this message.                                                                                                                                     | Applies to **both** AI and `--offline` (offline truncation uses word boundary + `…`).                                                       |
 | `--edit`           | Open before saving.                                                                                                                                                               | `generate`: tempfile + `$EDITOR`/`$VISUAL` -> print final to stdout. `commit`: passes `-e` to `git commit` -> editor on the staged message. |
+| `--ref <token>`    | Attach explicit ref token(s) for this run. Repeatable: `--ref PROJ-1 --ref PROJ-2` renders both.                                                                                  | **AI-only** — ignored with `--offline`. Wins over `--refs` and `commit.refs.source`; implies refs for the run even when `commit.refs.enabled` is false. |
+| `--refs`           | Force a single interactive refs prompt for this run, even when `commit.refs.source` is `branch` or `input`.                                                                       | **AI-only** — ignored with `--offline`. TTY-only; non-TTY warns and skips refs (exit 0). Implies refs for the run even when `commit.refs.enabled` is false. |
 
 Commit-only flags:
 
@@ -251,6 +255,8 @@ Commit-only flags:
   interactive). Use `--offline` with `--yes` still needs a TTY for the flow; for CI,
   prefer `generate --offline | git commit -F -`.
 - `--offline` (both subcommands) -> always non-interactive, no key, no TTY.
+- Refs prompts (`commit.refs.source: prompt`, or `--refs`) on non-TTY warn
+  and continue without refs — never an error, so pipes stay unblocked.
 
 ## Configuration
 
@@ -316,10 +322,12 @@ Don't confuse the stored `model` string with the per-run
 | `providers`  | `<name>.apiType`     | `string`  | inherits            | `openai-chat`, `openai-responses`, `anthropic`                                                                             |
 | `commit`     | `autoCommit`         | `boolean` | `false`             | Skip `Commit changes?` confirm (or use `-y/--yes`)                                                                         |
 | `commit`     | `autoPush`           | `boolean` | `false`             | Skip `Push to <branch>?` confirm (or use `-y/--yes`)                                                                       |
-| `commit`     | `commitFormat`       | `string`  | `"conventional"`    | `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform` (`freeform` AI-only), `previous` (recent-history style) |
+| `commit`     | `commitFormat`       | `string`  | `"conventional"`    | `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform` (`freeform` AI-only), `emojiKarma`, `google`, `atom`, `detailed`, `previous` (recent-history style) |
 | `commit`     | `onlyStagedChanges`  | `boolean` | `true`              | When true and nothing staged after picker, `commit` exits 0 with `No staged changes`; else falls through to `diffStrategy` |
-| `commit`     | `commitLanguage`     | `string`  | `"english"`         | BCP-47, stored as-given (`en`, `en-US`, `jp` …); `--lang` overrides                                                        |
-| `commit`     | `promptForRefs`      | `boolean` | `false`             | Reserved (wired for future refs prompt)                                                                                    |
+| `commit`     | `commitLanguage`     | `string`  | `"english"`         | BCP-47, stored as-given (`en`, `en-US`, `jp` …); `--lang` overrides. Six native languages (`english`, `russian`, `chinese`, `japanese`, `german`, `french`); any other value is a [custom language](#custom-languages) |
+| `commit`     | `customInstructions` | `string`  | `""`                | Standing guidance injected as `## Custom Instructions` for every format. Ends in `.md` and the file exists → read the file; else literal text. Empty ⇒ section omitted |
+| `commit`     | `promptForRefs`      | `boolean` | `false`             | **Deprecated**, superseded by `commit.refs`. Kept so existing configs validate; never read |
+| `commit`     | `refs`               | `object`  | `{enabled:false,source:"prompt",value:"",placement:"end",branchPattern:"[A-Z][A-Z0-9]*-[0-9]+"}` | Issue/ticket refs footer — see [Issue refs](#issue-refs); managed via `config edit`, `get/set` stays shallow |
 | `commit`     | `maxLength`          | `number`  | `80`                | Subject truncation limit; `--max-length` per-run                                                                           |
 | `commit`     | `bodyStyle`          | `string`  | `"subject-body"`    | `subject-only`, `subject-body`, `subject-body-footer`                                                                      |
 | `commit`     | `recentCommits`      | `object`  | `{enabled:false,count:5,scope:"all"}` | Recent commit messages as style examples (`enabled`, `count` 1–20, `scope` `all`/`mine`); managed via `config edit`, `get/set` stays shallow |
@@ -333,6 +341,84 @@ OPENAI_API_KEY='sk-...' commit-sage generate --model openai/gpt-5
 ```
 
 Ollama needs no key. Keys stored in the JSON file follow the same `provider/model` routing.
+
+### Custom instructions
+
+`commit.customInstructions` is standing guidance applied to every format, injected as a `## Custom Instructions` section in the AI prompt. Two shapes, detected automatically:
+
+```jsonc
+{
+  "commit": {
+    // literal text, used as-is
+    "customInstructions": "Write in the imperative mood. Never reference ticket IDs in the subject.",
+
+    // or a path to a Markdown file — read when it ends in .md and exists
+    "customInstructions": "~/.config/commitSage/instructions.md"
+  }
+}
+```
+
+The file wins only when the value ends in `.md` **and** that file is readable; anything else is treated as literal text. A leading `~` expands to your home directory. That includes a `.md` path that doesn't exist — the value is used verbatim rather than failing the run, so a typo degrades to literal instructions instead of an error.
+
+Empty (the default) means the section is omitted entirely, at zero prompt cost. Custom instructions are standing guidance you set once; `--context` is the one-shot equivalent for a single run.
+
+AI-only, like `--context` and `--format` — ignored under `--offline`.
+
+### Custom languages
+
+`commit.commitLanguage` accepts any string. Six values have built-in format templates:
+
+`english` · `russian` · `chinese` · `japanese` · `german` · `french`
+
+Tags that normalize to one of those work too — `en`, `en-US`, `jp`, `deutsch`, `francais`.
+
+Anything else is a **custom language**. The first run with an untranslated language asks whether to translate the format instructions, showing a checkbox list with the format you asked for pre-selected — press Enter to translate just that one, or tick more to fill the cache in the same pass. Translate uses your configured provider and costs one call per selected format. Formats you tick beyond the requested one are best-effort: if one fails to translate, it's skipped with a warning and the run continues on the requested format.
+
+Un-ticking the pre-selected format counts as declining, same as cancelling.
+
+Declining the prompt, cancelling it, or running without a TTY all count as declined: commit-sage warns and exits 0, so pipes and CI are never blocked by an unsupported language.
+
+Translations are cached in `translations.json` beside your config file, keyed by language then format:
+
+```jsonc
+{
+  "swahili": {
+    "conventional": "<translated format instructions>"
+  }
+}
+```
+
+Cached entries are used silently — no prompt on later runs. **To invalidate one, delete it:** edit `translations.json` and remove the entry (the language/format pair, or the whole language), then the next run re-translates. There is no expiry and no refresh flag; a cached translation stays until you remove it.
+
+`previous` has no template of its own — it mimics your recent commit history — so it is never offered for translation. It reuses the `conventional` template when a custom language is active.
+
+### Issue refs
+
+`commit.refs` attaches issue/ticket IDs to generated messages as a labeled footer line (`Refs: PROJ-123, PROJ-456`):
+
+```jsonc
+{
+  "commit": {
+    "refs": {
+      "enabled": false, // master switch — gates only the config-driven flow; --ref/--refs still attach per-run
+      "source": "prompt", // prompt | branch | input
+      "value": "", // fixed token(s) for source input; comma/space separated
+      "placement": "end", // end | start | prefix
+      "branchPattern": "[A-Z][A-Z0-9]*-[0-9]+" // regex over the branch name for source branch
+    }
+  }
+}
+```
+
+Source resolution per run: `--ref` wins over `--refs`, which wins over the configured `source`.
+
+- `prompt` asks once per run (`--refs` forces this even when `source` is `branch` or `input`). Cancelling aborts the run (exit 130). Non-TTY warns and continues without refs (exit 0), so pipes and CI stay unblocked.
+- `branch` extracts from the current branch name with `branchPattern` — the first capture group wins (e.g. `issue-([0-9]+)` yields the bare number), else the full match. An invalid pattern falls back to the Jira/Linear default; no match (or no branch yet) omits refs silently.
+- `input` uses the fixed `commit.refs.value`, split on commas/whitespace.
+
+Placement: `end` appends an own line below the message (default); `start` prepends an own line above; `prefix` puts the labeled line on the subject line itself (`Refs: PROJ-123 feat: …`) — deliberately not re-truncated against `maxLength`.
+
+Refs attach post-generation, before preview and the `--edit` handoff, so the editor sees the final text. AI-only, like `--format` and `--context` — ignored under `--offline`.
 
 ## Contributing
 

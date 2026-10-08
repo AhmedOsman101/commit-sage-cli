@@ -193,6 +193,88 @@ feat(auth): ユーザー認証を追加
 - OAuth2プロバイダーの統合を実装
 - 認証サービスモジュールを作成
 - セッション管理を追加`,
+
+  german: `Erstellen Sie eine Commit-Nachricht im Conventional Commits-Format:
+<Typ>[optionaler Bereich]: <Beschreibung>
+
+[optionaler Textkörper mit Aufzählungspunkten]
+
+Regeln:
+1. Erste Zeile: Typ(Bereich): Beschreibung (max. 50 Zeichen)
+2. Bei kleinen Änderungen nur die erste Zeile verwenden
+3. Bei komplexen Änderungen Kernpunkte im Textkörper auflisten:
+   - Jede Zeile beginnt mit "- "
+   - Jede Zeile max. 50 Zeichen
+   - Auf 5 Aufzählungspunkte begrenzen
+   - Änderungen prägnant zusammenfassen
+
+Regeln zur Typauswahl:
+- docs: ALLE Änderungen an Dokumentationsdateien (*.md, docs/*)
+- feat: Neue Funktionen oder bedeutende funktionale Änderungen
+- fix: Fehlerbehebungen und Korrekturen
+- style: Formatierung, Semikolons usw. (keine Codeänderung)
+- refactor: Codeänderungen ohne Fehlerbehebung oder neue Funktionen
+- perf: Leistungsverbesserungen
+- test: Tests hinzufügen oder aktualisieren
+- build: Build-System oder Abhängigkeiten
+- ci: CI/CD-Änderungen
+- chore: Sonstige Wartungsaufgaben
+
+Beispiele:
+Dokumentationsänderung:
+docs: Installations- und Nutzungsanleitungen aktualisieren
+
+- Beschreibung neuer Funktionen hinzugefügt
+- Konfigurationsabschnitt aktualisiert
+- Nutzungsbeispiele hinzugefügt
+
+Funktionsänderung:
+feat(auth): Benutzerauthentifizierung hinzufügen
+
+- OAuth2-Provider-Integration implementiert
+- Auth-Service-Modul erstellt
+- Sitzungsverwaltung hinzugefügt`,
+
+  french: `Générez un message de commit au format Conventional Commits :
+<type>[portée optionnelle]: <description>
+
+[corps optionnel avec liste à puces]
+
+Règles :
+1. Première ligne : type(portée): description (max 50 caractères)
+2. Pour les petits changements, utiliser uniquement la première ligne
+3. Pour les changements complexes, lister les points clés dans le corps :
+   - Chaque ligne commence par "- "
+   - Chaque ligne max 50 caractères
+   - Limiter à 5 puces
+   - Résumer les changements de manière concise
+
+Règles de sélection du type :
+- docs : TOUT changement dans les fichiers de documentation (*.md, docs/*)
+- feat : Nouvelles fonctionnalités ou changements fonctionnels significatifs
+- fix : Corrections de bugs et d'erreurs
+- style : Formatage, points-virgules, etc. (pas de changement de code)
+- refactor : Changements de code sans correction de bug ni ajout de fonctionnalité
+- perf : Améliorations des performances
+- test : Ajout ou mise à jour de tests
+- build : Système de build ou dépendances
+- ci : Changements CI/CD
+- chore : Autres tâches de maintenance
+
+Exemples :
+Changement de documentation :
+docs: mettre à jour les guides d'installation et d'utilisation
+
+- Ajout de la description des nouvelles fonctionnalités
+- Mise à jour de la section configuration
+- Ajout d'exemples d'utilisation
+
+Changement de fonctionnalité :
+feat(auth): ajouter l'authentification utilisateur
+
+- Intégration du fournisseur OAuth2 implémentée
+- Module de service d'authentification créé
+- Gestion des sessions ajoutée`,
 };
 
 export { conventionalTemplate };

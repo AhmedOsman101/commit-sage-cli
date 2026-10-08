@@ -8,6 +8,8 @@ import {
   type Config,
   DIFF_STRATEGIES,
   RECENT_COMMITS_SCOPES,
+  REFS_PLACEMENTS,
+  REFS_SOURCES,
   SUPPORTED_API_TYPES,
   SUPPORTED_REASONING_LEVELS,
 } from "@/lib/types/config.ts";
@@ -52,6 +54,14 @@ const providerEntrySchema = z.object({
   models: z.record(z.string(), modelPresetSchema).optional(),
 });
 
+const refsSchema = z.object({
+  enabled: z.boolean().optional(),
+  source: z.enum(REFS_SOURCES).optional(),
+  value: z.string().optional(),
+  placement: z.enum(REFS_PLACEMENTS).optional(),
+  branchPattern: z.string().optional(),
+});
+
 const ConfigSchema = z.strictObject({
   $schema: z
     .enum([
@@ -81,7 +91,10 @@ const ConfigSchema = z.strictObject({
     onlyStagedChanges: z.boolean(),
     commitFormat: z.enum(COMMIT_FORMATS),
     commitLanguage: z.string().min(1),
+    // Deprecated no-op: kept so older config files still validate (ADR 004).
     promptForRefs: z.boolean().optional(),
+    customInstructions: z.string().optional(),
+    refs: refsSchema.optional(),
     maxLength: z.uint32().optional(),
     bodyStyle: z.enum(BODY_STYLES).optional(),
     recentCommits: z

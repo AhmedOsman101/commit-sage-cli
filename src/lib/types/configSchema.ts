@@ -12,6 +12,8 @@ import {
   BODY_STYLES,
   DIFF_STRATEGIES,
   RECENT_COMMITS_SCOPES,
+  REFS_PLACEMENTS,
+  REFS_SOURCES,
   SUPPORTED_API_TYPES,
   SUPPORTED_REASONING_LEVELS,
 } from "@/lib/types/config.ts";
@@ -177,6 +179,44 @@ const PROVIDERS_CONFIG_SCHEMA = {
   },
 } as const;
 
+// ----- Section: commit.refs -----
+
+const REFS_CONFIG_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  description:
+    "Issue/ticket refs footer (ADR 004). Skipped entirely when enabled is false; never read for --offline runs.",
+  properties: {
+    enabled: {
+      type: "boolean",
+      description:
+        "Master switch for refs processing. When false, refs are skipped entirely — flags included.",
+    },
+    source: {
+      type: "string",
+      enum: [...REFS_SOURCES],
+      description:
+        "Where the ref tokens come from: prompt (ask once), branch (regex-extract from the current branch), input (fixed commit.refs.value).",
+    },
+    value: {
+      type: "string",
+      description:
+        "Fixed token(s) for source input; comma/space separated. Managed via config edit for multi-token values; get/set stays shallow.",
+    },
+    placement: {
+      type: "string",
+      enum: [...REFS_PLACEMENTS],
+      description:
+        "Where rendered refs land: end (own line below), start (own line above), prefix (same line as the subject).",
+    },
+    branchPattern: {
+      type: "string",
+      description:
+        "Regex over the branch name for source branch; first capture group wins, else the full match. Invalid patterns fall back to the Jira/Linear default.",
+    },
+  },
+} as const;
+
 // ----- Section: commit -----
 
 const COMMIT_CONFIG_SCHEMA = {
@@ -202,11 +242,19 @@ const COMMIT_CONFIG_SCHEMA = {
       type: "string",
       minLength: 1,
       description:
-        "Commit language tag (BCP-47, stored as-given, e.g. en, en-US, jp). Normalized internally.",
+        "Commit language tag (BCP-47, stored as-given, e.g. en, en-US, jp). Native: english, russian, chinese, japanese, german, french. Any other value is a custom language, translated on demand and cached.",
     },
     promptForRefs: {
       type: "boolean",
+      description:
+        "Deprecated no-op, superseded by commit.refs.enabled. Kept so existing config files stay valid; never read.",
     },
+    customInstructions: {
+      type: "string",
+      description:
+        "Extra standing guidance injected as a '## Custom Instructions' section for every format. Ends in .md and the file exists → the file is read; otherwise the value is literal instruction text.",
+    },
+    refs: { ...REFS_CONFIG_SCHEMA },
     maxLength: {
       type: "integer",
       minimum: 1,

@@ -5,9 +5,13 @@ import {
   SUPPORTED_LANGUAGES,
 } from "@/lib/types/commit.ts";
 import { angularTemplate } from "@/templates/formats/angular.ts";
+import { atomTemplate } from "@/templates/formats/atom.ts";
 import { conventionalTemplate } from "@/templates/formats/conventional.ts";
+import { detailedTemplate } from "@/templates/formats/detailed.ts";
 import { emojiTemplate } from "@/templates/formats/emoji.ts";
+import { emojiKarmaTemplate } from "@/templates/formats/emojiKarma.ts";
 import { freeformTemplate } from "@/templates/formats/freeform.ts";
+import { googleTemplate } from "@/templates/formats/google.ts";
 import { karmaTemplate } from "@/templates/formats/karma.ts";
 import { semanticTemplate } from "@/templates/formats/semantic.ts";
 
@@ -20,6 +24,10 @@ const templates: Record<Exclude<CommitFormat, "previous">, CommitTemplate> = {
   semantic: semanticTemplate,
   emoji: emojiTemplate,
   freeform: freeformTemplate,
+  emojiKarma: emojiKarmaTemplate,
+  google: googleTemplate,
+  atom: atomTemplate,
+  detailed: detailedTemplate,
 } as const;
 
 const isValidFormat = (format: string): format is CommitFormat =>
@@ -43,7 +51,15 @@ function getTemplate(format: CommitFormat, language: CommitLanguage): string {
     return template.english;
   }
 
-  return template[language];
+  const resolved = template[language];
+  if (resolved === undefined) {
+    Log.warning(
+      `Missing "${language}" template for this format, falling back to english`
+    );
+    return template.english;
+  }
+
+  return resolved;
 }
 
 export { getTemplate };
