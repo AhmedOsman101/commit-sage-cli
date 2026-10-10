@@ -14,6 +14,8 @@
 > - macOS, Windows, DMG, and installer names are unchanged.
 > - AUR `commit-sage-bin` follows automatically on release.
 > - Building from source now needs Bun 1.4.x instead of Deno.
+> - `commit.promptForRefs` is deprecated in favor of `commit.refs` — existing configs still validate, and nothing reads the old key anymore.
+
 
 ### What changes for users
 
@@ -22,17 +24,45 @@
 - **Nothing to relearn.** Flags, config keys, `commit-sage generate --offline` output, and exit codes (0/1/2/130) are byte-for-byte the same.
 - **Same install flows.** `unix.sh`, DMGs, the Windows installer, and the AUR package all keep working; only direct Linux asset URLs change (see above).
 - Config stays at `~/.config/commitSage/config.json`. One edge case: `XDG_CONFIG_HOME`/`XDG_CACHE_HOME` are now honored, so XDG-based setups may see the config/cache in the XDG location instead of the default.
+- **More message styles.** Four new formats — `emojiKarma`, `google`, `atom`, `detailed` — bringing the catalog to 11. Each one works in all six built-in languages, so `commit-sage generate --format google --lang japanese` just works:
 
-### Features
+```shell
+commit-sage generate --format emojiKarma
+commit-sage config set commit.commitFormat detailed
+```
 
-- **commit:** add configurable refs footer with branch extraction ([7b9c4b1](https://github.com/AhmedOsman101/commit-sage-cli/commit/7b9c4b190cd433c5cd1c4c8d8d93e2c4eb65e13d))
-- **commit:** add customInstructions and on-demand custom language translation ([92ef762](https://github.com/AhmedOsman101/commit-sage-cli/commit/92ef7623b8fd8a61c991220bdd99aab99fb407c9))
-- **commit:** add emojiKarma, google, atom, detailed formats with german/french templates ([4f7a3c5](https://github.com/AhmedOsman101/commit-sage-cli/commit/4f7a3c5c30b7e14afd62c41a849926a214eaceae))
+- **Guidance that sticks.** If you find yourself repeating the same context every run, set it once and stop typing it:
 
-### Bug Fixes
+```shell
+commit-sage config set commit.customInstructions "Write in the imperative mood."
+```
 
-- **commit:** correct decline messaging and honour translation checkbox ([beef85a](https://github.com/AhmedOsman101/commit-sage-cli/commit/beef85aa6d1b70f5fc9efeb86567aaea445802e7))
-- **git:** detect staged renames instead of reporting new files ([7b72278](https://github.com/AhmedOsman101/commit-sage-cli/commit/7b72278d20e689b748b87d0de9916fd092623c32))
+It is added to every format automatically. Point it at a `.md` file instead
+and the file's contents are used — handy for team conventions that live in
+docs.
+
+- **Your language, even if it isn't listed.** `commitLanguage` now accepts
+  anything, not just the six built-ins. The first run with a new language
+  offers a one-time translation; after that it behaves like a native. No TTY
+  or changed your mind? The run warns and exits cleanly instead of hanging,
+  so scripts and pipes never break.
+
+- **Issue IDs without retyping.** Enable refs once and your ticket IDs attach
+themselves:
+
+```shell
+commit-sage config set commit.refs '{"enabled":true,"source":"branch","value":"","placement":"end","branchPattern":"[A-Z][A-Z0-9]*-[0-9]+"}'
+```
+
+Working on `feature/PROJ-123-login`? Your message ends with `Refs: PROJ-123`
+automatically. Prefer it elsewhere — above the message or on the subject
+line — with `placement`. Rather decide per commit? `--ref PROJ-1 --ref
+PROJ-2` stamps explicit IDs onto one run, and `--refs` asks you just this
+once. Trying it out needs no config at all:
+
+```shell
+commit-sage generate --ref PROJ-123
+```
 
 ## [2.3.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v2.2.0...v2.3.0) (2026-10-08)
 
