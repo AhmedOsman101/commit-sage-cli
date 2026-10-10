@@ -1,9 +1,14 @@
-import { createXai } from "@ai-sdk/xai";
+import { createOpenAI } from "@ai-sdk/openai";
 import type { ProviderRunContext } from "@/services/providerAdapter.ts";
 import { defineProvider, registerAdapter } from "@/services/providerAdapter.ts";
 
+const XAI_BASE_URL = "https://api.x.ai/v1";
+
 function createXaiModel(ctx: ProviderRunContext) {
-  return createXai({ apiKey: ctx.apiKey })(ctx.modelId);
+  return createOpenAI({
+    apiKey: ctx.apiKey,
+    baseURL: ctx.baseUrl ?? XAI_BASE_URL,
+  })(ctx.modelId);
 }
 
 function xaiProviderOptions(reasoning: string | undefined) {

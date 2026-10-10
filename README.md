@@ -301,6 +301,12 @@ holds shared AI defaults; `providers.<name>` overrides per provider
 (`model preset > provider > defaults`) and are managed via `config edit` —
 `config get/set` stays shallow by design.
 
+Under the hood, the OpenAI-wire providers (`deepseek`, `mistral`,
+`moonshotai`, `xai`, `minimax`, `zai`) share the OpenAI client — their
+dedicated SDK packages were removed. Only `anthropic`, `google`, `ollama`,
+`openai`, and `openrouter` keep dedicated packages. Provider names, config
+keys, and request behavior are unchanged.
+
 Don't confuse the stored `model` string with the per-run
 `--model` flag (see [Flags Reference](#flags-reference)).
 

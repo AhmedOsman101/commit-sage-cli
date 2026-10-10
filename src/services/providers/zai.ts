@@ -11,9 +11,10 @@ const ZAI_BASE_URL = "https://api.z.ai/api/paas/v4/";
  * Register at https://z.ai and set ZAI_API_KEY.
  */
 function createZaiModel(ctx: ProviderRunContext) {
-  return createOpenAI({ baseURL: ZAI_BASE_URL, apiKey: ctx.apiKey })(
-    ctx.modelId
-  );
+  return createOpenAI({
+    baseURL: ctx.baseUrl ?? ZAI_BASE_URL,
+    apiKey: ctx.apiKey,
+  })(ctx.modelId);
 }
 
 function zaiProviderOptions(reasoning: string | undefined) {

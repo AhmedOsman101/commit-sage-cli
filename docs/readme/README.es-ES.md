@@ -301,6 +301,13 @@ Los presets `providers.<name>.models` resuelven por valor
 (`preset de modelo > proveedor > defaults`) y se gestionan con `config edit` —
 `config get/set` sigue shallow por diseño.
 
+Internamente, los proveedores compatibles con OpenAI (`deepseek`, `mistral`,
+`moonshotai`, `xai`, `minimax`, `zai`) comparten el cliente OpenAI — sus
+paquetes SDK dedicados fueron eliminados. Solo `anthropic`, `google`, `ollama`,
+`openai` y `openrouter` conservan paquetes dedicados. Los nombres de
+proveedor, las claves de configuración y el comportamiento de las peticiones
+no cambian.
+
 No confundas el string `model` guardado con el flag por ejecución
 `--model` (ver [Referencia de flags](#referencia-de-flags)).
 

@@ -1,9 +1,14 @@
-import { createDeepSeek } from "@ai-sdk/deepseek";
+import { createOpenAI } from "@ai-sdk/openai";
 import type { ProviderRunContext } from "@/services/providerAdapter.ts";
 import { defineProvider, registerAdapter } from "@/services/providerAdapter.ts";
 
+const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
+
 function createDeepSeekModel(ctx: ProviderRunContext) {
-  return createDeepSeek({ apiKey: ctx.apiKey })(ctx.modelId);
+  return createOpenAI({
+    apiKey: ctx.apiKey,
+    baseURL: ctx.baseUrl ?? DEEPSEEK_BASE_URL,
+  }).chat(ctx.modelId);
 }
 
 const deepseekAdapter = defineProvider({

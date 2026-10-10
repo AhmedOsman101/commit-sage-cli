@@ -1,9 +1,14 @@
-import { createMinimaxOpenAI } from "vercel-minimax-ai-provider";
+import { createOpenAI } from "@ai-sdk/openai";
 import type { ProviderRunContext } from "@/services/providerAdapter.ts";
 import { defineProvider, registerAdapter } from "@/services/providerAdapter.ts";
 
+const MINIMAX_BASE_URL = "https://api.minimax.io/v1";
+
 function createMinimaxModel(ctx: ProviderRunContext) {
-  return createMinimaxOpenAI({ apiKey: ctx.apiKey })(ctx.modelId);
+  return createOpenAI({
+    apiKey: ctx.apiKey,
+    baseURL: ctx.baseUrl ?? MINIMAX_BASE_URL,
+  }).chat(ctx.modelId);
 }
 
 const minimaxAdapter = defineProvider({
