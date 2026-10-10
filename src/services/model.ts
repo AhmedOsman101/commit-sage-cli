@@ -1,6 +1,11 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: Each child has different incompatible types for the same parameter */
 /** biome-ignore-all lint/correctness/noUnusedFunctionParameters: This is a base class */
 import { setTimeout } from "node:timers/promises";
+import {
+  extractReasoningMiddleware,
+  generateText,
+  wrapLanguageModel,
+} from "ai";
 import { DEFAULT_CONFIG } from "@/lib/constants.ts";
 import { TruncatedResponseError } from "@/lib/errors.ts";
 import { classifyAIError } from "@/lib/handleAiErrors.ts";
@@ -10,6 +15,10 @@ import type { CommitMessage } from "@/lib/types/commit.ts";
 import type { ApiType } from "@/lib/types/config.ts";
 import type { ApiError, ErrorWithResponse } from "@/lib/types/index.ts";
 import ConfigService from "@/services/config.ts";
+import type {
+  ProviderAdapter,
+  ProviderRunContext,
+} from "@/services/providerAdapter.ts";
 
 abstract class ModelService {
   protected static readonly maxRetryBackoff = 10_000;
@@ -88,6 +97,112 @@ abstract class ModelService {
   ): Promise<CommitMessage> {
     // Empty implementation as per requirement
     return Promise.resolve({ message: "", model: "" });
+  }
+
+  /**
+   * Shared generation shell behind the adapter registry.
+   *
+   * Every adapter-backed provider runs through here: resolve the
+   * `provider/model` split, the key (`getProviderApiKey` keeps the env
+   * `$`-prefix and local no-auth rules), the base URL (per-value chain
+   * with the compiled provider entry as fallback, mirroring the old
+   * OpenRouter file), the wire format, the reasoning level, and the
+   * temperature/budget/timeout options — then one `think`-middleware wrap,
+   * one `generateText`, and one retry callback. The prompt passes through
+   * untouched; adapters only shape the model and its options.
+   *
+   * `modelOverride` (optional) is the CLI `--model` flag value, resolved
+   * against config + default by `resolveModel` like everywhere else.
+   */
+  public static async run(
+    adapter: ProviderAdapter,
+    prompt: string,
+    attempt = 1,
+    modelOverride?: string
+  ): Promise<CommitMessage> {
+    Log.debug(
+      `[${adapter.name}Service.run] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
+    );
+    try {
+      const { provider, modelId, model } =
+        await ModelService.resolveProviderAndModel(modelOverride);
+      const apiKey =
+        (await ConfigService.getProviderApiKey(provider)) ?? undefined;
+      const rawBaseUrl = await ConfigService.resolveProviderValue(
+        provider,
+        modelId,
+        "baseUrl"
+      );
+      const compiledBaseUrl = (
+        DEFAULT_CONFIG.providers as unknown as Record<
+          string,
+          Record<string, unknown>
+        >
+      )[provider]?.baseUrl;
+      const baseUrl =
+        typeof rawBaseUrl === "string" && rawBaseUrl
+          ? rawBaseUrl
+          : typeof compiledBaseUrl === "string" && compiledBaseUrl
+            ? compiledBaseUrl
+            : undefined;
+      const configuredApiType = await ModelService.getApiType(
+        provider,
+        modelId
+      );
+      const baseCtx: ProviderRunContext = {
+        provider,
+        modelId,
+        model,
+        apiKey,
+        baseUrl,
+        apiType: configuredApiType,
+      };
+      const apiType = adapter.apiType?.(baseCtx) ?? configuredApiType;
+      const factoryOptions = adapter.factoryOptions?.({ ...baseCtx, apiType });
+      const ctx: ProviderRunContext = {
+        ...baseCtx,
+        apiType,
+        ...(factoryOptions ? { factoryOptions } : {}),
+      };
+      const reasoning = await ModelService.getReasoningLevel(provider, modelId);
+      const generationOptions = await ModelService.getGenerationOptions(
+        provider,
+        modelId,
+        attempt
+      );
+      const providerOptions = adapter.providerOptions?.(reasoning);
+      Log.debug(
+        `[${adapter.name}Service.run] CALL API model=${model}` +
+          (baseUrl ? `, baseURL=${baseUrl}` : "")
+      );
+
+      const wrappedModel = wrapLanguageModel({
+        model: adapter.createModel(ctx),
+        middleware: extractReasoningMiddleware({ tagName: "think" }),
+      });
+
+      const { text, finishReason } = await generateText({
+        model: wrappedModel,
+        prompt,
+        ...generationOptions,
+        ...(providerOptions ? { providerOptions } : {}),
+      });
+
+      ModelService.throwIfTruncated(finishReason, provider, model);
+
+      Log.debug(
+        `[${adapter.name}Service.run] EXIT message="${text.substring(0, 50)}..."`
+      );
+      return { message: text, model };
+    } catch (error) {
+      Log.debug(`[${adapter.name}Service.run] ERROR ${error}`);
+      return await ModelService.handleGenerationError(
+        error,
+        prompt,
+        attempt,
+        (p: string, a: number) => ModelService.run(adapter, p, a, modelOverride)
+      );
+    }
   }
 
   /**
