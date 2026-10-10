@@ -1,0 +1,50 @@
+{
+  // Gate scope: only shipped sources enter `bun check`
+  "include": ["src", "scripts"],
+  "compilerOptions": {
+    // Language & Environment
+    "target": "ESNext",
+    "lib": ["ESNext"],
+    "types": ["bun"],
+
+    // Modules
+    "moduleDetection": "force", // Treat all .ts files as modules
+    "resolveJsonModule": true, // Allow importing .json files
+    "verbatimModuleSyntax": true, // Enforce explicit import/export syntax
+    "module": "Preserve",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+
+    // Bundler mode
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+
+    // Type Checking — Strict
+    "strict": true, // Enable all strict type checks
+    "noImplicitAny": true, // (auto-enabled by strict) Prevent implicit 'any' types
+    "strictNullChecks": true, // (auto-enabled by strict) Enable strict null checks
+    "strictFunctionTypes": true, // (auto-enabled by strict) Strict function type variance
+    "strictBindCallApply": true, // (auto-enabled by strict) Strict check for bind/call/apply
+    "noImplicitThis": true, // (auto-enabled by strict) Prevent implicit 'this' as 'any'
+    "skipLibCheck": true, // Skip type checking of .d.ts files
+    "noFallthroughCasesInSwitch": true,
+
+    // Linting
+    "noUnusedLocals": false, // Error on unused local variables
+    "noUnusedParameters": false, // Error on unused function parameters
+    "allowUnusedLabels": false, // Disallow unused labels
+    "noUncheckedSideEffectImports": true, // Error on side-effect imports of non-existent modules
+    "allowUnreachableCode": false, // Error on unreachable code
+    "noUncheckedIndexedAccess": false, // Add undefined to index signatures
+    "noPropertyAccessFromIndexSignature": false, // Require bracket notation for index signatures
+    "noImplicitOverride": true, // Require explicit override keyword
+    "exactOptionalPropertyTypes": false, // Distinguish between optional and undefined
+    "noErrorTruncation": true, // Show full type errors (no truncation)
+
+    // JavaScript
+    "allowJs": false, // Do not allow .js files
+    "checkJs": false // Do not type-check .js files
+  }
+}
