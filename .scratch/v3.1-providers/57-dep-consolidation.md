@@ -1,6 +1,6 @@
 ## Question
 
-Collapse the OpenAI-wire SDKs onto `createOpenAI`-with-baseUrl inside the adapter literals, per `docs/plans/v2.5-providers.md` phase 3.
+Collapse the OpenAI-wire SDKs onto `createOpenAI`-with-baseUrl inside the adapter literals, per `docs/plans/v3.1-providers.md` phase 3.
 
 ## Scope
 

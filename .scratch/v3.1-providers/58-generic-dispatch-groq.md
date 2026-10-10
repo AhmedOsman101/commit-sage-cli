@@ -1,6 +1,6 @@
 ## Question
 
-Ship generic dispatch plus the groq preset as adapter literals, per `docs/plans/v2.5-providers.md` phases 4-5 and ADR 008.
+Ship generic dispatch plus the groq preset as adapter literals, per `docs/plans/v3.1-providers.md` phases 4-5 and ADR 008.
 
 ## Scope
 

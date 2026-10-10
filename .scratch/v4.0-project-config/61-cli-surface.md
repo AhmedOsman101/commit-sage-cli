@@ -1,6 +1,6 @@
 ## Question
 
-Ship the project-config CLI surface, per `docs/plans/v3.0-project-config-commitlint.md` and ADR 013.
+Ship the project-config CLI surface, per `docs/plans/v4.0-project-config-commitlint.md` and ADR 013.
 
 ## Scope
 

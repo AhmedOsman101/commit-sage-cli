@@ -1,6 +1,6 @@
 ## Question
 
-Introduce the adapter seam and migrate the first provider family, per `docs/plans/v2.5-providers.md` phase 1 and ADR 007.
+Introduce the adapter seam and migrate the first provider family, per `docs/plans/v3.1-providers.md` phase 1 and ADR 007.
 
 ## Scope
 

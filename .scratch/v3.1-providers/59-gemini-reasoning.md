@@ -1,6 +1,6 @@
 ## Question
 
-Ship Gemini thinking controls plus per-provider reasoning validation, per `docs/plans/v2.5-providers.md` phase 6 and ADR 009.
+Ship Gemini thinking controls plus per-provider reasoning validation, per `docs/plans/v3.1-providers.md` phase 6 and ADR 009.
 
 ## Scope
 

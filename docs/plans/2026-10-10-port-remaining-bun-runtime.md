@@ -1,7 +1,7 @@
 # Port remaining Deno runtime and release tooling to Bun
 
 - **Date:** 2026-10-10
-- **Status:** In Progress
+- **Status:** Landed in v3.0.0 (2026-10-10, PR #68). Kept as history.
 - **Branch:** `refactor/migrate-to-bun`
 - **For:** human implementer working by hand
 - **Scope:** last `Deno.*`, Cliffy install, Charmd swap, typecheck, release, cutover

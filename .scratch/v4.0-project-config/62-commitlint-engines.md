@@ -1,6 +1,6 @@
 ## Question
 
-Ship both commitlint engines with fail-open validation, per `docs/plans/v3.0-project-config-commitlint.md` and ADR 014.
+Ship both commitlint engines with fail-open validation, per `docs/plans/v4.0-project-config-commitlint.md` and ADR 014.
 
 ## Scope
 

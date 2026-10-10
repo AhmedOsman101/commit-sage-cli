@@ -1,6 +1,6 @@
 ## Question
 
-Delete `onlyStagedChanges` and fold it into `diffStrategy`, per `docs/plans/v3.0-project-config-commitlint.md` and ADR 011.
+Delete `onlyStagedChanges` and fold it into `diffStrategy`, per `docs/plans/v4.0-project-config-commitlint.md` and ADR 011.
 
 ## Scope
 

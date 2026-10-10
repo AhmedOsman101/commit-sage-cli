@@ -1,6 +1,6 @@
 ## Question
 
-Finish the literal migration for the remaining 8 providers, per `docs/plans/v2.5-providers.md` phase 2 and ADR 007.
+Finish the literal migration for the remaining 8 providers, per `docs/plans/v3.1-providers.md` phase 2 and ADR 007.
 
 ## Scope
 

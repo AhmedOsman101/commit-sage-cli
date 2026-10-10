@@ -16,7 +16,6 @@
 > - Building from source now needs Bun 1.4.x instead of Deno.
 > - `commit.promptForRefs` is deprecated in favor of `commit.refs` — existing configs still validate, and nothing reads the old key anymore.
 
-
 ### What changes for users
 
 - **Much smaller downloads.** Every binary shrinks 30–44%: Linux 165->93 MB, macOS 141->82 and 130->74 MB, Windows 141->99 and 135->86 MB.
@@ -47,11 +46,20 @@ docs.
   or changed your mind? The run warns and exits cleanly instead of hanging,
   so scripts and pipes never break.
 
-- **Issue IDs without retyping.** Enable refs once and your ticket IDs attach
-themselves:
+- **Issue IDs without retyping.** Enable refs once, and your ticket IDs attach themselves
 
-```shell
-commit-sage config set commit.refs '{"enabled":true,"source":"branch","value":"","placement":"end","branchPattern":"[A-Z][A-Z0-9]*-[0-9]+"}'
+```json
+{
+  "commit": {
+    "refs": {
+      "enabled": true,
+      "source": "prompt",
+      "value": "",
+      "placement": "end",
+      "branchPattern": "[A-Z][A-Z0-9]*-[0-9]+"
+    }
+  }
+}
 ```
 
 Working on `feature/PROJ-123-login`? Your message ends with `Refs: PROJ-123`
