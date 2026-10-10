@@ -28,7 +28,7 @@ Pick the surface that fits the moment: `generate` prints a message to stdout
 
 - Git in `$PATH`.
 - Internet for AI providers (skip with `--offline` or `ollama` locally).
-- Deno 2.x only if compiling from source (`mask compile`).
+- Bun 1.4.x only if compiling from source (`mask compile`).
 
 ## Installation
 
@@ -100,7 +100,7 @@ package, which tracks GitHub releases.
 
 ### Compile from source
 
-Requires [Deno](https://deno.land/) and [mask](https://github.com/jacobdeichert/mask).
+Requires [Bun](https://bun.sh/) and [mask](https://github.com/jacobdeichert/mask).
 
 ```shell
 git clone https://github.com/AhmedOsman101/commit-sage-cli.git commit-sage

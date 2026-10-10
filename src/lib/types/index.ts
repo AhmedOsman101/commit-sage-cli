@@ -1,18 +1,14 @@
-import type { AxiosError } from "axios";
-
 type CommandOutput = {
   stdout: string;
   stderr: string;
   code: number;
 };
 
-type ApiErrorResponse = {
-  status: number;
-  data: unknown;
-};
-
-type ErrorWithResponse = AxiosError & {
-  response?: ApiErrorResponse;
+type ErrorWithResponse = {
+  response?: {
+    status: number;
+    data: unknown;
+  };
 };
 
 type ApiError = {
@@ -20,4 +16,4 @@ type ApiError = {
   shouldRetry: boolean;
 };
 
-export type { ApiError, ApiErrorResponse, CommandOutput, ErrorWithResponse };
+export type { ApiError, CommandOutput, ErrorWithResponse };

@@ -50,6 +50,28 @@ Darwin) OS="macos" ;;
   ;;
 esac
 
+# Detect libc flavor for the Linux asset names (gnu vs musl).
+# Respects a pre-set LIBC env var (auto|gnu|musl), matching how
+# VERSION/INSTALL_DIR can be overridden from the environment.
+LIBC="${LIBC:-auto}"
+if [[ "${OS}" == "linux" ]]; then
+  case "${LIBC}" in
+  gnu | musl) ;; # explicit override, use as-is
+  *)
+    # Ask the loader of a real binary, not ldd itself: on glibc this
+    # prints ld-linux, on musl a musl loader path. (A stray musl loader
+    # file on disk means nothing — e.g. toolchains ship one.)
+    if [[ -f /etc/alpine-release ]]; then
+      LIBC="musl"
+    elif ldd /bin/ls 2>/dev/null | grep -qi "musl"; then
+      LIBC="musl"
+    else
+      LIBC="gnu"
+    fi
+    ;;
+  esac
+fi
+
 # Detect Rosetta 2 on macOS: if the shell is running as x64 under Rosetta on an ARM Mac,
 # download the native arm64 binary instead of the x64 one
 if [[ "${OS}" == "macos" ]] && [[ "${ARCH}" == "x64" ]]; then
@@ -167,7 +189,11 @@ main() {
   fi
 
   log_info "Version: ${VERSION}"
-  log_info "Architecture: ${ARCH}"
+  if [[ "${OS}" == "linux" ]]; then
+    log_info "Architecture: ${ARCH} (libc: ${LIBC})"
+  else
+    log_info "Architecture: ${ARCH}"
+  fi
 
   # Ask for installation directory (skip prompt when piped via curl | bash)
   if [[ "${INSTALL_DIR}" == "${HOME}/.local/bin" ]] && [[ -t 0 ]]; then
@@ -184,10 +210,15 @@ main() {
   # Create install directory
   mkdir -p "${INSTALL_DIR}"
 
-  # Download binary
-  local url="${REPO_URL}/releases/download/v${VERSION}/commit-sage-${OS}-${ARCH}"
+  # Download binary (Linux assets are per-libc: -gnu- vs -musl-)
+  if [[ "${OS}" == "linux" ]]; then
+    asset="commit-sage-${OS}-${LIBC}-${ARCH}"
+  else
+    asset="commit-sage-${OS}-${ARCH}"
+  fi
+  local url="${REPO_URL}/releases/download/v${VERSION}/${asset}"
 
-  log_info "Downloading Commit Sage v${VERSION} for ${OS}-${ARCH}..."
+  log_info "Downloading Commit Sage v${VERSION} for ${asset}..."
   download_file "${url}" "${INSTALL_DIR}/commit-sage" || {
     log_error "Failed to download binary. Please check the version."
     exit 1

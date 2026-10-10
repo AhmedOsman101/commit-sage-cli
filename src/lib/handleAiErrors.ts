@@ -24,7 +24,6 @@ import {
   TypeValidationError,
   UnsupportedFunctionalityError,
 } from "ai";
-import type { AxiosError } from "axios";
 import { ERROR_MESSAGES } from "@/lib/constants.ts";
 import { ConfigurationError, TruncatedResponseError } from "@/lib/errors.ts";
 
@@ -250,61 +249,11 @@ function classifyAIError(error: unknown): UnifiedError {
     };
   }
 
-  // 4. Handle Axios errors
-  if (isAxiosError(error)) {
-    const status = error.response?.status;
-    // biome-ignore lint/suspicious/noExplicitAny: For error handling
-    const apiMessage = (error.response?.data as any)?.error?.message;
-
-    switch (status) {
-      case 401:
-        return {
-          message: ERROR_MESSAGES.authenticationError,
-          shouldRetry: true,
-          status,
-        };
-      case 402:
-        return {
-          message: ERROR_MESSAGES.paymentRequired,
-          shouldRetry: false,
-          status,
-        };
-      case 429:
-        return {
-          message: ERROR_MESSAGES.rateLimitExceeded,
-          shouldRetry: true,
-          status,
-        };
-      case 422:
-        return {
-          message: apiMessage || ERROR_MESSAGES.invalidRequest,
-          shouldRetry: false,
-          status,
-        };
-      case 500:
-        return {
-          message: ERROR_MESSAGES.serverError,
-          shouldRetry: true,
-          status,
-        };
-      default:
-        return {
-          message: `${ERROR_MESSAGES.apiError.replace("{0}", String(status))}: ${apiMessage || "Unknown"}`,
-          shouldRetry: (status ?? 0) >= 500,
-          status,
-        };
-    }
-  }
-
-  // 5. Fallback: unknown error
+  // 4. Fallback: unknown error
   return {
     message: error instanceof Error ? error.message : "Unknown error occurred",
     shouldRetry: false,
   };
-}
-
-function isAxiosError(err: unknown): err is AxiosError {
-  return Boolean((err as AxiosError)?.isAxiosError);
 }
 
 export type { NormalizedAIError, UnifiedError };

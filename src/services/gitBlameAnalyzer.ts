@@ -93,7 +93,7 @@ class GitBlameAnalyzer {
       "git",
       ["blame", "--line-porcelain", filePath.replaceAll('"', "")],
       await GitService.initialize(),
-      { timeoutMs: await GitService.getTimeoutMs() }
+      { timeout: await GitService.getTimeoutMs() }
     );
 
     if (cmdResult.isError()) {

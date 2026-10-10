@@ -3,7 +3,7 @@
 # Usage: build-dmg.sh [VERSION] [OUTPUT_DIR]
 # Packages each macOS binary present in bin/ into its own arch-tagged DMG.
 # Binaries are cross-compiled beforehand by `mask release`; this script only
-# wraps them, so it needs no Deno toolchain — just create-dmg (via Homebrew).
+# wraps them, so it needs no Bun toolchain — just create-dmg (via Homebrew).
 
 set -euo pipefail
 

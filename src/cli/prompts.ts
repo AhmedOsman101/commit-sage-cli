@@ -11,7 +11,7 @@ import GitService from "@/services/git.ts";
  * otherwise hang forever on piped/CI stdin.
  */
 function guardTTY(): void {
-  if (!Deno.stdin.isTerminal()) {
+  if (!process.stdin.isTTY) {
     throw Log.error(
       "Interactive TTY required for this prompt. Pipe stdin from CI instead."
     ).exit();

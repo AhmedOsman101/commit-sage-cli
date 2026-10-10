@@ -56,7 +56,7 @@ async function resolveCustomLanguageTemplate(
 ): Promise<Result<string>> {
   // Non-TTY counts as declined: exit 0 rather than hang or fail. The
   // sentinel carries the user-facing message; the CLI warns once.
-  if (!Deno.stdin.isTerminal()) {
+  if (!process.stdin.isTTY) {
     return Err(
       new LanguageTranslationDeclinedError(
         language,

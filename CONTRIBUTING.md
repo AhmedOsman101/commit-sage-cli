@@ -11,11 +11,11 @@ git clone https://github.com/AhmedOsman101/commit-sage-cli.git
 cd commit-sage-cli
 ```
 
-2. Install [Deno](https://deno.land/)
+2. Install [Bun](https://bun.sh/) (1.4.x, exact version pinned in CI)
 
 > [!warning]
 >
-> This project requires Deno v2.2 or higher.
+> This project requires Bun v1.4 or higher.
 
 3. Install [Mask](https://github.com/jacobdeichert/mask) task runner.
 
@@ -29,7 +29,7 @@ mask run
 
 - Ensure your changes pass all existing logic.
 - Format with `mask format` before committing any changes.
-  - Requires any package manager other than `deno` to run Biome, since Deno does not currently support `devDependencies` (all gets included in the final binary).
+  - Requires `bun install` first, since Biome runs from `devDependencies`.
 - Follow the [Conventional Commits](https://www.conventionalcommits.org/) format.
 
 ## Submitting a PR

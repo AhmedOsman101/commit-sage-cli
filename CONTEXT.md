@@ -50,3 +50,11 @@ _Avoid_: custom provider
 **Project config**:
 A repo-local `.commitsage/config.json` that overlays the global config for runs inside that repo. Untrusted repos apply only non-sensitive keys.
 _Avoid_: workspace config, local config
+
+**Runtime seam**:
+The modules that own every runtime call (`command.ts`, `fileSystem.ts`, `spinner.ts`, `logger.ts`, commit preview, env/args). The rest of `src/` stays runtime-free so the runtime can change without touching callers.
+_Avoid_: runtime wrapper, platform layer
+
+**Bun-native-first**:
+The policy that seam internals prefer a `Bun.*` API where one exists and use `node:*` only where Bun has none (directory ops, signals, TTY checks). Recorded in ADR 015.
+_Avoid_: Bun-only, native-only

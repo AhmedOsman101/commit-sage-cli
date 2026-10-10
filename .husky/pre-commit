@@ -57,6 +57,6 @@ fi
 
 # --- Do type checking before any commit --- #
 printf "\e[34mDoing type checks...\e[0m\n"
-if ! deno check; then
+if ! bun check; then
   yesNo "Typechecking failed.\nDo you want to proceed with the commit?" || abort
 fi

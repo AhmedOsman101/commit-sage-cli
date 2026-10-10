@@ -7,7 +7,9 @@
 ```bash
 unset BIOME_CONFIG_PATH &>/dev/null
 unset BIOME_BINARY_PATH &>/dev/null
-version="2.5.11"
+version=$(
+  bun -e 'import pkg from "./package.json"; process.stdout.write(pkg.devDependencies["@biomejs/biome"]);'
+)
 pkg="@biomejs/biome@${version}"
 
 declare -a argv
@@ -15,14 +17,8 @@ eval 'argv=(${args})'
 
 if command -v biome &>/dev/null && [[ "$(biome --version | awk '{ print $2 }')" == "${version}" ]]; then
   biome "${argv[@]}"
-elif command -v pnpm &>/dev/null; then
-  pnpm dlx "${pkg}" "${argv[@]}"
-elif command -v bunx &>/dev/null; then
-  bunx "${pkg}" "${argv[@]}"
 elif command -v bun &>/dev/null; then
-  bun x "${pkg}" "${argv[@]}"
-elif command -v npx &>/dev/null; then
-  npx "${pkg}" "${argv[@]}"
+  bun run -- biome "${argv[@]}"
 else
   echo "Failed to run biome."
 fi
@@ -69,7 +65,7 @@ $MASK biome "${args[*]}"
 > Run type-checking
 
 ```bash
-deno check
+bun check
 ```
 
 ## schema
@@ -81,7 +77,7 @@ deno check
 > Regenerate `config.schema.json` from `src/lib/types/configSchema.ts`
 
 ```bash
-deno run -A scripts/build-schema.ts
+bun run scripts/build-schema.ts
 ```
 
 ### check
@@ -89,7 +85,7 @@ deno run -A scripts/build-schema.ts
 > Verify the schema is in sync instead of writing (exits non-zero on drift)
 
 ```bash
-deno run -A scripts/build-schema.ts --check
+bun run scripts/build-schema.ts --check
 ```
 
 ## run [args]
@@ -100,9 +96,9 @@ deno run -A scripts/build-schema.ts --check
 if [[ -n "${args}" ]]; then
   declare -a argv
   eval 'argv=(${args})'
-  deno run -A src/main.ts "${argv[@]}"
+  bun run src/main.ts "${argv[@]}"
 else
-  deno run -A src/main.ts
+  bun run src/main.ts
 fi
 ```
 
@@ -116,15 +112,15 @@ fi
   - flags: -t --target
   - type: string
   - desc: Which target operating system to compile against.
-  - choices: x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu, x86_64-pc-windows-msvc, aarch64-pc-windows-msvc, x86_64-apple-darwin, aarch64-apple-darwin
+  - choices: linux-x64, linux-arm64, linux-x64-musl, linux-arm64-musl, windows-x64, windows-arm64, darwin-x64, darwin-arm64
 
 ```bash
 path="${path:-$HOME/.local/bin/commit-sage}"
 
 if [[ -z "${target}" ]]; then
-  deno compile -A -o "${path}" src/main.ts
+  bun build --compile "src/main.ts" --outfile "${path}"
 else
-  deno compile -A -o "${path}" ${target:+--target "${target}"} src/main.ts
+  bun build --compile ${target:+--target "bun-${target}"} "src/main.ts" --outfile "${path}"
 fi
 ```
 
@@ -141,7 +137,7 @@ $MASK compile "${SCRIPTS_DIR:-${HOME}/scripts}/bin/commit-sage"
 > Compile for Linux-x64 at `~/.local/bin/commit-sage` or any given path
 
 ```bash
-$MASK compile --target x86_64-unknown-linux-gnu "${path}"
+$MASK compile --target linux-x64 "${path}"
 ```
 
 ### compile linux-arm64 [path]
@@ -149,7 +145,23 @@ $MASK compile --target x86_64-unknown-linux-gnu "${path}"
 > Compile for Linux-arm64 at `~/.local/bin/commit-sage` or any given path
 
 ```bash
-$MASK compile --target aarch64-unknown-linux-gnu "${path}"
+$MASK compile --target linux-arm64 "${path}"
+```
+
+### compile linux-x64-musl [path]
+
+> Compile for Linux-x64-musl at `~/.local/bin/commit-sage` or any given path
+
+```bash
+$MASK compile --target linux-x64-musl "${path}"
+```
+
+### compile linux-arm64-musl [path]
+
+> Compile for Linux-arm64-musl at `~/.local/bin/commit-sage` or any given path
+
+```bash
+$MASK compile --target linux-arm64-musl "${path}"
 ```
 
 ### compile macos-x64 [path]
@@ -157,7 +169,7 @@ $MASK compile --target aarch64-unknown-linux-gnu "${path}"
 > Compile for macOS-x64 at `~/.local/bin/commit-sage` or any given path
 
 ```bash
-$MASK compile --target x86_64-apple-darwin "${path}"
+$MASK compile --target darwin-x64 "${path}"
 ```
 
 ### compile macos-arm64 [path]
@@ -165,7 +177,7 @@ $MASK compile --target x86_64-apple-darwin "${path}"
 > Compile for macOS-arm64 at `~/.local/bin/commit-sage` or any given path
 
 ```bash
-$MASK compile --target aarch64-apple-darwin "${path}"
+$MASK compile --target darwin-arm64 "${path}"
 ```
 
 ### compile windows-x64 [path]
@@ -174,7 +186,7 @@ $MASK compile --target aarch64-apple-darwin "${path}"
 
 ```bash
 [[ "${path}" != *".exe" ]] && path="${path}.exe"
-$MASK compile --target x86_64-pc-windows-msvc "${path}"
+$MASK compile --target windows-x64 "${path}"
 ```
 
 ### compile windows-arm64 [path]
@@ -183,7 +195,7 @@ $MASK compile --target x86_64-pc-windows-msvc "${path}"
 
 ```bash
 [[ "${path}" != *".exe" ]] && path="${path}.exe"
-$MASK compile --target aarch64-pc-windows-msvc "${path}"
+$MASK compile --target windows-arm64 "${path}"
 ```
 
 ## release
@@ -198,9 +210,20 @@ mkdir -p "${baseDir}/bin" &>/dev/null
 # --- Build the binaries --- #
 # Drop stale binaries.
 rm -f "${baseDir}"/bin/commit-sage-* &>/dev/null
-for os in 'linux' 'macos' 'windows'; do
+for os in 'macos' 'windows'; do
   for arch in 'x64' 'arm64'; do
     ${MASK} compile "${os}-${arch}" "bin/commit-sage-${os}-${arch}"
+  done
+done
+
+# Compile the Linux binaries against the glibc and musl libraries
+for lib in 'gnu' 'musl'; do
+  for arch in 'x64' 'arm64'; do
+    if [[ "${lib}" == "gnu" ]]; then
+      ${MASK} compile "linux-${arch}" "bin/commit-sage-linux-${lib}-${arch}"
+    else
+      ${MASK} compile "linux-${arch}-${lib}" "bin/commit-sage-linux-${lib}-${arch}"
+    fi
   done
 done
 ```

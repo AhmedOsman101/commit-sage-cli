@@ -2,8 +2,7 @@
 // Licensed under the GNU General Public License v3.0. See LICENSE for details.
 
 import { Command } from "@cliffy/command";
-import { renderMarkdown } from "@littletof/charmd";
-import { bold } from "@std/fmt/colors";
+import { bold } from "picocolors";
 import { resolveOptions, validateOptions } from "@/cli/flags.ts";
 import { handleGenerationResult } from "@/cli/handlers/generationResult.ts";
 import { runOffline } from "@/cli/handlers/offline.ts";
@@ -38,17 +37,17 @@ function splitMessage(message: string): { subject: string; body: string } {
 }
 
 /**
- * Render a commit message for terminal preview. Subject is rendered as a
- * markdown heading (H3) so it stands out from the body. When the message is
- * single-line (no body) we render just the subject — the heading itself
- * communicates the preview framing.
+ * Render a commit message for terminal preview. Subject is bolded; body is
+ * rendered to ANSI via the native markdown renderer. Kept separate because
+ * the renderer mangles pre-styled ANSI input, so only clean markdown goes
+ * through it. When the message is single-line (no body) just the bold
+ * subject is returned.
  */
 function renderPreview(message: string): string {
-  let { subject, body } = splitMessage(message);
-  subject = bold(subject);
+  const { subject, body } = splitMessage(message);
 
-  if (!body) return renderMarkdown(`${subject}`);
-  return renderMarkdown(`${subject}\n\n${body}`);
+  if (!body) return bold(subject);
+  return `${bold(subject)}\n\n${Bun.markdown.ansi(body)}`;
 }
 
 // ─── The commit subcommand ──────────────────────────────────────────────────

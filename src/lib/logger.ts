@@ -1,20 +1,20 @@
 import {
   blue,
   bold,
-  brightWhite,
   cyan,
   gray,
   green,
   magenta,
   red,
   white,
+  whiteBright,
   yellow,
-} from "@std/fmt/colors";
+} from "picocolors";
 import { Encoder } from "@/lib/utils.ts";
 import FileLogger from "@/services/fileLogger.ts";
 
 // Cached debug flag - checked once at module load
-const DEBUG_ENABLED = Deno.env.get("DEBUG") === "1";
+const DEBUG_ENABLED = process.env.DEBUG === "1";
 
 function toCustomString(value: unknown, indentLevel = 0): string {
   const indent = "  ".repeat(indentLevel); // 2 spaces for indentation
@@ -45,7 +45,7 @@ function toCustomString(value: unknown, indentLevel = 0): string {
 
     const items = entries.map(([key, val]) => {
       // Key without quotes, value processed recursively
-      return `${indent}  ${brightWhite(`${key}:`)} ${toCustomString(val, indentLevel + 1)}`;
+      return `${indent}  ${whiteBright(`${key}:`)} ${toCustomString(val, indentLevel + 1)}`;
     });
 
     return `{\n${items.join(white(",\n"))}\n${indent}}`;
@@ -91,7 +91,7 @@ const LEVEL_CONFIG: Record<Level, LogLevel> = {
 class LogResult {
   // Type never indicates that this function never returns, as it terminates program execution
   exit(code = 1): never {
-    return Deno.exit(code);
+    return process.exit(code);
   }
 }
 
@@ -149,9 +149,9 @@ class LogBuilder {
     const stream = this.#stream ?? defaultStream;
 
     if (stream === "stdout") {
-      Deno.stdout.writeSync(text);
+      process.stdout.write(text);
     } else {
-      Deno.stderr.writeSync(text);
+      process.stderr.write(text);
     }
 
     this.#logToFile(level, message, data);

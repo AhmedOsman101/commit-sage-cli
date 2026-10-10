@@ -6,7 +6,7 @@ import { decode, encode } from "gpt-tokenizer/encoding/o200k_base";
 // close-enough approximation for other providers — truncation only needs to
 // keep the diff roughly within the model's window, not exact per-model
 // counts. The slim `gpt-tokenizer/encoding/*` subpath import keeps exactly
-// one BPE rank table in the `deno compile` bundle instead of all encodings.
+// one BPE rank table in the compiled bundle instead of all encodings.
 
 type FileDiffBlock = {
   /** Repo-relative path (`b/` side of `diff --git`), or `"unknown"`. */
