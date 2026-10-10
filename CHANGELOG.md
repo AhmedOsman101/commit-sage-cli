@@ -1,5 +1,39 @@
 # Changelog
 
+## [3.0.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v2.3.0...v3.0.0) (2026-10-10)
+
+> **⚠ BREAKING CHANGES**
+>
+> The runtime moves from Deno to Bun. The CLI itself is unchanged — same
+> subcommands, flags, config file, and exit codes — but distribution changes:
+>
+> - Linux binaries are renamed: `commit-sage-linux-x64` ->
+>   `commit-sage-linux-gnu-x64` (same for arm64). Update any pinned URLs.
+> - New musl variants (`commit-sage-linux-musl-*`) for Alpine and minimal
+>   containers.
+> - macOS, Windows, DMG, and installer names are unchanged.
+> - AUR `commit-sage-bin` follows automatically on release.
+> - Building from source now needs Bun 1.4.x instead of Deno.
+
+### What changes for users
+
+- **Much smaller downloads.** Every binary shrinks 30–44%: Linux 165->93 MB, macOS 141->82 and 130->74 MB, Windows 141->99 and 135->86 MB.
+- **Alpine and old-glibc support.** The new musl builds run where glibc builds refuse to start; the installer picks the right one automatically.
+- **Nothing to relearn.** Flags, config keys, `commit-sage generate --offline` output, and exit codes (0/1/2/130) are byte-for-byte the same.
+- **Same install flows.** `unix.sh`, DMGs, the Windows installer, and the AUR package all keep working; only direct Linux asset URLs change (see above).
+- Config stays at `~/.config/commitSage/config.json`. One edge case: `XDG_CONFIG_HOME`/`XDG_CACHE_HOME` are now honored, so XDG-based setups may see the config/cache in the XDG location instead of the default.
+
+### Features
+
+- **commit:** add configurable refs footer with branch extraction ([7b9c4b1](https://github.com/AhmedOsman101/commit-sage-cli/commit/7b9c4b190cd433c5cd1c4c8d8d93e2c4eb65e13d))
+- **commit:** add customInstructions and on-demand custom language translation ([92ef762](https://github.com/AhmedOsman101/commit-sage-cli/commit/92ef7623b8fd8a61c991220bdd99aab99fb407c9))
+- **commit:** add emojiKarma, google, atom, detailed formats with german/french templates ([4f7a3c5](https://github.com/AhmedOsman101/commit-sage-cli/commit/4f7a3c5c30b7e14afd62c41a849926a214eaceae))
+
+### Bug Fixes
+
+- **commit:** correct decline messaging and honour translation checkbox ([beef85a](https://github.com/AhmedOsman101/commit-sage-cli/commit/beef85aa6d1b70f5fc9efeb86567aaea445802e7))
+- **git:** detect staged renames instead of reporting new files ([7b72278](https://github.com/AhmedOsman101/commit-sage-cli/commit/7b72278d20e689b748b87d0de9916fd092623c32))
+
 ## [2.3.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v2.2.0...v2.3.0) (2026-10-08)
 
 ### Features
