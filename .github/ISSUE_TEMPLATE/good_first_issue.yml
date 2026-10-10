@@ -29,6 +29,6 @@ body:
       placeholder: |
         - Look at `src/models/errors.ts`
         - See how existing error messages are written
-        - Run `deno task dev` to test
+        - Run `mask run <args>` to test
     validations:
       required: false

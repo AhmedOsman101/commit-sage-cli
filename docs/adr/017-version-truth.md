@@ -1,0 +1,3 @@
+# 0017 — `version.txt` leads, `package.json` follows via release-please
+
+`release-please` keeps `version-file: version.txt` and now lists `package.json` (not the deleted `deno.json`) under `extra-files`, so one release bumps both files together and `src/cli/version.ts` (which reads `package.json`) can never drift from the tag. Chosen over switching the version-file to `package.json` because it preserves the existing release flow byte-for-byte — same PR shape, same tag derivation — with the smallest possible diff. The staged `deno.json` deletion is what forced the call: leaving the ghost entry would fail every release.

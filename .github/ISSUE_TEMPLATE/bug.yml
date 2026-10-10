@@ -19,7 +19,7 @@ body:
       label: Steps to reproduce
       description: Include commands or inputs that reproduce the issue.
       placeholder: |
-        1. Run `deno task dev`
+        1. Run `mask run <args>`
         2. Enter input: ...
         3. See error: ...
     validations:
@@ -35,9 +35,9 @@ body:
     id: logs
     attributes:
       label: Logs and environment
-      description: Paste any error logs and mention your OS, Deno version, and provider (ollama, OpenAI, etc.)
+      description: Paste any error logs and mention your OS, Bun version, and provider (ollama, OpenAI, etc.)
       placeholder: |
-        Arch Linux, Deno 2.2.1, ollama 0.1.29
+        Arch Linux, Bun 1.4.3, ollama 0.40.1
         Error:
         ```
         ...

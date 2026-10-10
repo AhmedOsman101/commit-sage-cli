@@ -28,7 +28,7 @@ Elige la superficie según el momento: `generate` imprime un mensaje a stdout
 
 - Git en tu `PATH`.
 - Internet para proveedores IA (omítelo con `--offline` o `ollama` local).
-- Deno 2.x solo si compilas desde el código fuente (`mask compile`).
+- Bun 1.4.x solo si compilas desde el código fuente (`mask compile`).
 
 ## Instalación
 
@@ -100,7 +100,7 @@ que sigue las versiones de GitHub.
 
 ### Compilar desde el código fuente
 
-Requiere [Deno](https://deno.land/) y [mask](https://github.com/jacobdeichert/mask).
+Requiere [Bun](https://bun.sh/) y [mask](https://github.com/jacobdeichert/mask).
 
 ```shell
 git clone https://github.com/AhmedOsman101/commit-sage-cli.git commit-sage
