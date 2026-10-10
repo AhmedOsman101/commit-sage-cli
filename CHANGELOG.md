@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.0.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v2.3.0...v3.0.0) (2026-10-10)
+
+
+### Features
+
+* **commit:** add configurable refs footer with branch extraction ([7b9c4b1](https://github.com/AhmedOsman101/commit-sage-cli/commit/7b9c4b190cd433c5cd1c4c8d8d93e2c4eb65e13d))
+* **commit:** add customInstructions and on-demand custom language translation ([92ef762](https://github.com/AhmedOsman101/commit-sage-cli/commit/92ef7623b8fd8a61c991220bdd99aab99fb407c9))
+* **commit:** add emojiKarma, google, atom, detailed formats with german/french templates ([4f7a3c5](https://github.com/AhmedOsman101/commit-sage-cli/commit/4f7a3c5c30b7e14afd62c41a849926a214eaceae))
+* create 66-rename-detection.md 2026-10-08@07:17pm ([7b72278](https://github.com/AhmedOsman101/commit-sage-cli/commit/7b72278d20e689b748b87d0de9916fd092623c32))
+
+
+### Bug Fixes
+
+* **commit:** correct decline messaging and honour translation checkbox ([beef85a](https://github.com/AhmedOsman101/commit-sage-cli/commit/beef85aa6d1b70f5fc9efeb86567aaea445802e7))
+* **git:** detect staged renames instead of reporting new files ([7b72278](https://github.com/AhmedOsman101/commit-sage-cli/commit/7b72278d20e689b748b87d0de9916fd092623c32))
+
 ## [2.3.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v2.2.0...v2.3.0) (2026-10-08)
 
 ### Features
