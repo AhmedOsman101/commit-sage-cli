@@ -1,25 +1,28 @@
+import { appendFileSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { wrap } from "lib-result";
 import { JsonStringify } from "@/lib/utils.ts";
 
 function getCacheDir(): string {
-  const OS = Deno.build.os;
+  const OS = process.platform;
   const HOME_DIR = homedir();
 
   switch (OS) {
+    case "darwin": // macOS
+    case "linux":
     case "freebsd":
     case "netbsd":
-    case "darwin":
-    case "linux":
-      return join(HOME_DIR, ".cache", "commit-sage");
-    // biome-ignore lint/suspicious/noFallthroughSwitchClause: If the directory doesn't exist use the default case
-    case "windows": {
-      const cacheDir = Deno.env.get("LOCALAPPDATA");
-      if (cacheDir) return join(cacheDir, "commit-sage", "cache");
+    case "openbsd": {
+      const base = process.env.XDG_CACHE_HOME ?? join(HOME_DIR, ".cache");
+      return join(base, "commitSage");
+    }
+    case "win32": {
+      const base = process.env.LOCALAPPDATA;
+      return base ? join(base, "commitSage") : join(HOME_DIR, "commitSage");
     }
     default:
-      return join(HOME_DIR, ".commit-sage", "cache");
+      return join(HOME_DIR, ".commitSage");
   }
 }
 
@@ -39,9 +42,11 @@ function formatTimestamp(date: Date): string {
 class FileLogger {
   private static ensureLogDir(): void {
     try {
-      Deno.mkdirSync(CACHE_DIR, { recursive: true });
+      mkdirSync(CACHE_DIR, { recursive: true });
     } catch (error) {
-      if (!(error instanceof Deno.errors.AlreadyExists)) {
+      if (
+        !(error instanceof Error && "code" in error && error.code === "EEXIST")
+      ) {
         console.error("Failed to create log directory:", error);
       }
     }
@@ -85,7 +90,7 @@ class FileLogger {
     logEntry += "\n";
 
     try {
-      Deno.writeTextFileSync(LOG_FILE, logEntry, { append: true });
+      appendFileSync(LOG_FILE, logEntry);
     } catch (e) {
       console.error("Failed to write to log file:", e);
     }
@@ -104,7 +109,7 @@ class FileLogger {
     const timestamp = formatTimestamp(new Date());
     const logEntry = `${timestamp} [INFO] ${message}\n`;
     try {
-      Deno.writeTextFileSync(LOG_FILE, logEntry, { append: true });
+      appendFileSync(LOG_FILE, logEntry);
     } catch {
       /* Ignored */
     }
@@ -115,7 +120,7 @@ class FileLogger {
     const timestamp = formatTimestamp(new Date());
     const logEntry = `${timestamp} [DEBUG] ${message}\n`;
     try {
-      Deno.writeTextFileSync(LOG_FILE, logEntry, { append: true });
+      appendFileSync(LOG_FILE, logEntry);
     } catch {
       // Ignore
     }

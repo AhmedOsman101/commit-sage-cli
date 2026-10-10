@@ -360,7 +360,6 @@ class ConfigService {
       JSON.stringify(DEFAULT_CONFIG, null, 2),
       file
     );
-    file.close();
 
     if (writeResult.isError()) return Err(writeResult.error);
 
@@ -638,7 +637,7 @@ class ConfigService {
   /**
    * Pure resolver for `providers.<name>.apiKey` (Config V2 transport).
    *
-   * - `"$ENV_VAR"` → `Deno.env.get("ENV_VAR")`; missing env → Err
+   * - `"$ENV_VAR"` → `process.env["ENV_VAR"]`; missing env → Err
    * - literal (no `$` prefix) → passthrough Ok
    * - `undefined`/`null`/`""` + local provider (`ollama`/`llamacpp`/`vllm`)
    *   → Ok(null), no auth required
@@ -660,7 +659,7 @@ class ConfigService {
       (typeof raw === "string" && raw.trim() === "")
     ) {
       if (isLocal) return Ok<string | null>(null);
-      const fallback = Deno.env.get(`${upper}_API_KEY`);
+      const fallback = process.env[`${upper}_API_KEY`];
       if (fallback) return Ok<string | null>(fallback);
       return ErrFromText<string | null>(
         `API key for provider "${providerName}" is not set (providers.${providerName}.apiKey is absent and $${upper}_API_KEY is not set)`
@@ -680,7 +679,7 @@ class ConfigService {
           `Invalid apiKey "${raw}" for provider "${providerName}": expected "$ENV_VAR"`
         );
       }
-      const value = Deno.env.get(envName);
+      const value = process.env[envName];
       if (value) return Ok<string | null>(value);
       return ErrFromText<string | null>(
         `API key env var $${envName} for provider "${providerName}" is not set`
@@ -784,11 +783,11 @@ class ConfigService {
   static async getApiKey(service: ApiService): Promise<string> {
     try {
       if (!ConfigService.shell) {
-        ConfigService.shell = basename(Deno.env.get("SHELL") ?? "bash");
+        ConfigService.shell = basename(process.env.SHELL ?? "bash");
       }
       const envVarName = await ConfigService.getApiKeyEnvVar(service);
       const key =
-        Deno.env.get(envVarName) ??
+        process.env[envVarName] ??
         (await ConfigService.promptForApiKey(service));
 
       if (key) ConfigService.validateApiKey(service, key);
@@ -807,11 +806,11 @@ class ConfigService {
 
   protected static getShell() {
     if (!ConfigService.shell) {
-      const shellPath = Deno.env.get("SHELL");
+      const shellPath = process.env.SHELL;
       if (shellPath) ConfigService.shell = basename(shellPath);
       else
         switch (OS) {
-          case "windows":
+          case "win32":
             ConfigService.shell = "powershell";
             break;
           case "linux":

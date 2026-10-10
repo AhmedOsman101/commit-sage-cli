@@ -1,6 +1,9 @@
-import { homedir } from "node:os";
+import os from "node:os";
 import { join } from "node:path";
 import type { Config } from "@/lib/types/config.ts";
+
+const OS = os.platform();
+const HOME_DIR = os.homedir();
 
 /**
  * Directory holding the user's config and caches. One helper so
@@ -9,38 +12,32 @@ import type { Config } from "@/lib/types/config.ts";
  */
 function getConfigDir(): string {
   switch (OS) {
-    case "freebsd":
-    case "netbsd":
     case "darwin": // macOS
     case "linux":
-      return join(HOME_DIR, ".config", "commitSage");
-    // biome-ignore lint/suspicious/noFallthroughSwitchClause: If no config dir is found, fall through to the default case
-    case "windows": {
-      const configDir = Deno.env.get("APPDATA");
-      if (configDir) {
-        return join(configDir, "commitSage");
-      }
+    case "freebsd":
+    case "netbsd":
+    case "openbsd": {
+      const base = process.env.XDG_CONFIG_HOME ?? join(HOME_DIR, ".config");
+      return join(base, "commitSage");
+    }
+    case "win32": {
+      const base = process.env.APPDATA ?? process.env.LOCALAPPDATA;
+      return base ? join(base, "commitSage") : join(HOME_DIR, "commitSage");
     }
     default:
       return join(HOME_DIR, "commitSage");
   }
 }
 
-const OS: Readonly<string> = Deno.build.os;
-
-const HOME_DIR: Readonly<string> = homedir();
-
-const CONFIG_PATH: Readonly<string> = join(getConfigDir(), "config.json");
+const CONFIG_DIR = getConfigDir();
+const CONFIG_PATH = join(CONFIG_DIR, "config.json");
 
 /**
  * User-owned cache of AI-translated format templates, keyed
  * `[language][format]`. Deleting an entry re-triggers translation on the
  * next run — that is the whole invalidation story (ADR 003).
  */
-const TRANSLATIONS_PATH: Readonly<string> = join(
-  getConfigDir(),
-  "translations.json"
-);
+const TRANSLATIONS_PATH = join(CONFIG_DIR, "translations.json");
 
 const DEFAULT_CONFIG: Readonly<Config> = {
   $schema:
@@ -71,7 +68,7 @@ const DEFAULT_CONFIG: Readonly<Config> = {
     openrouter: {
       baseUrl: "https://openrouter.ai/api/v1",
     },
-  } as Config["providers"],
+  },
   commit: {
     autoCommit: false,
     autoPush: false,
@@ -128,6 +125,7 @@ const ERROR_MESSAGES = {
 } as const;
 
 export {
+  CONFIG_DIR,
   CONFIG_PATH,
   DEFAULT_CONFIG,
   ERROR_MESSAGES,

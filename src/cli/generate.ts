@@ -26,7 +26,7 @@ import GitService from "@/services/git.ts";
  */
 async function guardNonTTY(opts: Record<string, unknown>): Promise<true> {
   if (opts.offline) return true; // offline doesn't need a key
-  if (Deno.stdin.isTerminal()) return true; // interactive session
+  if (process.stdin.isTTY) return true; // interactive session
 
   // Determine the active provider: --model provider/model wins, then the
   // config model string.

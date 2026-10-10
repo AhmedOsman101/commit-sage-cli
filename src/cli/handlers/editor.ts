@@ -35,11 +35,11 @@ async function runEditor(
     );
     if (writeResult.isError()) return Err(writeResult.error);
 
-    // Determine editor
+    // Determine editor. Must block until it exits.
     const editor =
-      Deno.env.get("VISUAL") ??
-      Deno.env.get("EDITOR") ??
-      (OS === "windows" ? "notepad" : "vi");
+      process.env.VISUAL ??
+      process.env.EDITOR ??
+      (OS === "win32" ? "notepad" : "vi");
 
     // Handle "code --wait" style strings: split on first space
     const [editorBin, ...editorArgs] = editor.split(/\s+/);

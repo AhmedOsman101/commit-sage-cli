@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer";
-import * as path from "node:path";
+import { join, normalize } from "node:path";
 import { Err, ErrFromText, ErrFromUnknown, Ok, type Result } from "lib-result";
 import { DEFAULT_CONFIG } from "@/lib/constants.ts";
 import {
@@ -69,9 +69,9 @@ class GitService {
     args: string[],
     options: { timeoutMs?: number } = {}
   ): Promise<Result<CommandOutput, CommandError>> {
-    const timeoutMs = options.timeoutMs ?? (await GitService.getTimeoutMs());
+    const timeout = options.timeoutMs ?? (await GitService.getTimeoutMs());
     const cmd = await CommandService.execute("git", args, GitService.repoPath, {
-      timeoutMs,
+      timeout,
     });
     if (cmd.isError()) {
       if (isCommandTimeout(cmd.error)) {
@@ -88,7 +88,7 @@ class GitService {
                   code: cmd.error.code ?? 0,
                 }
               : undefined,
-            { cause: { timedOut: true, timeoutMs } }
+            { cause: { timedOut: true, timeoutMs: timeout } }
           )
         );
       }
@@ -411,7 +411,7 @@ class GitService {
             .map(async file => {
               // Read the content of the new file
               const contentResult = await FileSystemService.readFile(
-                path.join(GitService.repoPath, file)
+                join(GitService.repoPath, file)
               );
               if (contentResult.isError()) return "";
 
@@ -493,7 +493,7 @@ class GitService {
     }
   }
   static async isNewFile(filePath: string): Promise<boolean> {
-    const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
+    const normalizedPath = normalize(filePath.replace(/^\/+/, ""));
 
     // Full porcelain (not path-limited): a path-limited status reports a
     // rename target as `A `, which would mislabel renames as new files.
@@ -524,7 +524,7 @@ class GitService {
     return isAdded && !renameTargets.has(normalizedPath);
   }
   static async isFileDeleted(filePath: string): Promise<boolean> {
-    const normalizedPath = path.normalize(filePath.replace(/^\/+/, ""));
+    const normalizedPath = normalize(filePath.replace(/^\/+/, ""));
 
     // TODO: use `git ls-files --deleted` instead of `git status`
     const { stdout } = (
@@ -548,8 +548,8 @@ class GitService {
     const cmd = await CommandService.execute(
       "git",
       ["rev-parse", "--is-inside-work-tree"],
-      Deno.cwd(),
-      { timeoutMs: await GitService.getTimeoutMs() }
+      process.cwd(),
+      { timeout: await GitService.getTimeoutMs() }
     );
 
     if (cmd.isError()) {

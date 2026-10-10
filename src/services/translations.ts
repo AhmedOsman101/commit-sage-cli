@@ -103,7 +103,19 @@ async function saveCachedTemplate(
   }
 
   try {
-    await Deno.writeTextFile(TRANSLATIONS_PATH, stringified.ok);
+    // writeFile requires the file to exist (unlike Deno.writeTextFile),
+    // so touch it first on a fresh machine where no translation was cached.
+    const exists = await FileSystemService.fileExists(TRANSLATIONS_PATH);
+    if (exists.isError()) {
+      const created = await FileSystemService.createFile(TRANSLATIONS_PATH);
+      if (created.isError()) {
+        Log.warning(
+          `Could not create the translation cache at ${TRANSLATIONS_PATH} (${created.error.message})`
+        );
+        return Ok(false);
+      }
+    }
+    await FileSystemService.writeFile(TRANSLATIONS_PATH, stringified.ok);
     return Ok(true);
   } catch (error) {
     Log.warning(
@@ -119,4 +131,4 @@ const TranslationsService = {
 };
 
 export type { TranslationsFile };
-export { TranslationsService as default, TranslationsService };
+export default TranslationsService;

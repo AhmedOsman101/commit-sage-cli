@@ -84,7 +84,7 @@ async function resolveMaxLength(
   if (flagValue !== undefined) return flagValue;
   const cfg = await ConfigService.get("commit", "maxLength");
   if (cfg.isOk() && cfg.ok) return cfg.ok as unknown as number;
-  return (DEFAULT_CONFIG.commit as unknown as Record<string, number>).maxLength;
+  return DEFAULT_CONFIG.commit.maxLength;
 }
 
 interface OfflineRunOptions {

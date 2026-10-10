@@ -1,31 +1,30 @@
 import { Err, Ok, type Result } from "lib-result";
 import { CommandError } from "@/lib/errors.ts";
 import type { CommandOutput } from "@/lib/types/index.ts";
-import { Decoder } from "@/lib/utils.ts";
+
+type ExecuteOptions = {
+  signal?: AbortSignal;
+  timeout?: number;
+};
 
 const CommandService = {
   async execute(
     cmd: string,
     args: string[] = [],
-    cwd = Deno.cwd(),
-    options: Deno.CommandOptions & { timeoutMs?: number } = {}
+    cwd = process.cwd(),
+    options: ExecuteOptions = {}
   ): Promise<Result<CommandOutput, CommandError>> {
     const fullCommand = `${cmd} ${args.join(" ")}`.trim();
-    const timeoutMs = options.timeoutMs;
+    const timeoutMs = options.timeout;
     const timeoutEnabled =
       typeof timeoutMs === "number" &&
       Number.isFinite(timeoutMs) &&
       timeoutMs > 0;
-    const timeoutSignal = timeoutEnabled
-      ? AbortSignal.timeout(timeoutMs as number)
-      : undefined;
-    const signal =
-      timeoutSignal !== undefined
-        ? options.signal !== undefined
-          ? AbortSignal.any([options.signal, timeoutSignal])
-          : timeoutSignal
-        : options.signal;
-    const isTimeout = () => timeoutSignal?.aborted === true;
+    // Native Bun.spawn timeout. SIGKILL (not the default SIGTERM) is the
+    // timeout signature: the async API has no `exitedDueToTimeout` flag,
+    // so a SIGKILL death while a timeout is armed is how a timeout kill
+    // is told apart from a genuine failure. `isCommandTimeout` still
+    // matches on the structured cause below, then the message.
     const timeoutError = (output?: {
       stdout: string;
       stderr: string;
@@ -39,29 +38,25 @@ const CommandService = {
       );
 
     try {
-      const command = new Deno.Command(cmd, {
-        args,
-        stdout: "piped",
-        stderr: "piped",
+      const proc = Bun.spawn([cmd, ...args], {
         cwd,
-        ...(signal !== undefined ? { signal } : {}),
+        stdout: "pipe",
+        stderr: "pipe",
+        ...(options.signal !== undefined ? { signal: options.signal } : {}),
+        ...(timeoutEnabled
+          ? { timeout: timeoutMs as number, killSignal: "SIGKILL" }
+          : {}),
       });
 
-      const output = await command.output();
+      const [stdout, stderr, code] = await Promise.all([
+        proc.stdout.text(),
+        proc.stderr.text(),
+        proc.exited,
+      ]);
 
-      if (isTimeout()) {
-        return Err(
-          timeoutError({
-            stdout: Decoder.decode(output.stdout),
-            stderr: Decoder.decode(output.stderr),
-            code: output.code,
-          })
-        );
+      if (timeoutEnabled && proc.signalCode === "SIGKILL") {
+        return Err(timeoutError({ stdout, stderr, code }));
       }
-
-      const stdout = Decoder.decode(output.stdout);
-      const stderr = Decoder.decode(output.stderr);
-      const code = output.code;
 
       if (code !== 0) {
         // Combine stderr and stdout for better error context if stderr is empty
@@ -77,15 +72,21 @@ const CommandService = {
 
       return Ok({ stdout, stderr, code });
     } catch (error) {
-      if (isTimeout()) {
-        return Err(timeoutError());
-      }
-
+      // Native timeout kills resolve `exited` rather than throwing, so any
+      // throw here is a spawn failure, never a timeout.
       let errorMessage = "An unknown error occurred";
 
-      if (error instanceof Deno.errors.NotFound) {
+      if (
+        error instanceof Error &&
+        "code" in error &&
+        error.code === "ENOENT"
+      ) {
         errorMessage = `Command "${cmd}" not found`;
-      } else if (error instanceof Deno.errors.PermissionDenied) {
+      } else if (
+        error instanceof Error &&
+        "code" in error &&
+        (error.code === "EACCES" || error.code === "EPERM")
+      ) {
         errorMessage = `Permission denied for command '${cmd}'`;
       } else if (error instanceof Error) {
         errorMessage = error.message;
@@ -121,20 +122,21 @@ const CommandService = {
     } = {}
   ): Promise<Result<CommandOutput, CommandError>> {
     try {
-      const command = new Deno.Command(cmd, {
-        args,
+      const proc = Bun.spawn([cmd, ...args], {
         cwd: options.cwd,
-        stdin: options.inheritStdin ? "inherit" : "piped",
-        stdout: options.inheritStdout ? "inherit" : "piped",
-        stderr: options.inheritStderr ? "inherit" : "piped",
+        stdin: options.inheritStdin ? "inherit" : "ignore",
+        stdout: options.inheritStdout ? "inherit" : "pipe",
+        stderr: options.inheritStderr ? "inherit" : "pipe",
       });
 
-      const output = await command.output();
-
-      // Inherited streams have no captured buffer — decoding them throws.
-      const stdout = options.inheritStdout ? "" : Decoder.decode(output.stdout);
-      const stderr = options.inheritStderr ? "" : Decoder.decode(output.stderr);
-      const code = output.code;
+      // Inherited streams are not capturable — stdout/stderr are null.
+      const stdout = options.inheritStdout
+        ? ""
+        : ((await proc.stdout?.text()) ?? "");
+      const stderr = options.inheritStderr
+        ? ""
+        : ((await proc.stderr?.text()) ?? "");
+      const code = await proc.exited;
 
       if (code !== 0) {
         // Combine stderr and stdout for better error context if stderr is empty.
@@ -153,7 +155,7 @@ const CommandService = {
       return Ok({ stdout, stderr, code });
     } catch (error) {
       const message =
-        error instanceof Deno.errors.NotFound
+        error instanceof Error && "code" in error && error.code === "ENOENT"
           ? `Command "${cmd}" not found`
           : error instanceof Error
             ? error.message

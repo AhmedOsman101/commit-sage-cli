@@ -60,7 +60,7 @@ async function resolveRefsTokens(
     case "input":
       return parseRefTokens(refs.value);
     default: {
-      if (!Deno.stdin.isTerminal()) {
+      if (!process.stdin.isTTY) {
         Log.warning(
           "Refs need an interactive prompt but stdin is not a TTY — continuing without refs."
         );

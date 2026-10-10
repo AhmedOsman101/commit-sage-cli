@@ -227,9 +227,9 @@ async function isProvidersUserSet(
 function resolveEditor(): { bin: string; args: string[] } {
   // ponytail: duplicate 5-line editor resolution; extract resolveEditor() as follow-up
   const editor =
-    Deno.env.get("VISUAL") ??
-    Deno.env.get("EDITOR") ??
-    (OS === "windows" ? "notepad" : "vi");
+    process.env.VISUAL ??
+    process.env.EDITOR ??
+    (OS === "win32" ? "notepad" : "vi");
   const [bin, ...args] = editor.split(/\s+/);
   return { bin, args };
 }
@@ -542,7 +542,7 @@ class ConfigCommand extends Command {
           if (OS === "darwin") {
             cmd = "open";
             args = [CONFIG_PATH];
-          } else if (OS === "windows") {
+          } else if (OS === "win32") {
             cmd = "cmd";
             args = ["/c", "start", "", CONFIG_PATH];
           } else {
