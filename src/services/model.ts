@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/suspicious/noExplicitAny: Each child has different incompatible types for the same parameter */
 /** biome-ignore-all lint/correctness/noUnusedFunctionParameters: This is a base class */
 import { setTimeout } from "node:timers/promises";
 import {
@@ -13,7 +12,6 @@ import { Log } from "@/lib/logger.ts";
 import { splitProviderModel } from "@/lib/modelString.ts";
 import type { CommitMessage } from "@/lib/types/commit.ts";
 import type { ApiType } from "@/lib/types/config.ts";
-import type { ApiError, ErrorWithResponse } from "@/lib/types/index.ts";
 import ConfigService from "@/services/config.ts";
 import type {
   ProviderAdapter,
@@ -70,16 +68,6 @@ abstract class ModelService {
       modelId: split.ok.model,
       model,
     };
-  }
-
-  /**
-   * Handles API errors and returns structured error information.
-   * Subclasses must provide their own implementation.
-   * Default implementation returns an empty result.
-   */
-  protected static handleApiError(error: ErrorWithResponse): ApiError {
-    // Empty implementation as per requirement
-    return { errorMessage: "", shouldRetry: false };
   }
 
   /**
@@ -170,7 +158,7 @@ abstract class ModelService {
         modelId,
         attempt
       );
-      const providerOptions = adapter.providerOptions?.(reasoning);
+      const providerOptions = adapter.providerOptions?.(reasoning, ctx);
       Log.debug(
         `[${adapter.name}Service.run] CALL API model=${model}` +
           (baseUrl ? `, baseURL=${baseUrl}` : "")
@@ -203,16 +191,6 @@ abstract class ModelService {
         (p: string, a: number) => ModelService.run(adapter, p, a, modelOverride)
       );
     }
-  }
-
-  /**
-   * Extracts a commit message from a response.
-   * Subclasses must provide their own implementation.
-   * Default implementation returns an empty string.
-   */
-  protected static extractCommitMessage(response: any): string {
-    // Empty implementation as per requirement
-    return "";
   }
 
   protected static async getMaxRetries(): Promise<number> {
@@ -473,76 +451,6 @@ abstract class ModelService {
     )
       return resolved;
     return fallback ?? "openai-chat";
-  }
-
-  protected static async getOpenAIProviderOptions(options?: {
-    forceReasoning?: boolean;
-    provider?: string;
-    modelId?: string;
-  }) {
-    const reasoning = await ModelService.getReasoningLevel(
-      options?.provider,
-      options?.modelId
-    );
-
-    if (!reasoning) return;
-
-    return {
-      openai: {
-        reasoningEffort: reasoning,
-        ...(options?.forceReasoning ? { forceReasoning: true } : {}),
-      },
-    };
-  }
-
-  protected static async getAnthropicProviderOptions(
-    provider?: string,
-    modelId?: string
-  ) {
-    const reasoning = await ModelService.getReasoningLevel(provider, modelId);
-
-    if (!reasoning) return;
-
-    return {
-      anthropic: {
-        thinking: {
-          type: "adaptive" as const,
-        },
-        effort: reasoning,
-      },
-    };
-  }
-
-  protected static async getGoogleProviderOptions(
-    provider?: string,
-    modelId?: string
-  ) {
-    const reasoning = await ModelService.getReasoningLevel(provider, modelId);
-
-    if (!reasoning) return;
-
-    return {
-      google: {
-        thinkingConfig: {
-          thinkingLevel: reasoning,
-        },
-      },
-    };
-  }
-
-  protected static async getXaiProviderOptions(
-    provider?: string,
-    modelId?: string
-  ) {
-    const reasoning = await ModelService.getReasoningLevel(provider, modelId);
-
-    if (!reasoning) return;
-
-    return {
-      xai: {
-        reasoningEffort: reasoning === "medium" ? "high" : reasoning,
-      },
-    };
   }
 
   /**

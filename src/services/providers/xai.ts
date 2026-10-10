@@ -1,60 +1,26 @@
 import { createXai } from "@ai-sdk/xai";
-import {
-  extractReasoningMiddleware,
-  generateText,
-  wrapLanguageModel,
-} from "ai";
-import type { CommitMessage } from "@/lib/types/commit.ts";
-import ConfigService from "@/services/config.ts";
-import { ModelService } from "@/services/model.ts";
+import type { ProviderRunContext } from "@/services/providerAdapter.ts";
+import { defineProvider, registerAdapter } from "@/services/providerAdapter.ts";
 
-class XaiService extends ModelService {
-  static override async generateCommitMessage(
-    prompt: string,
-    attempt = 1,
-    modelOverride?: string
-  ): Promise<CommitMessage> {
-    try {
-      const { provider, modelId, model } =
-        await ModelService.resolveProviderAndModel(modelOverride);
-      const apiKey =
-        (await ConfigService.getProviderApiKey(provider)) ?? undefined;
-      const generationOptions = await ModelService.getGenerationOptions(
-        provider,
-        modelId,
-        attempt
-      );
-      const providerOptions = await ModelService.getXaiProviderOptions(
-        provider,
-        modelId
-      );
-      const xai = createXai({ apiKey });
-
-      const wrappedModel = wrapLanguageModel({
-        model: xai(modelId),
-        middleware: extractReasoningMiddleware({ tagName: "think" }),
-      });
-
-      const { text, finishReason } = await generateText({
-        model: wrappedModel,
-        prompt,
-        ...generationOptions,
-        providerOptions,
-      });
-
-      ModelService.throwIfTruncated(finishReason, provider, model);
-
-      return { message: text, model };
-    } catch (error) {
-      return await XaiService.handleGenerationError(
-        error,
-        prompt,
-        attempt,
-        (p: string, a: number) =>
-          XaiService.generateCommitMessage(p, a, modelOverride)
-      );
-    }
-  }
+function createXaiModel(ctx: ProviderRunContext) {
+  return createXai({ apiKey: ctx.apiKey })(ctx.modelId);
 }
 
-export default XaiService;
+function xaiProviderOptions(reasoning: string | undefined) {
+  if (!reasoning) return;
+  return {
+    xai: {
+      reasoningEffort: reasoning === "medium" ? "high" : reasoning,
+    },
+  };
+}
+
+const xaiAdapter = defineProvider({
+  name: "xai",
+  createModel: createXaiModel,
+  providerOptions: xaiProviderOptions,
+});
+
+registerAdapter(xaiAdapter);
+
+export { xaiAdapter };

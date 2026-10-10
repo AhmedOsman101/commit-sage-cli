@@ -60,10 +60,13 @@ type ProviderAdapter = {
    * Map the explicit reasoning level to `generateText` provider options.
    * Return `undefined` (or leave unset) to send none — the `false`/`"off"`
    * and `true`/`"default"` cases never reach here because
-   * `getReasoningLevel` already normalizes them to `undefined`.
+   * `getReasoningLevel` already normalizes them to `undefined`. The context
+   * is there for mappings that depend on resolved values (e.g. OpenAI's
+   * `forceReasoning`, which applies only off the official base URL).
    */
   providerOptions?: (
-    reasoning: string | undefined
+    reasoning: string | undefined,
+    ctx: ProviderRunContext
   ) => SharedProviderOptions | undefined;
   /**
    * Extra options for the client factory (e.g. OpenRouter's attribution

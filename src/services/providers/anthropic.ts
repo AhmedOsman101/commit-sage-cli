@@ -1,60 +1,29 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
-import {
-  extractReasoningMiddleware,
-  generateText,
-  wrapLanguageModel,
-} from "ai";
-import type { CommitMessage } from "@/lib/types/commit.ts";
-import ConfigService from "@/services/config.ts";
-import { ModelService } from "@/services/model.ts";
+import type { ProviderRunContext } from "@/services/providerAdapter.ts";
+import { defineProvider, registerAdapter } from "@/services/providerAdapter.ts";
 
-class AnthropicService extends ModelService {
-  static override async generateCommitMessage(
-    prompt: string,
-    attempt = 1,
-    modelOverride?: string
-  ): Promise<CommitMessage> {
-    try {
-      const { provider, modelId, model } =
-        await ModelService.resolveProviderAndModel(modelOverride);
-      const apiKey =
-        (await ConfigService.getProviderApiKey(provider)) ?? undefined;
-      const generationOptions = await ModelService.getGenerationOptions(
-        provider,
-        modelId,
-        attempt
-      );
-      const providerOptions = await ModelService.getAnthropicProviderOptions(
-        provider,
-        modelId
-      );
-      const anthropic = createAnthropic({ apiKey });
-
-      const wrappedModel = wrapLanguageModel({
-        model: anthropic(modelId),
-        middleware: extractReasoningMiddleware({ tagName: "think" }),
-      });
-
-      const { text, finishReason } = await generateText({
-        model: wrappedModel,
-        prompt,
-        ...generationOptions,
-        providerOptions,
-      });
-
-      ModelService.throwIfTruncated(finishReason, provider, model);
-
-      return { message: text, model };
-    } catch (error) {
-      return await AnthropicService.handleGenerationError(
-        error,
-        prompt,
-        attempt,
-        (p: string, a: number) =>
-          AnthropicService.generateCommitMessage(p, a, modelOverride)
-      );
-    }
-  }
+function createAnthropicModel(ctx: ProviderRunContext) {
+  return createAnthropic({ apiKey: ctx.apiKey })(ctx.modelId);
 }
 
-export default AnthropicService;
+function anthropicProviderOptions(reasoning: string | undefined) {
+  if (!reasoning) return;
+  return {
+    anthropic: {
+      thinking: {
+        type: "adaptive" as const,
+      },
+      effort: reasoning,
+    },
+  };
+}
+
+const anthropicAdapter = defineProvider({
+  name: "anthropic",
+  createModel: createAnthropicModel,
+  providerOptions: anthropicProviderOptions,
+});
+
+registerAdapter(anthropicAdapter);
+
+export { anthropicAdapter };
