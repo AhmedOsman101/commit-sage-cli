@@ -1,24 +1,15 @@
 {
-  "lsp": {
-    "deno": {
-      "settings": { "deno": { "enable": true } }
-    }
-  },
   "languages": {
-    "JavaScript": {
-      "language_servers": [
-        "deno",
-        "json-language-server",
-        "import-cost-lsp",
-        "biome"
-      ]
-    },
     "TypeScript": {
+      "inlay_hints": {
+        "enabled": false
+      },
       "language_servers": [
-        "deno",
+        "typescript-ls",
         "json-language-server",
         "import-cost-lsp",
-        "biome"
+        "biome",
+        "!deno"
       ]
     }
   }

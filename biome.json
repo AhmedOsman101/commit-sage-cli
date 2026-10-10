@@ -271,7 +271,7 @@
     "parser": {
       "unsafeParameterDecoratorsEnabled": true
     },
-    "globals": ["Deno"]
+    "globals": ["Bun"]
   },
   "json": {
     "formatter": {
