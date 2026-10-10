@@ -18,10 +18,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Deno
-        uses: denoland/setup-deno@v2
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          deno-version: "latest"
+          bun-version: "latest"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
       - name: Setup Mask
         uses: taiki-e/install-action@v2
@@ -151,8 +154,10 @@ jobs:
         uses: softprops/action-gh-release@v2.0.0
         with:
           files: |
-            binaries/commit-sage-linux-x64
-            binaries/commit-sage-linux-arm64
+            binaries/commit-sage-linux-gnu-x64
+            binaries/commit-sage-linux-gnu-arm64
+            binaries/commit-sage-linux-musl-x64
+            binaries/commit-sage-linux-musl-arm64
             binaries/commit-sage-windows-x64.exe
             binaries/commit-sage-windows-arm64.exe
             binaries/commit-sage-macos-x64
