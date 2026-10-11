@@ -156,12 +156,17 @@ abstract class ModelService {
         ...(factoryOptions ? { factoryOptions } : {}),
       };
       const reasoning = await ModelService.getReasoningLevel(provider, modelId);
+      if (reasoning !== undefined) {
+        Log.debug(
+          `[${adapter.name}Service.run] reasoning level="${reasoning}"`
+        );
+      }
       const generationOptions = await ModelService.getGenerationOptions(
         provider,
         modelId,
         attempt
       );
-      const providerOptions = adapter.providerOptions?.(reasoning, ctx);
+      const providerOptions = await adapter.providerOptions?.(reasoning, ctx);
       Log.debug(
         `[${adapter.name}Service.run] CALL API model=${model}` +
           (baseUrl ? `, baseURL=${baseUrl}` : "")
@@ -342,16 +347,22 @@ abstract class ModelService {
     }
 
     // Reasoning models reject temperature: omit it when explicitly nulled
-    // or when an explicit reasoning level is configured, instead of sending
-    // a value the model will warn about or refuse.
+    // or when reasoning is on — an explicit level, or `true`/`"default"`
+    // (provider default with reasoning on, no forced level) — instead of
+    // sending a value the model will warn about or refuse.
+    const reasoningOn =
+      providerName !== undefined
+        ? await ModelService.isReasoningActive(providerName, modelId)
+        : reasoning !== undefined;
     const omitTemperature =
       temperature === null ||
       temperature === undefined ||
-      reasoning !== undefined;
+      reasoning !== undefined ||
+      reasoningOn;
     if (omitTemperature) {
       Log.debug(
         "[modelService.getGenerationOptions] omitting temperature " +
-          `(${temperature === null ? "explicitly disabled" : `reasoning level "${reasoning}" set`})`
+          `(${temperature === null ? "explicitly disabled" : reasoning !== undefined ? `reasoning level "${reasoning}" set` : "reasoning enabled"})`
       );
     }
 
@@ -360,6 +371,28 @@ abstract class ModelService {
       maxOutputTokens,
       abortSignal: timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : undefined,
     };
+  }
+
+  /**
+   * Raw tri-state check behind the temperature rule: `true`/`"default"` mean
+   * "provider default with reasoning on" (omit temperature, force no
+   * level); any other string is an explicit level; `false`/`"off"`/unset
+   * is off.
+   */
+  protected static async isReasoningActive(
+    providerName: string,
+    modelId?: string
+  ): Promise<boolean> {
+    const raw = await ConfigService.resolveProviderValue(
+      providerName,
+      modelId,
+      "reasoning"
+    );
+    return (
+      raw === true ||
+      raw === "default" ||
+      (typeof raw === "string" && raw !== "off")
+    );
   }
 
   /**

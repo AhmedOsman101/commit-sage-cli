@@ -79,6 +79,9 @@ const SUPPORTED_REASONING_LEVELS = [
 
 type ProviderReasoning = (typeof SUPPORTED_REASONING_LEVELS)[number];
 
+const GEMINI_THINKING_LEVELS = ["minimal", "low", "medium", "high"] as const;
+type GeminiThinkingLevel = (typeof GEMINI_THINKING_LEVELS)[number];
+
 const SUPPORTED_PROVIDERS = [
   "openai",
   "anthropic",
@@ -146,6 +149,17 @@ type ProviderEntry = {
    * Defaults to `true`.
    */
   useApiKey?: boolean;
+  /**
+   * Gemini-only. Thinking token budget for `gemini-2.5*`: `0` disables,
+   * `-1` lets the model decide, Pro models floor at 128. Other families
+   * ignore it. Defaults to `0`.
+   */
+  thinkingBudget?: number;
+  /**
+   * Gemini-only. Thinking depth for `gemini-3*` (`minimal|low|medium|high`,
+   * cannot be disabled). Other families ignore it. Defaults to `"low"`.
+   */
+  thinkingLevel?: GeminiThinkingLevel;
   models?: Record<string, ModelPreset>;
 };
 
@@ -192,6 +206,7 @@ export type {
   ConfigSection,
   ConfigValue,
   DiffStrategy,
+  GeminiThinkingLevel,
   GenerationConfig,
   GitConfig,
   KnownProvider,
@@ -212,6 +227,7 @@ export type {
 export {
   BODY_STYLES,
   DIFF_STRATEGIES,
+  GEMINI_THINKING_LEVELS,
   RECENT_COMMITS_SCOPES,
   REFS_PLACEMENTS,
   REFS_SOURCES,

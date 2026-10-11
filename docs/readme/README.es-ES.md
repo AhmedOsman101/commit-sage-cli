@@ -341,6 +341,36 @@ esperar una release. Dale una entrada `providers.<nombre>` con `baseUrl` (más
 proveedor desconocido sin `baseUrl` es un error de configuración que nombra
 `providers.<nombre>.baseUrl`.
 
+### Niveles de reasoning
+
+`reasoning` acepta `off`, `default`, un tri-estado boolean, o un nivel
+explícito. `false`/`"off"` desactiva; `true`/`"default"` significa default
+del proveedor con reasoning activado (se omite temperature, sin forzar
+nivel).
+
+Subconjuntos honestos por proveedor (reflejados en el JSON schema; cualquier
+otro valor pasa tal cual — tú eres responsable de lo que la API haga con
+él):
+
+| Proveedor(es)                                        | Niveles                             |
+| ---------------------------------------------------- | ----------------------------------- |
+| `openai`, `groq`, `zai`                              | `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` |
+| `anthropic`                                          | `low`, `medium`, `high`, `xhigh`, `max` |
+| `gemini`                                             | `minimal`, `low`, `medium`, `high`  |
+| `xai`                                                | `low`, `high` (`medium` se mapea a `high` en silencio) |
+| `ollama`, `openrouter`, `deepseek`, `mistral`, `moonshotai`, `minimax` | ignorado (no se envían opciones de reasoning) |
+
+Los gateways desconocidos aceptan el set completo (`none`, `xhigh`, `max`,
+`ultra` incluidos) como passthrough literal.
+
+El thinking de Gemini depende de la familia: `thinkingLevel`
+(`minimal|low|medium|high`, por defecto `low`) solo aplica a `gemini-3*`
+(ahí el thinking no se puede desactivar); `thinkingBudget` (`0` desactiva,
+`-1` decide el modelo, Pro mínimo 128) solo aplica a `gemini-2.5*`;
+`gemini-2.0`/Gemma no envían ninguno. Los tokens de thinking salen de
+`maxOutputTokens`, así que un budget grande puede dejar sin espacio al
+mensaje — el reintento por truncado duplica el budget para compensar.
+
 ### Todas las secciones de un vistazo
 
 | Sección      | Clave                | Tipo      | Por defecto         | Notas                                                                                                             |

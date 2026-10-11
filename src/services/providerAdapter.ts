@@ -70,12 +70,17 @@ type ProviderAdapter = {
    * and `true`/`"default"` cases never reach here because
    * `getReasoningLevel` already normalizes them to `undefined`. The context
    * is there for mappings that depend on resolved values (e.g. OpenAI's
-   * `forceReasoning`, which applies only off the official base URL).
+   * `forceReasoning`, which applies only off the official base URL). May be
+   * async: the Gemini hook resolves its first-class thinking keys through
+   * the shared per-value chain.
    */
   providerOptions?: (
     reasoning: string | undefined,
     ctx: ProviderRunContext
-  ) => SharedProviderOptions | undefined;
+  ) =>
+    | SharedProviderOptions
+    | undefined
+    | Promise<SharedProviderOptions | undefined>;
   /**
    * Extra options for the client factory (e.g. OpenRouter's attribution
    * headers). `run()` exposes the result on `ctx.factoryOptions` for
