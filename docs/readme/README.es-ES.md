@@ -301,8 +301,75 @@ Los presets `providers.<name>.models` resuelven por valor
 (`preset de modelo > proveedor > defaults`) y se gestionan con `config edit` —
 `config get/set` sigue shallow por diseño.
 
+Internamente, los proveedores compatibles con OpenAI (`deepseek`, `mistral`,
+`moonshotai`, `xai`, `minimax`, `zai`) comparten el cliente OpenAI — sus
+paquetes SDK dedicados fueron eliminados. Solo `anthropic`, `google`, `ollama`,
+`openai` y `openrouter` conservan paquetes dedicados. Los nombres de
+proveedor, las claves de configuración y el comportamiento de las peticiones
+no cambian.
+
 No confundas el string `model` guardado con el flag por ejecución
 `--model` (ver [Referencia de flags](#referencia-de-flags)).
+
+### Preset de Groq + gateways genéricos
+
+`groq` es un preset listo para usar: `groq/<modelo>` con `$GROQ_API_KEY` y URL
+base `https://api.groq.com/openai/v1`. El ejemplo canónico es
+`groq/openai/gpt-oss-120b` (un id alojado en Groq, no nuestro);
+`groq/qwen/qwen3-8b-27b` es la alternativa más ligera con los mismos límites
+del nivel gratuito.
+
+Cualquier otro endpoint compatible con OpenAI se puede usar por nombre — sin
+esperar una release. Dale una entrada `providers.<nombre>` con `baseUrl` (más
+`apiType`: `openai-chat` por defecto, `openai-responses` o `anthropic`) y usa
+`<nombre>/<modelo>`:
+
+```json
+"providers": {
+  "omniroute": {
+    "baseUrl": "https://gateway.example.com/v1",
+    "apiKey": "$OMNIROUTE_API_KEY",
+    "apiType": "openai-chat",
+    "headers": { "X-Custom-Auth": "abc" }
+  }
+}
+```
+
+`headers` envía cabeceras extra (auth del gateway, atribución);
+`useApiKey: false` no envía cabecera `Authorization`. Los hosts locales
+(`localhost`, `*.local`, `*.internal`) sin clave tampoco la envían. Un
+proveedor desconocido sin `baseUrl` es un error de configuración que nombra
+`providers.<nombre>.baseUrl`.
+
+### Niveles de reasoning
+
+`reasoning` acepta `off`, `default`, un tri-estado boolean, o un nivel
+explícito. `false`/`"off"` desactiva; `true`/`"default"` significa default
+del proveedor con reasoning activado (se omite temperature, sin forzar
+nivel).
+
+Subconjuntos honestos por proveedor (reflejados en el JSON schema; cualquier
+otro valor pasa tal cual — tú eres responsable de lo que la API haga con
+él):
+
+| Proveedor(es)                                        | Niveles                             |
+| ---------------------------------------------------- | ----------------------------------- |
+| `openai`, `groq`, `zai`                              | `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` |
+| `anthropic`                                          | `low`, `medium`, `high`, `xhigh`, `max` |
+| `gemini`                                             | `minimal`, `low`, `medium`, `high`  |
+| `xai`                                                | `low`, `high` (`medium` se mapea a `high` en silencio) |
+| `ollama`, `openrouter`, `deepseek`, `mistral`, `moonshotai`, `minimax` | ignorado (no se envían opciones de reasoning) |
+
+Los gateways desconocidos aceptan el set completo (`none`, `xhigh`, `max`,
+`ultra` incluidos) como passthrough literal.
+
+El thinking de Gemini depende de la familia: `thinkingLevel`
+(`minimal|low|medium|high`, por defecto `low`) solo aplica a `gemini-3*`
+(ahí el thinking no se puede desactivar); `thinkingBudget` (`0` desactiva,
+`-1` decide el modelo, Pro mínimo 128) solo aplica a `gemini-2.5*`;
+`gemini-2.0`/Gemma no envían ninguno. Los tokens de thinking salen de
+`maxOutputTokens`, así que un budget grande puede dejar sin espacio al
+mensaje — el reintento por truncado duplica el budget para compensar.
 
 ### Todas las secciones de un vistazo
 

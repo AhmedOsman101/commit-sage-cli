@@ -1,33 +1,52 @@
-import type { ProviderType } from "@/lib/types/config.ts";
-import type { ModelService } from "@/services/model.ts";
-import AnthropicService from "@/services/providers/anthropic.ts";
-import DeepseekService from "@/services/providers/deepseek.ts";
-import GeminiService from "@/services/providers/gemini.ts";
-import MinimaxService from "@/services/providers/minimax.ts";
-import MistralService from "@/services/providers/mistral.ts";
-import MoonshotService from "@/services/providers/moonshot.ts";
-import OllamaService from "@/services/providers/ollama.ts";
-import OpenAiService from "@/services/providers/openai.ts";
-import OpenRouterService from "@/services/providers/openrouter.ts";
-import XaiService from "@/services/providers/xai.ts";
-import ZaiService from "@/services/providers/zai.ts";
+import { ModelService } from "@/services/model.ts";
+import type { ProviderAdapter } from "@/services/providerAdapter.ts";
+import { getAdapter } from "@/services/providerAdapter.ts";
+import "@/services/providers/anthropic.ts";
+import "@/services/providers/deepseek.ts";
+import "@/services/providers/gemini.ts";
+import "@/services/providers/groq.ts";
+import "@/services/providers/minimax.ts";
+import "@/services/providers/mistral.ts";
+import "@/services/providers/moonshot.ts";
+import "@/services/providers/ollama.ts";
+import "@/services/providers/openai.ts";
+import "@/services/providers/openrouter.ts";
+import "@/services/providers/xai.ts";
+import "@/services/providers/zai.ts";
 
-const providers: Record<ProviderType, typeof ModelService> = {
-  gemini: GeminiService,
-  openai: OpenAiService,
-  anthropic: AnthropicService,
-  deepseek: DeepseekService,
-  mistral: MistralService,
-  xai: XaiService,
-  ollama: OllamaService,
-  moonshotai: MoonshotService,
-  zai: ZaiService,
-  minimax: MinimaxService,
-  openrouter: OpenRouterService,
-};
+/**
+ * One `ModelService` subclass per adapter, built once and cached. The
+ * subclass is only a dispatch shell — every run goes through the shared
+ * `ModelService.run()`, so adapter-backed providers stay byte-identical
+ * to the classes they replace.
+ */
+const adapterServices = new Map<string, typeof ModelService>();
 
-function getProviderService(type: ProviderType): typeof ModelService {
-  return providers[type];
+function serviceForAdapter(adapter: ProviderAdapter): typeof ModelService {
+  const cached = adapterServices.get(adapter.name);
+  if (cached) return cached;
+  class AdapterService extends ModelService {
+    static override generateCommitMessage(
+      prompt: string,
+      attempt = 1,
+      modelOverride?: string
+    ) {
+      return ModelService.run(adapter, prompt, attempt, modelOverride);
+    }
+  }
+  adapterServices.set(adapter.name, AdapterService);
+  return AdapterService;
+}
+
+/**
+ * Dispatch shell for a provider name: known literals resolve from the
+ * registry, unknown names with `providers.<name>.baseUrl` dispatch a
+ * generic gateway adapter, and unknown names without one fail with a
+ * `ConfigurationError` naming the missing key (via `getAdapter`).
+ */
+async function getProviderService(type: string): Promise<typeof ModelService> {
+  const adapter = await getAdapter(type);
+  return serviceForAdapter(adapter);
 }
 
 export { getProviderService };

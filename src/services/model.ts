@@ -1,6 +1,10 @@
-/** biome-ignore-all lint/suspicious/noExplicitAny: Each child has different incompatible types for the same parameter */
 /** biome-ignore-all lint/correctness/noUnusedFunctionParameters: This is a base class */
 import { setTimeout } from "node:timers/promises";
+import {
+  extractReasoningMiddleware,
+  generateText,
+  wrapLanguageModel,
+} from "ai";
 import { DEFAULT_CONFIG } from "@/lib/constants.ts";
 import { TruncatedResponseError } from "@/lib/errors.ts";
 import { classifyAIError } from "@/lib/handleAiErrors.ts";
@@ -8,8 +12,11 @@ import { Log } from "@/lib/logger.ts";
 import { splitProviderModel } from "@/lib/modelString.ts";
 import type { CommitMessage } from "@/lib/types/commit.ts";
 import type { ApiType } from "@/lib/types/config.ts";
-import type { ApiError, ErrorWithResponse } from "@/lib/types/index.ts";
 import ConfigService from "@/services/config.ts";
+import type {
+  ProviderAdapter,
+  ProviderRunContext,
+} from "@/services/providerAdapter.ts";
 
 abstract class ModelService {
   protected static readonly maxRetryBackoff = 10_000;
@@ -64,16 +71,6 @@ abstract class ModelService {
   }
 
   /**
-   * Handles API errors and returns structured error information.
-   * Subclasses must provide their own implementation.
-   * Default implementation returns an empty result.
-   */
-  protected static handleApiError(error: ErrorWithResponse): ApiError {
-    // Empty implementation as per requirement
-    return { errorMessage: "", shouldRetry: false };
-  }
-
-  /**
    * Generates a commit message based on a prompt and attempt number.
    * Subclasses must provide their own implementation.
    * Default implementation returns an empty commit message.
@@ -91,13 +88,117 @@ abstract class ModelService {
   }
 
   /**
-   * Extracts a commit message from a response.
-   * Subclasses must provide their own implementation.
-   * Default implementation returns an empty string.
+   * Shared generation shell behind the adapter registry.
+   *
+   * Every adapter-backed provider runs through here: resolve the
+   * `provider/model` split, the key (`getProviderApiKey` keeps the env
+   * `$`-prefix and local no-auth rules), the base URL (per-value chain
+   * with the compiled provider entry as fallback, mirroring the old
+   * OpenRouter file), the wire format, the reasoning level, and the
+   * temperature/budget/timeout options — then one `think`-middleware wrap,
+   * one `generateText`, and one retry callback. The prompt passes through
+   * untouched; adapters only shape the model and its options.
+   *
+   * `modelOverride` (optional) is the CLI `--model` flag value, resolved
+   * against config + default by `resolveModel` like everywhere else.
    */
-  protected static extractCommitMessage(response: any): string {
-    // Empty implementation as per requirement
-    return "";
+  public static async run(
+    adapter: ProviderAdapter,
+    prompt: string,
+    attempt = 1,
+    modelOverride?: string
+  ): Promise<CommitMessage> {
+    Log.debug(
+      `[${adapter.name}Service.run] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
+    );
+    try {
+      const { provider, modelId, model } =
+        await ModelService.resolveProviderAndModel(modelOverride);
+      const rawBaseUrl = await ConfigService.resolveProviderValue(
+        provider,
+        modelId,
+        "baseUrl"
+      );
+      const compiledBaseUrl = (
+        DEFAULT_CONFIG.providers as unknown as Record<
+          string,
+          Record<string, unknown>
+        >
+      )[provider]?.baseUrl;
+      const baseUrl =
+        typeof rawBaseUrl === "string" && rawBaseUrl
+          ? rawBaseUrl
+          : typeof compiledBaseUrl === "string" && compiledBaseUrl
+            ? compiledBaseUrl
+            : undefined;
+      const apiKey = await ConfigService.getEffectiveApiKey(
+        provider,
+        modelId,
+        baseUrl
+      );
+      const configuredApiType = await ModelService.getApiType(
+        provider,
+        modelId
+      );
+      const baseCtx: ProviderRunContext = {
+        provider,
+        modelId,
+        model,
+        apiKey,
+        baseUrl,
+        apiType: configuredApiType,
+      };
+      const apiType = adapter.apiType?.(baseCtx) ?? configuredApiType;
+      const factoryOptions = adapter.factoryOptions?.({ ...baseCtx, apiType });
+      const ctx: ProviderRunContext = {
+        ...baseCtx,
+        apiType,
+        ...(factoryOptions ? { factoryOptions } : {}),
+      };
+      const reasoning = await ModelService.getReasoningLevel(provider, modelId);
+      if (reasoning !== undefined) {
+        Log.debug(
+          `[${adapter.name}Service.run] reasoning level="${reasoning}"`
+        );
+      }
+      const generationOptions = await ModelService.getGenerationOptions(
+        provider,
+        modelId,
+        attempt
+      );
+      const providerOptions = await adapter.providerOptions?.(reasoning, ctx);
+      Log.debug(
+        `[${adapter.name}Service.run] CALL API model=${model}` +
+          (baseUrl ? `, baseURL=${baseUrl}` : "")
+      );
+
+      const wrappedModel = wrapLanguageModel({
+        model: adapter.createModel(ctx),
+        middleware: extractReasoningMiddleware({ tagName: "think" }),
+      });
+
+      const { text, finishReason } = await generateText({
+        model: wrappedModel,
+        prompt,
+        ...generationOptions,
+        ...(providerOptions ? { providerOptions } : {}),
+      });
+
+      ModelService.throwIfTruncated(finishReason, provider, model);
+
+      Log.debug(
+        `[${adapter.name}Service.run] EXIT message="${text.substring(0, 50)}..."`
+      );
+      return { message: text, model };
+    } catch (error) {
+      Log.debug(`[${adapter.name}Service.run] ERROR ${error}`);
+      return await ModelService.handleGenerationError(
+        error,
+        prompt,
+        attempt,
+        (p: string, a: number) => ModelService.run(adapter, p, a, modelOverride)
+      );
+    }
   }
 
   protected static async getMaxRetries(): Promise<number> {
@@ -246,16 +347,22 @@ abstract class ModelService {
     }
 
     // Reasoning models reject temperature: omit it when explicitly nulled
-    // or when an explicit reasoning level is configured, instead of sending
-    // a value the model will warn about or refuse.
+    // or when reasoning is on — an explicit level, or `true`/`"default"`
+    // (provider default with reasoning on, no forced level) — instead of
+    // sending a value the model will warn about or refuse.
+    const reasoningOn =
+      providerName !== undefined
+        ? await ModelService.isReasoningActive(providerName, modelId)
+        : reasoning !== undefined;
     const omitTemperature =
       temperature === null ||
       temperature === undefined ||
-      reasoning !== undefined;
+      reasoning !== undefined ||
+      reasoningOn;
     if (omitTemperature) {
       Log.debug(
         "[modelService.getGenerationOptions] omitting temperature " +
-          `(${temperature === null ? "explicitly disabled" : `reasoning level "${reasoning}" set`})`
+          `(${temperature === null ? "explicitly disabled" : reasoning !== undefined ? `reasoning level "${reasoning}" set` : "reasoning enabled"})`
       );
     }
 
@@ -264,6 +371,28 @@ abstract class ModelService {
       maxOutputTokens,
       abortSignal: timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : undefined,
     };
+  }
+
+  /**
+   * Raw tri-state check behind the temperature rule: `true`/`"default"` mean
+   * "provider default with reasoning on" (omit temperature, force no
+   * level); any other string is an explicit level; `false`/`"off"`/unset
+   * is off.
+   */
+  protected static async isReasoningActive(
+    providerName: string,
+    modelId?: string
+  ): Promise<boolean> {
+    const raw = await ConfigService.resolveProviderValue(
+      providerName,
+      modelId,
+      "reasoning"
+    );
+    return (
+      raw === true ||
+      raw === "default" ||
+      (typeof raw === "string" && raw !== "off")
+    );
   }
 
   /**
@@ -358,76 +487,6 @@ abstract class ModelService {
     )
       return resolved;
     return fallback ?? "openai-chat";
-  }
-
-  protected static async getOpenAIProviderOptions(options?: {
-    forceReasoning?: boolean;
-    provider?: string;
-    modelId?: string;
-  }) {
-    const reasoning = await ModelService.getReasoningLevel(
-      options?.provider,
-      options?.modelId
-    );
-
-    if (!reasoning) return;
-
-    return {
-      openai: {
-        reasoningEffort: reasoning,
-        ...(options?.forceReasoning ? { forceReasoning: true } : {}),
-      },
-    };
-  }
-
-  protected static async getAnthropicProviderOptions(
-    provider?: string,
-    modelId?: string
-  ) {
-    const reasoning = await ModelService.getReasoningLevel(provider, modelId);
-
-    if (!reasoning) return;
-
-    return {
-      anthropic: {
-        thinking: {
-          type: "adaptive" as const,
-        },
-        effort: reasoning,
-      },
-    };
-  }
-
-  protected static async getGoogleProviderOptions(
-    provider?: string,
-    modelId?: string
-  ) {
-    const reasoning = await ModelService.getReasoningLevel(provider, modelId);
-
-    if (!reasoning) return;
-
-    return {
-      google: {
-        thinkingConfig: {
-          thinkingLevel: reasoning,
-        },
-      },
-    };
-  }
-
-  protected static async getXaiProviderOptions(
-    provider?: string,
-    modelId?: string
-  ) {
-    const reasoning = await ModelService.getReasoningLevel(provider, modelId);
-
-    if (!reasoning) return;
-
-    return {
-      xai: {
-        reasoningEffort: reasoning === "medium" ? "high" : reasoning,
-      },
-    };
   }
 
   /**

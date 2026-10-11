@@ -1,67 +1,21 @@
-import {
-  extractReasoningMiddleware,
-  generateText,
-  wrapLanguageModel,
-} from "ai";
-import { createMinimaxOpenAI } from "vercel-minimax-ai-provider";
-import { Log } from "@/lib/logger.ts";
-import type { CommitMessage } from "@/lib/types/commit.ts";
-import ConfigService from "@/services/config.ts";
-import { ModelService } from "@/services/model.ts";
+import { createOpenAI } from "@ai-sdk/openai";
+import type { ProviderRunContext } from "@/services/providerAdapter.ts";
+import { defineProvider, registerAdapter } from "@/services/providerAdapter.ts";
 
-class MinimaxService extends ModelService {
-  static override async generateCommitMessage(
-    prompt: string,
-    attempt = 1,
-    modelOverride?: string
-  ): Promise<CommitMessage> {
-    Log.debug(
-      `[minimaxService.generateCommitMessage] ENTRY attempt=${attempt}, prompt.length=${prompt.length}`
-    );
-    try {
-      const { provider, modelId, model } =
-        await ModelService.resolveProviderAndModel(modelOverride);
-      const apiKey =
-        (await ConfigService.getProviderApiKey(provider)) ?? undefined;
-      const generationOptions = await ModelService.getGenerationOptions(
-        provider,
-        modelId,
-        attempt
-      );
-      Log.debug(
-        `[minimaxService.generateCommitMessage] CALL API model=${model}`
-      );
+const MINIMAX_BASE_URL = "https://api.minimax.io/v1";
 
-      const client = createMinimaxOpenAI({ apiKey });
-
-      const wrappedModel = wrapLanguageModel({
-        model: client(modelId),
-        middleware: extractReasoningMiddleware({ tagName: "think" }),
-      });
-
-      const { text, finishReason } = await generateText({
-        model: wrappedModel,
-        prompt,
-        ...generationOptions,
-      });
-
-      ModelService.throwIfTruncated(finishReason, provider, model);
-
-      Log.debug(
-        `[minimaxService.generateCommitMessage] EXIT message="${text.substring(0, 50)}..."`
-      );
-      return { message: text, model };
-    } catch (error) {
-      Log.debug(`[minimaxService.generateCommitMessage] ERROR ${error}`);
-      return await MinimaxService.handleGenerationError(
-        error,
-        prompt,
-        attempt,
-        (p: string, a: number) =>
-          MinimaxService.generateCommitMessage(p, a, modelOverride)
-      );
-    }
-  }
+function createMinimaxModel(ctx: ProviderRunContext) {
+  return createOpenAI({
+    apiKey: ctx.apiKey,
+    baseURL: ctx.baseUrl ?? MINIMAX_BASE_URL,
+  }).chat(ctx.modelId);
 }
 
-export default MinimaxService;
+const minimaxAdapter = defineProvider({
+  name: "minimax",
+  createModel: createMinimaxModel,
+});
+
+registerAdapter(minimaxAdapter);
+
+export { minimaxAdapter };

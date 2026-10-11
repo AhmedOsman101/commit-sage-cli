@@ -301,8 +301,72 @@ holds shared AI defaults; `providers.<name>` overrides per provider
 (`model preset > provider > defaults`) and are managed via `config edit` —
 `config get/set` stays shallow by design.
 
+Under the hood, the OpenAI-wire providers (`deepseek`, `mistral`,
+`moonshotai`, `xai`, `minimax`, `zai`) share the OpenAI client — their
+dedicated SDK packages were removed. Only `anthropic`, `google`, `ollama`,
+`openai`, and `openrouter` keep dedicated packages. Provider names, config
+keys, and request behavior are unchanged.
+
 Don't confuse the stored `model` string with the per-run
 `--model` flag (see [Flags Reference](#flags-reference)).
+
+### Groq preset + generic gateways
+
+`groq` is a ready-made preset: `groq/<model>` with `$GROQ_API_KEY` and base
+URL `https://api.groq.com/openai/v1`. The canonical example is
+`groq/openai/gpt-oss-120b` (a Groq-hosted id, not ours);
+`groq/qwen/qwen3-8b-27b` is the lighter alternative under the same free-tier
+limits.
+
+Any other OpenAI-compatible endpoint is addressable by name — no release
+needed. Give it a `providers.<name>` entry with `baseUrl` (plus `apiType`:
+`openai-chat` by default, `openai-responses`, or `anthropic`) and use
+`<name>/<model>`:
+
+```json
+"providers": {
+  "omniroute": {
+    "baseUrl": "https://gateway.example.com/v1",
+    "apiKey": "$OMNIROUTE_API_KEY",
+    "apiType": "openai-chat",
+    "headers": { "X-Custom-Auth": "abc" }
+  }
+}
+```
+
+`headers` sends extra headers (gateway auth, attribution); `useApiKey: false`
+sends no `Authorization` header. Local hosts (`localhost`, `*.local`,
+`*.internal`) without a key send none either. An unknown provider name
+without `baseUrl` is a configuration error naming
+`providers.<name>.baseUrl`.
+
+### Reasoning levels
+
+`reasoning` accepts `off`, `default`, a boolean tri-state, or an explicit
+level. `false`/`"off"` disables; `true`/`"default"` means provider default
+with reasoning on (temperature is omitted, no level forced).
+
+Honest subsets per provider (mirrored in the JSON schema; anything else
+passes through as-is — you own what the API does with it):
+
+| Provider(s)                                          | Levels                              |
+| ---------------------------------------------------- | ----------------------------------- |
+| `openai`, `groq`, `zai`                              | `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` |
+| `anthropic`                                          | `low`, `medium`, `high`, `xhigh`, `max` |
+| `gemini`                                             | `minimal`, `low`, `medium`, `high`  |
+| `xai`                                                | `low`, `high` (`medium` silently maps to `high`) |
+| `ollama`, `openrouter`, `deepseek`, `mistral`, `moonshotai`, `minimax` | ignored (no reasoning options are sent) |
+
+Unknown gateways accept the full set (`none`, `xhigh`, `max`, `ultra`
+included) as verbatim passthrough.
+
+Gemini thinking is family-gated: `thinkingLevel`
+(`minimal|low|medium|high`, default `low`) applies to `gemini-3*` only
+(thinking cannot be disabled there); `thinkingBudget` (`0` off, `-1` model
+decides, Pro floor 128) applies to `gemini-2.5*` only; `gemini-2.0`/Gemma
+send neither. Thinking tokens draw from `maxOutputTokens`, so a large budget
+can starve the message — the truncation retry doubles the budget to
+compensate.
 
 ### All sections at a glance
 

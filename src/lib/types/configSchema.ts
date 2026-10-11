@@ -11,6 +11,7 @@ import { COMMIT_FORMATS } from "@/lib/types/commit.ts";
 import {
   BODY_STYLES,
   DIFF_STRATEGIES,
+  GEMINI_THINKING_LEVELS,
   RECENT_COMMITS_SCOPES,
   REFS_PLACEMENTS,
   REFS_SOURCES,
@@ -133,49 +134,106 @@ const MODEL_PRESET_SCHEMA = {
   },
 } as const;
 
-const PROVIDER_ENTRY_SCHEMA = {
-  type: "object",
-  additionalProperties: false,
-  properties: {
-    baseUrl: {
-      type: "string",
-      format: "uri",
+// Honest reasoning subsets per known provider, for editor-time validation
+// in the generated JSON Schema. Runtime stays permissive: out-of-subset
+// values passthrough without warnings (the user is responsible), except
+// where a value would error the provider — those stay silent guardrails
+// in the adapter literals (e.g. xAI `medium` → `high`).
+const OPENAI_WIRE_REASONING_LEVELS = [
+  "none",
+  "minimal",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max",
+] as const;
+const ANTHROPIC_REASONING_LEVELS = [
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max",
+] as const;
+const XAI_REASONING_LEVELS = ["low", "high"] as const;
+
+function providerEntrySchema(reasoningLevels: readonly string[]) {
+  return {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      baseUrl: {
+        type: "string",
+        format: "uri",
+      },
+      apiKey: {
+        type: "string",
+        description: 'API key literal or "$ENV_VAR" reference',
+      },
+      apiType: {
+        type: "string",
+        enum: [...SUPPORTED_API_TYPES],
+      },
+      timeoutMs: {
+        type: "integer",
+        minimum: 0,
+      },
+      reasoning: {
+        oneOf: [
+          { type: "boolean" },
+          { type: "string", enum: [...reasoningLevels] },
+        ],
+      },
+      contextWindow: { type: "integer", minimum: 1 },
+      maxInputTokens: { type: "integer", minimum: 1 },
+      maxOutputTokens: { type: "integer", minimum: 1 },
+      headers: {
+        type: "object",
+        additionalProperties: { type: "string" },
+        description:
+          "Extra headers merged into the client (gateway auth, attribution). Entry-level only; honored by generic-gateway dispatch.",
+      },
+      useApiKey: {
+        type: "boolean",
+        description:
+          "False sends no Authorization header even when a key is configured. Defaults to true.",
+      },
+      thinkingBudget: {
+        type: "number",
+        description:
+          "Gemini-only thinking token budget for gemini-2.5 models: 0 disables, -1 lets the model decide. Pro models floor at 128. Defaults to 0.",
+      },
+      thinkingLevel: {
+        type: "string",
+        enum: [...GEMINI_THINKING_LEVELS],
+        description:
+          "Gemini-only thinking depth for gemini-3 models (cannot be disabled). Defaults to low.",
+      },
+      models: {
+        type: "object",
+        additionalProperties: { ...MODEL_PRESET_SCHEMA },
+        description:
+          "Per-model preset overrides, keyed by model id (may contain slashes)",
+      },
     },
-    apiKey: {
-      type: "string",
-      description: 'API key literal or "$ENV_VAR" reference',
-    },
-    apiType: {
-      type: "string",
-      enum: [...SUPPORTED_API_TYPES],
-    },
-    timeoutMs: {
-      type: "integer",
-      minimum: 0,
-    },
-    reasoning: {
-      oneOf: [
-        { type: "boolean" },
-        { type: "string", enum: [...SUPPORTED_REASONING_LEVELS] },
-      ],
-    },
-    contextWindow: { type: "integer", minimum: 1 },
-    maxInputTokens: { type: "integer", minimum: 1 },
-    maxOutputTokens: { type: "integer", minimum: 1 },
-    models: {
-      type: "object",
-      additionalProperties: { ...MODEL_PRESET_SCHEMA },
-      description:
-        "Per-model preset overrides, keyed by model id (may contain slashes)",
-    },
-  },
-} as const;
+  };
+}
+
+const PROVIDER_ENTRY_SCHEMA = providerEntrySchema([
+  ...SUPPORTED_REASONING_LEVELS,
+]);
 
 const PROVIDERS_CONFIG_SCHEMA = {
   type: "object",
   additionalProperties: { ...PROVIDER_ENTRY_SCHEMA },
   properties: {
     defaults: { ...PROVIDER_DEFAULTS_SCHEMA },
+    openai: providerEntrySchema([...OPENAI_WIRE_REASONING_LEVELS]),
+    anthropic: providerEntrySchema([...ANTHROPIC_REASONING_LEVELS]),
+    gemini: providerEntrySchema([...GEMINI_THINKING_LEVELS]),
+    xai: providerEntrySchema([...XAI_REASONING_LEVELS]),
+    groq: providerEntrySchema([...OPENAI_WIRE_REASONING_LEVELS]),
+    zai: providerEntrySchema([...OPENAI_WIRE_REASONING_LEVELS]),
   },
 } as const;
 

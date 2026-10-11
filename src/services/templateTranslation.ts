@@ -3,7 +3,6 @@ import { DEFAULT_CONFIG } from "@/lib/constants.ts";
 import { Log } from "@/lib/logger.ts";
 import { splitProviderModel } from "@/lib/modelString.ts";
 import type { CommitFormat } from "@/lib/types/commit.ts";
-import { type ProviderType, SUPPORTED_PROVIDERS } from "@/lib/types/config.ts";
 import ConfigService from "@/services/config.ts";
 import { getProviderService } from "@/services/providerRegistry.ts";
 import { getTemplate } from "@/templates/index.ts";
@@ -86,21 +85,16 @@ async function translateFormatTemplate(
   const split = splitProviderModel(model);
   if (split.isError()) return Err(split.error);
 
-  // The provider registry is keyed by the known-provider union, so an unknown
-  // provider must be rejected here rather than resolving to `undefined` and
-  // throwing an opaque "not a function" further down.
-  if (!(SUPPORTED_PROVIDERS as readonly string[]).includes(split.ok.provider)) {
-    return ErrFromText(
-      `Cannot translate with unknown provider "${split.ok.provider}". Known providers: ${SUPPORTED_PROVIDERS.join(", ")}`
-    );
-  }
-
-  const Service = getProviderService(split.ok.provider as ProviderType);
-  Log.info(
-    `Translating the "${format}" format instructions into ${language}...`
-  );
-
+  // Unknown provider names dispatch generically through the registry when
+  // `providers.<name>.baseUrl` is set; without it `getProviderService`
+  // throws a `ConfigurationError` naming the missing key, which lands in
+  // the `Err` below instead of an opaque "not a function" crash.
   try {
+    const Service = await getProviderService(split.ok.provider);
+    Log.info(
+      `Translating the "${format}" format instructions into ${language}...`
+    );
+
     const response = await Service.generateCommitMessage(
       buildTranslationPrompt(language, format),
       1,

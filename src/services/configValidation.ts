@@ -7,6 +7,7 @@ import {
   BODY_STYLES,
   type Config,
   DIFF_STRATEGIES,
+  GEMINI_THINKING_LEVELS,
   RECENT_COMMITS_SCOPES,
   REFS_PLACEMENTS,
   REFS_SOURCES,
@@ -51,6 +52,10 @@ const providerEntrySchema = z.object({
   contextWindow: z.uint32().optional(),
   maxInputTokens: z.uint32().optional(),
   maxOutputTokens: z.uint32().optional(),
+  headers: z.record(z.string(), z.string()).optional(),
+  useApiKey: z.boolean().optional(),
+  thinkingBudget: z.number().optional(),
+  thinkingLevel: z.enum(GEMINI_THINKING_LEVELS).optional(),
   models: z.record(z.string(), modelPresetSchema).optional(),
 });
 

@@ -124,6 +124,31 @@
             "type": "integer",
             "minimum": 1
           },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Extra headers merged into the client (gateway auth, attribution). Entry-level only; honored by generic-gateway dispatch."
+          },
+          "useApiKey": {
+            "type": "boolean",
+            "description": "False sends no Authorization header even when a key is configured. Defaults to true."
+          },
+          "thinkingBudget": {
+            "type": "number",
+            "description": "Gemini-only thinking token budget for gemini-2.5 models: 0 disables, -1 lets the model decide. Pro models floor at 128. Defaults to 0."
+          },
+          "thinkingLevel": {
+            "type": "string",
+            "enum": [
+              "minimal",
+              "low",
+              "medium",
+              "high"
+            ],
+            "description": "Gemini-only thinking depth for gemini-3 models (cannot be disabled). Defaults to low."
+          },
           "models": {
             "type": "object",
             "additionalProperties": {
@@ -235,6 +260,824 @@
             "maxOutputTokens": {
               "type": "integer",
               "minimum": 1
+            }
+          }
+        },
+        "openai": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "baseUrl": {
+              "type": "string",
+              "format": "uri"
+            },
+            "apiKey": {
+              "type": "string",
+              "description": "API key literal or \"$ENV_VAR\" reference"
+            },
+            "apiType": {
+              "type": "string",
+              "enum": [
+                "openai-chat",
+                "openai-responses",
+                "anthropic"
+              ]
+            },
+            "timeoutMs": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "reasoning": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "minimal",
+                    "low",
+                    "medium",
+                    "high",
+                    "xhigh",
+                    "max"
+                  ]
+                }
+              ]
+            },
+            "contextWindow": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxInputTokens": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxOutputTokens": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "headers": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "Extra headers merged into the client (gateway auth, attribution). Entry-level only; honored by generic-gateway dispatch."
+            },
+            "useApiKey": {
+              "type": "boolean",
+              "description": "False sends no Authorization header even when a key is configured. Defaults to true."
+            },
+            "thinkingBudget": {
+              "type": "number",
+              "description": "Gemini-only thinking token budget for gemini-2.5 models: 0 disables, -1 lets the model decide. Pro models floor at 128. Defaults to 0."
+            },
+            "thinkingLevel": {
+              "type": "string",
+              "enum": [
+                "minimal",
+                "low",
+                "medium",
+                "high"
+              ],
+              "description": "Gemini-only thinking depth for gemini-3 models (cannot be disabled). Defaults to low."
+            },
+            "models": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "reasoning": {
+                    "oneOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "off",
+                          "none",
+                          "default",
+                          "low",
+                          "minimal",
+                          "medium",
+                          "high",
+                          "xhigh",
+                          "max",
+                          "ultra"
+                        ]
+                      }
+                    ]
+                  },
+                  "contextWindow": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxInputTokens": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxOutputTokens": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "temperature": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 2,
+                    "description": "Per-model temperature override. Null omits temperature (reasoning models reject it)."
+                  }
+                }
+              },
+              "description": "Per-model preset overrides, keyed by model id (may contain slashes)"
+            }
+          }
+        },
+        "anthropic": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "baseUrl": {
+              "type": "string",
+              "format": "uri"
+            },
+            "apiKey": {
+              "type": "string",
+              "description": "API key literal or \"$ENV_VAR\" reference"
+            },
+            "apiType": {
+              "type": "string",
+              "enum": [
+                "openai-chat",
+                "openai-responses",
+                "anthropic"
+              ]
+            },
+            "timeoutMs": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "reasoning": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high",
+                    "xhigh",
+                    "max"
+                  ]
+                }
+              ]
+            },
+            "contextWindow": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxInputTokens": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxOutputTokens": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "headers": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "Extra headers merged into the client (gateway auth, attribution). Entry-level only; honored by generic-gateway dispatch."
+            },
+            "useApiKey": {
+              "type": "boolean",
+              "description": "False sends no Authorization header even when a key is configured. Defaults to true."
+            },
+            "thinkingBudget": {
+              "type": "number",
+              "description": "Gemini-only thinking token budget for gemini-2.5 models: 0 disables, -1 lets the model decide. Pro models floor at 128. Defaults to 0."
+            },
+            "thinkingLevel": {
+              "type": "string",
+              "enum": [
+                "minimal",
+                "low",
+                "medium",
+                "high"
+              ],
+              "description": "Gemini-only thinking depth for gemini-3 models (cannot be disabled). Defaults to low."
+            },
+            "models": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "reasoning": {
+                    "oneOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "off",
+                          "none",
+                          "default",
+                          "low",
+                          "minimal",
+                          "medium",
+                          "high",
+                          "xhigh",
+                          "max",
+                          "ultra"
+                        ]
+                      }
+                    ]
+                  },
+                  "contextWindow": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxInputTokens": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxOutputTokens": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "temperature": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 2,
+                    "description": "Per-model temperature override. Null omits temperature (reasoning models reject it)."
+                  }
+                }
+              },
+              "description": "Per-model preset overrides, keyed by model id (may contain slashes)"
+            }
+          }
+        },
+        "gemini": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "baseUrl": {
+              "type": "string",
+              "format": "uri"
+            },
+            "apiKey": {
+              "type": "string",
+              "description": "API key literal or \"$ENV_VAR\" reference"
+            },
+            "apiType": {
+              "type": "string",
+              "enum": [
+                "openai-chat",
+                "openai-responses",
+                "anthropic"
+              ]
+            },
+            "timeoutMs": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "reasoning": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "minimal",
+                    "low",
+                    "medium",
+                    "high"
+                  ]
+                }
+              ]
+            },
+            "contextWindow": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxInputTokens": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxOutputTokens": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "headers": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "Extra headers merged into the client (gateway auth, attribution). Entry-level only; honored by generic-gateway dispatch."
+            },
+            "useApiKey": {
+              "type": "boolean",
+              "description": "False sends no Authorization header even when a key is configured. Defaults to true."
+            },
+            "thinkingBudget": {
+              "type": "number",
+              "description": "Gemini-only thinking token budget for gemini-2.5 models: 0 disables, -1 lets the model decide. Pro models floor at 128. Defaults to 0."
+            },
+            "thinkingLevel": {
+              "type": "string",
+              "enum": [
+                "minimal",
+                "low",
+                "medium",
+                "high"
+              ],
+              "description": "Gemini-only thinking depth for gemini-3 models (cannot be disabled). Defaults to low."
+            },
+            "models": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "reasoning": {
+                    "oneOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "off",
+                          "none",
+                          "default",
+                          "low",
+                          "minimal",
+                          "medium",
+                          "high",
+                          "xhigh",
+                          "max",
+                          "ultra"
+                        ]
+                      }
+                    ]
+                  },
+                  "contextWindow": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxInputTokens": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxOutputTokens": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "temperature": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 2,
+                    "description": "Per-model temperature override. Null omits temperature (reasoning models reject it)."
+                  }
+                }
+              },
+              "description": "Per-model preset overrides, keyed by model id (may contain slashes)"
+            }
+          }
+        },
+        "xai": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "baseUrl": {
+              "type": "string",
+              "format": "uri"
+            },
+            "apiKey": {
+              "type": "string",
+              "description": "API key literal or \"$ENV_VAR\" reference"
+            },
+            "apiType": {
+              "type": "string",
+              "enum": [
+                "openai-chat",
+                "openai-responses",
+                "anthropic"
+              ]
+            },
+            "timeoutMs": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "reasoning": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              ]
+            },
+            "contextWindow": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxInputTokens": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxOutputTokens": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "headers": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "Extra headers merged into the client (gateway auth, attribution). Entry-level only; honored by generic-gateway dispatch."
+            },
+            "useApiKey": {
+              "type": "boolean",
+              "description": "False sends no Authorization header even when a key is configured. Defaults to true."
+            },
+            "thinkingBudget": {
+              "type": "number",
+              "description": "Gemini-only thinking token budget for gemini-2.5 models: 0 disables, -1 lets the model decide. Pro models floor at 128. Defaults to 0."
+            },
+            "thinkingLevel": {
+              "type": "string",
+              "enum": [
+                "minimal",
+                "low",
+                "medium",
+                "high"
+              ],
+              "description": "Gemini-only thinking depth for gemini-3 models (cannot be disabled). Defaults to low."
+            },
+            "models": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "reasoning": {
+                    "oneOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "off",
+                          "none",
+                          "default",
+                          "low",
+                          "minimal",
+                          "medium",
+                          "high",
+                          "xhigh",
+                          "max",
+                          "ultra"
+                        ]
+                      }
+                    ]
+                  },
+                  "contextWindow": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxInputTokens": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxOutputTokens": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "temperature": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 2,
+                    "description": "Per-model temperature override. Null omits temperature (reasoning models reject it)."
+                  }
+                }
+              },
+              "description": "Per-model preset overrides, keyed by model id (may contain slashes)"
+            }
+          }
+        },
+        "groq": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "baseUrl": {
+              "type": "string",
+              "format": "uri"
+            },
+            "apiKey": {
+              "type": "string",
+              "description": "API key literal or \"$ENV_VAR\" reference"
+            },
+            "apiType": {
+              "type": "string",
+              "enum": [
+                "openai-chat",
+                "openai-responses",
+                "anthropic"
+              ]
+            },
+            "timeoutMs": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "reasoning": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "minimal",
+                    "low",
+                    "medium",
+                    "high",
+                    "xhigh",
+                    "max"
+                  ]
+                }
+              ]
+            },
+            "contextWindow": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxInputTokens": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxOutputTokens": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "headers": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "Extra headers merged into the client (gateway auth, attribution). Entry-level only; honored by generic-gateway dispatch."
+            },
+            "useApiKey": {
+              "type": "boolean",
+              "description": "False sends no Authorization header even when a key is configured. Defaults to true."
+            },
+            "thinkingBudget": {
+              "type": "number",
+              "description": "Gemini-only thinking token budget for gemini-2.5 models: 0 disables, -1 lets the model decide. Pro models floor at 128. Defaults to 0."
+            },
+            "thinkingLevel": {
+              "type": "string",
+              "enum": [
+                "minimal",
+                "low",
+                "medium",
+                "high"
+              ],
+              "description": "Gemini-only thinking depth for gemini-3 models (cannot be disabled). Defaults to low."
+            },
+            "models": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "reasoning": {
+                    "oneOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "off",
+                          "none",
+                          "default",
+                          "low",
+                          "minimal",
+                          "medium",
+                          "high",
+                          "xhigh",
+                          "max",
+                          "ultra"
+                        ]
+                      }
+                    ]
+                  },
+                  "contextWindow": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxInputTokens": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxOutputTokens": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "temperature": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 2,
+                    "description": "Per-model temperature override. Null omits temperature (reasoning models reject it)."
+                  }
+                }
+              },
+              "description": "Per-model preset overrides, keyed by model id (may contain slashes)"
+            }
+          }
+        },
+        "zai": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "baseUrl": {
+              "type": "string",
+              "format": "uri"
+            },
+            "apiKey": {
+              "type": "string",
+              "description": "API key literal or \"$ENV_VAR\" reference"
+            },
+            "apiType": {
+              "type": "string",
+              "enum": [
+                "openai-chat",
+                "openai-responses",
+                "anthropic"
+              ]
+            },
+            "timeoutMs": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "reasoning": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "minimal",
+                    "low",
+                    "medium",
+                    "high",
+                    "xhigh",
+                    "max"
+                  ]
+                }
+              ]
+            },
+            "contextWindow": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxInputTokens": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxOutputTokens": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "headers": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "Extra headers merged into the client (gateway auth, attribution). Entry-level only; honored by generic-gateway dispatch."
+            },
+            "useApiKey": {
+              "type": "boolean",
+              "description": "False sends no Authorization header even when a key is configured. Defaults to true."
+            },
+            "thinkingBudget": {
+              "type": "number",
+              "description": "Gemini-only thinking token budget for gemini-2.5 models: 0 disables, -1 lets the model decide. Pro models floor at 128. Defaults to 0."
+            },
+            "thinkingLevel": {
+              "type": "string",
+              "enum": [
+                "minimal",
+                "low",
+                "medium",
+                "high"
+              ],
+              "description": "Gemini-only thinking depth for gemini-3 models (cannot be disabled). Defaults to low."
+            },
+            "models": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "reasoning": {
+                    "oneOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "off",
+                          "none",
+                          "default",
+                          "low",
+                          "minimal",
+                          "medium",
+                          "high",
+                          "xhigh",
+                          "max",
+                          "ultra"
+                        ]
+                      }
+                    ]
+                  },
+                  "contextWindow": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxInputTokens": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxOutputTokens": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "temperature": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 2,
+                    "description": "Per-model temperature override. Null omits temperature (reasoning models reject it)."
+                  }
+                }
+              },
+              "description": "Per-model preset overrides, keyed by model id (may contain slashes)"
             }
           }
         }
