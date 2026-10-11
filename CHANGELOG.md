@@ -1,16 +1,48 @@
 # Changelog
 
-## [3.1.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v3.0.0...v3.1.0) (2026-10-11)
+## [3.1.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v3.0.0...v3.1.0) (2026-10-12)
 
+### What's changed for the users
 
-### Features
+- **Groq, ready to go.** `groq` is a built-in preset — set a key and pick a model; nothing else to configure:
 
-* **providers:** add gemini thinking keys and per-provider reasoning subsets ([97d9411](https://github.com/AhmedOsman101/commit-sage-cli/commit/97d9411c9f32dd2facfdcd2175c0ea247d043f36))
-* **providers:** add generic gateway dispatch and groq preset ([e2d48db](https://github.com/AhmedOsman101/commit-sage-cli/commit/e2d48db336fc727681363edf97fc9d3d3b84e34d))
-* **providers:** consolidate openai-wire SDKs onto shared client ([366008a](https://github.com/AhmedOsman101/commit-sage-cli/commit/366008a799d5d9a9ecdbc345f66b3c538facbc5a))
-* **providers:** introduce adapter seam and migrate minimax, moonshotai, openrouter ([9988841](https://github.com/AhmedOsman101/commit-sage-cli/commit/99888419aa3a1064d9a26841f4cff680f2b68d58))
-* **providers:** migrate remaining 8 providers onto adapter literals ([dd4b9b5](https://github.com/AhmedOsman101/commit-sage-cli/commit/dd4b9b5eae99f7cfca173f50bb617307191dd14e))
-* **providers:** v3.1 provider completion ([6957d3c](https://github.com/AhmedOsman101/commit-sage-cli/commit/6957d3cac810083c5f66f3f6068a94c0e32359f4))
+```shell
+export GROQ_API_KEY='gsk_...'
+commit-sage generate --model groq/openai/gpt-oss-120b
+```
+
+`groq/qwen/qwen3-8b-27b` is the lighter sibling under the same free-tier limits — handy when you want commit messages fast instead of thorough.
+
+- **Any OpenAI-compatible gateway, by name.** Point the tool at a router or proxy you already use, and address it like a built-in provider:
+
+```shell
+export OMNIROUTE_API_KEY='...'
+commit-sage generate --model omniroute/kimi-k2
+```
+
+```json
+{
+  "providers": {
+    "omniroute": {
+      "baseUrl": "https://gateway.example.com/v1",
+      "apiKey": "$OMNIROUTE_API_KEY",
+      "apiType": "openai-chat",
+      "headers": { "X-Custom-Auth": "abc" }
+    }
+  }
+}
+```
+
+`apiType` picks the wire (`openai-chat`, `openai-responses`, `anthropic`), `headers` sends extra headers (gateway auth, attribution), and `useApiKey: false` — or a keyless local host (`localhost`, `*.local`, `*.internal`) — sends no `Authorization` header. Miss the `baseUrl`, and you get a configuration error naming `providers.<name>.baseUrl` instead of a crash mid-run. No release needed for the next gateway you try.
+
+- **Reasoning levels that tell the truth.** Each provider accepts only what its API honors (xAI is `low|high`; Anthropic's `low…max` without `none`; Gemini's `minimal…high`), and the JSON schema flags the rest in your editor while the value you set still goes through as written — you own what a gateway does with it. Unknown gateways accept the full set (`none`, `xhigh`, `max`, `ultra` included). Setting `reasoning: true` / `"default"` keeps the provider's own default with reasoning on: temperature is omitted instead of sent to a model that rejects it, and no level is forced.
+
+- **Gemini thinking, first-class.** New keys, family-gated the way Google's API expects: `thinkingLevel` (`minimal`–`high`, default `low`) for `gemini-3*`, `thinkingBudget` (`0` off, `-1` lets the model decide, Pro models floor at 128) for `gemini-2.5*`. `gemini-2.0*` and Gemma send neither, silently. Thinking tokens are drawn from `maxOutputTokens`, so a big budget can starve the message — the existing truncation retry still doubles the budget to compensate.
+
+- **Fewer dependencies, same behavior.** Five provider SDKs are gone (`deepseek`, `mistral`, `moonshotai`, `xai`, and `vercel-minimax`), folded into the OpenAI client the tool already ships — fewer packages to audit and a slightly smaller source install. Prompts, provider names, and request behavior are unchanged, and `anthropic`, `google`, `ollama`, `openai`, and `openrouter` keep their dedicated packages. (Compiled binary size is essentially flat — same-machine build went 92.8 → 92.1 MB on linux-x64 — so expect no download-size surprise either way.)
+
+- **Nothing to migrate.** Existing configs load as-is — every key in this release is additive. One edge case: keyless configs relying on the LLM SDK's own env fallback now read `MOONSHOTAI_API_KEY` (was `MOONSHOT_API_KEY`) for `moonshotai` and `ZAI_API_KEY` (was `OPENAI_API_KEY`) for `zai`. Set the key in `providers.<name>.apiKey` (or under the new name) if you rely on it.
+
 
 ## [3.0.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v2.3.0...v3.0.0) (2026-10-10)
 
