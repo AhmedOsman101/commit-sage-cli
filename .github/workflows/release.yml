@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -33,7 +33,7 @@ jobs:
 
       - name: Cache Biome
         id: cache-biome
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /usr/local/bin/biome
           key: biome-${{ env.BIOME_VERSION }}-linux-x64
@@ -50,7 +50,7 @@ jobs:
         run: mask release
 
       - name: Upload Binaries
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: binaries
           path: bin/
@@ -62,10 +62,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: binaries
           path: bin/
@@ -79,7 +79,7 @@ jobs:
           & "C:\Program Files (x86)\NSIS\makensis.exe" installer\windows\commit-sage.nsi
 
       - name: Upload Installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: installer
           path: release/*.exe
@@ -94,10 +94,10 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: binaries
           path: bin/
@@ -112,7 +112,7 @@ jobs:
           bash installer/macos/build-dmg.sh "${TAG#v}" dmg
 
       - name: Upload DMGs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dmg
           path: dmg/*.dmg
@@ -124,19 +124,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: binaries
           path: binaries
 
       - name: Download installer
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: installer
           path: installer
 
       - name: Download DMGs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: dmg
           path: dmg
