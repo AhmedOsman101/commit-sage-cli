@@ -51,6 +51,8 @@ const providerEntrySchema = z.object({
   contextWindow: z.uint32().optional(),
   maxInputTokens: z.uint32().optional(),
   maxOutputTokens: z.uint32().optional(),
+  headers: z.record(z.string(), z.string()).optional(),
+  useApiKey: z.boolean().optional(),
   models: z.record(z.string(), modelPresetSchema).optional(),
 });
 

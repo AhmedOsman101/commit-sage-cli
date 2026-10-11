@@ -68,6 +68,10 @@ const DEFAULT_CONFIG: Readonly<Config> = {
     openrouter: {
       baseUrl: "https://openrouter.ai/api/v1",
     },
+    groq: {
+      baseUrl: "https://api.groq.com/openai/v1",
+      apiKey: "$GROQ_API_KEY",
+    },
   },
   commit: {
     autoCommit: false,

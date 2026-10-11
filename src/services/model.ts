@@ -114,8 +114,6 @@ abstract class ModelService {
     try {
       const { provider, modelId, model } =
         await ModelService.resolveProviderAndModel(modelOverride);
-      const apiKey =
-        (await ConfigService.getProviderApiKey(provider)) ?? undefined;
       const rawBaseUrl = await ConfigService.resolveProviderValue(
         provider,
         modelId,
@@ -133,6 +131,11 @@ abstract class ModelService {
           : typeof compiledBaseUrl === "string" && compiledBaseUrl
             ? compiledBaseUrl
             : undefined;
+      const apiKey = await ConfigService.getEffectiveApiKey(
+        provider,
+        modelId,
+        baseUrl
+      );
       const configuredApiType = await ModelService.getApiType(
         provider,
         modelId

@@ -162,6 +162,17 @@ const PROVIDER_ENTRY_SCHEMA = {
     contextWindow: { type: "integer", minimum: 1 },
     maxInputTokens: { type: "integer", minimum: 1 },
     maxOutputTokens: { type: "integer", minimum: 1 },
+    headers: {
+      type: "object",
+      additionalProperties: { type: "string" },
+      description:
+        "Extra headers merged into the client (gateway auth, attribution). Entry-level only; honored by generic-gateway dispatch.",
+    },
+    useApiKey: {
+      type: "boolean",
+      description:
+        "False sends no Authorization header even when a key is configured. Defaults to true.",
+    },
     models: {
       type: "object",
       additionalProperties: { ...MODEL_PRESET_SCHEMA },

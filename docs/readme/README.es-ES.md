@@ -311,6 +311,36 @@ no cambian.
 No confundas el string `model` guardado con el flag por ejecución
 `--model` (ver [Referencia de flags](#referencia-de-flags)).
 
+### Preset de Groq + gateways genéricos
+
+`groq` es un preset listo para usar: `groq/<modelo>` con `$GROQ_API_KEY` y URL
+base `https://api.groq.com/openai/v1`. El ejemplo canónico es
+`groq/openai/gpt-oss-120b` (un id alojado en Groq, no nuestro);
+`groq/qwen/qwen3-8b-27b` es la alternativa más ligera con los mismos límites
+del nivel gratuito.
+
+Cualquier otro endpoint compatible con OpenAI se puede usar por nombre — sin
+esperar una release. Dale una entrada `providers.<nombre>` con `baseUrl` (más
+`apiType`: `openai-chat` por defecto, `openai-responses` o `anthropic`) y usa
+`<nombre>/<modelo>`:
+
+```json
+"providers": {
+  "omniroute": {
+    "baseUrl": "https://gateway.example.com/v1",
+    "apiKey": "$OMNIROUTE_API_KEY",
+    "apiType": "openai-chat",
+    "headers": { "X-Custom-Auth": "abc" }
+  }
+}
+```
+
+`headers` envía cabeceras extra (auth del gateway, atribución);
+`useApiKey: false` no envía cabecera `Authorization`. Los hosts locales
+(`localhost`, `*.local`, `*.internal`) sin clave tampoco la envían. Un
+proveedor desconocido sin `baseUrl` es un error de configuración que nombra
+`providers.<nombre>.baseUrl`.
+
 ### Todas las secciones de un vistazo
 
 | Sección      | Clave                | Tipo      | Por defecto         | Notas                                                                                                             |

@@ -91,6 +91,7 @@ const SUPPORTED_PROVIDERS = [
   "moonshotai",
   "zai",
   "minimax",
+  "groq",
 ] as const;
 
 type KnownProvider = (typeof SUPPORTED_PROVIDERS)[number];
@@ -133,6 +134,18 @@ type ProviderEntry = {
   contextWindow?: number;
   maxInputTokens?: number;
   maxOutputTokens?: number;
+  /**
+   * Escape hatch for gateways: extra headers merged into the client
+   * (gateway auth, attribution). Entry-level only — model presets never
+   * carry headers. Honored by generic-gateway dispatch; known literals
+   * keep their own fixed headers.
+   */
+  headers?: Record<string, string>;
+  /**
+   * `false` sends no `Authorization` header even when a key is configured.
+   * Defaults to `true`.
+   */
+  useApiKey?: boolean;
   models?: Record<string, ModelPreset>;
 };
 

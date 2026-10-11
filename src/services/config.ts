@@ -714,6 +714,66 @@ class ConfigService {
   }
 
   /**
+   * True for loopback-style gateway hosts. A `baseUrl` on one of these
+   * without a resolvable key sends no auth header instead of failing —
+   * this extends the local-provider no-auth rule to arbitrary gateways
+   * (e.g. a LAN stub), where demanding a key would be noise.
+   */
+  protected static isLocalHost(baseUrl: string | undefined): boolean {
+    if (!baseUrl) return false;
+    let hostname: string;
+    try {
+      hostname = new URL(baseUrl).hostname.toLowerCase();
+    } catch {
+      return false;
+    }
+    return (
+      hostname === "localhost" ||
+      hostname.endsWith(".local") ||
+      hostname.endsWith(".internal")
+    );
+  }
+
+  /**
+   * Effective API key for one run, or `undefined` when no auth header
+   * should be sent.
+   *
+   * - `providers.<name>.useApiKey: false` ⇒ `undefined` (never throws,
+   *   even with no key configured).
+   * - Resolvable key ⇒ the key (`null` local no-auth collapses to
+   *   `undefined` here).
+   * - Unresolvable key on a local host ⇒ `undefined` instead of fatal.
+   * - Unresolvable anywhere else ⇒ the same fatal missing-key error
+   *   `getProviderApiKey` raises.
+   */
+  static async getEffectiveApiKey(
+    providerName: string,
+    modelId: string | undefined,
+    baseUrl: string | undefined
+  ): Promise<string | undefined> {
+    const useApiKey = await ConfigService.resolveProviderValue(
+      providerName,
+      modelId,
+      "useApiKey"
+    );
+    if (useApiKey === false) return undefined;
+    const loaded = await ConfigService.load();
+    let raw: unknown;
+    if (loaded.isOk()) {
+      const providers = (loaded.ok as unknown as Record<string, unknown>)
+        .providers as Record<string, unknown> | undefined;
+      const entry = providers?.[providerName] as
+        | Record<string, unknown>
+        | undefined;
+      raw = entry?.apiKey;
+    }
+    const resolved = ConfigService.resolveApiKey(raw, providerName);
+    if (resolved.isOk()) return resolved.ok ?? undefined;
+    if (ConfigService.isLocalHost(baseUrl)) return undefined;
+    throw Log.error(resolved.error.message).exit();
+  }
+
+  /**
    * Per-value fallback `preset > provider > defaults` (Config V2).
    *
    * For `key` (one of `reasoning`/`contextWindow`/`maxInputTokens`/

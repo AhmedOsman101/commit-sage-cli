@@ -1,10 +1,10 @@
-import type { ProviderType } from "@/lib/types/config.ts";
 import { ModelService } from "@/services/model.ts";
 import type { ProviderAdapter } from "@/services/providerAdapter.ts";
-import { adapterRegistry } from "@/services/providerAdapter.ts";
+import { getAdapter } from "@/services/providerAdapter.ts";
 import "@/services/providers/anthropic.ts";
 import "@/services/providers/deepseek.ts";
 import "@/services/providers/gemini.ts";
+import "@/services/providers/groq.ts";
 import "@/services/providers/minimax.ts";
 import "@/services/providers/mistral.ts";
 import "@/services/providers/moonshot.ts";
@@ -38,28 +38,15 @@ function serviceForAdapter(adapter: ProviderAdapter): typeof ModelService {
   return AdapterService;
 }
 
-function serviceForAdapterName(name: string): typeof ModelService {
-  const adapter = adapterRegistry[name];
-  if (!adapter) throw new Error(`No adapter registered for "${name}"`);
+/**
+ * Dispatch shell for a provider name: known literals resolve from the
+ * registry, unknown names with `providers.<name>.baseUrl` dispatch a
+ * generic gateway adapter, and unknown names without one fail with a
+ * `ConfigurationError` naming the missing key (via `getAdapter`).
+ */
+async function getProviderService(type: string): Promise<typeof ModelService> {
+  const adapter = await getAdapter(type);
   return serviceForAdapter(adapter);
-}
-
-const providers: Record<ProviderType, typeof ModelService> = {
-  gemini: serviceForAdapterName("gemini"),
-  openai: serviceForAdapterName("openai"),
-  anthropic: serviceForAdapterName("anthropic"),
-  deepseek: serviceForAdapterName("deepseek"),
-  mistral: serviceForAdapterName("mistral"),
-  xai: serviceForAdapterName("xai"),
-  ollama: serviceForAdapterName("ollama"),
-  moonshotai: serviceForAdapterName("moonshotai"),
-  zai: serviceForAdapterName("zai"),
-  minimax: serviceForAdapterName("minimax"),
-  openrouter: serviceForAdapterName("openrouter"),
-};
-
-function getProviderService(type: ProviderType): typeof ModelService {
-  return providers[type];
 }
 
 export { getProviderService };

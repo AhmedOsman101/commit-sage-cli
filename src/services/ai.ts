@@ -257,7 +257,7 @@ const AiService = {
     );
 
     try {
-      const Service = getProviderService(providerType as never);
+      const Service = await getProviderService(providerType as never);
       Log.debug(`[aiService.generateCommitMessage] CALL ${Service.name}`);
       // modelOverride is the effective "provider/model" string; the provider
       // resolves it via ModelService.resolveModel(modelOverride) which does
