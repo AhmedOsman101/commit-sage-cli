@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.1.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v3.0.0...v3.1.0) (2026-10-11)
+
+
+### Features
+
+* **providers:** add gemini thinking keys and per-provider reasoning subsets ([97d9411](https://github.com/AhmedOsman101/commit-sage-cli/commit/97d9411c9f32dd2facfdcd2175c0ea247d043f36))
+* **providers:** add generic gateway dispatch and groq preset ([e2d48db](https://github.com/AhmedOsman101/commit-sage-cli/commit/e2d48db336fc727681363edf97fc9d3d3b84e34d))
+* **providers:** consolidate openai-wire SDKs onto shared client ([366008a](https://github.com/AhmedOsman101/commit-sage-cli/commit/366008a799d5d9a9ecdbc345f66b3c538facbc5a))
+* **providers:** introduce adapter seam and migrate minimax, moonshotai, openrouter ([9988841](https://github.com/AhmedOsman101/commit-sage-cli/commit/99888419aa3a1064d9a26841f4cff680f2b68d58))
+* **providers:** migrate remaining 8 providers onto adapter literals ([dd4b9b5](https://github.com/AhmedOsman101/commit-sage-cli/commit/dd4b9b5eae99f7cfca173f50bb617307191dd14e))
+* **providers:** v3.1 provider completion ([6957d3c](https://github.com/AhmedOsman101/commit-sage-cli/commit/6957d3cac810083c5f66f3f6068a94c0e32359f4))
+
 ## [3.0.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v2.3.0...v3.0.0) (2026-10-10)
 
 > **⚠ BREAKING CHANGES**
