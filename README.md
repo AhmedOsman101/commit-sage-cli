@@ -38,7 +38,7 @@ Four ways — all install the same `commit-sage` binary.
 
 Download the asset for your platform from [Releases](https://github.com/AhmedOsman101/commit-sage-cli/releases).
 
-```shell
+```bash
 # example: Linux x64 — pick the asset that matches `uname -s` / `uname -m`
 curl -L -o commit-sage https://github.com/AhmedOsman101/commit-sage-cli/releases/latest/download/commit-sage-linux-x64
 chmod +x commit-sage
@@ -59,7 +59,7 @@ macOS DMG and Windows NSIS installers are also published — see below.
 
 ### Quick Install (Linux & macOS)
 
-```shell
+```bash
 curl -fsSL https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/main/installer/unix.sh | bash
 ```
 
@@ -70,7 +70,7 @@ appends `~/.local/bin` to your shell config, and verifies with `commit-sage --ve
 
 Customize:
 
-```shell
+```bash
 INSTALL_DIR=~/bin VERSION=1.8.0 bash <(curl -fsSL https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/main/installer/unix.sh)
 ```
 
@@ -78,7 +78,7 @@ See [`installer/README.md`](installer/README.md) for manual curl + PATH setup.
 
 ### AUR (Arch Linux)
 
-```shell
+```bash
 paru -S commit-sage-bin
 # yay -S commit-sage-bin
 ```
@@ -102,7 +102,7 @@ package, which tracks GitHub releases.
 
 Requires [Bun](https://bun.sh/) and [mask](https://github.com/jacobdeichert/mask).
 
-```shell
+```bash
 git clone https://github.com/AhmedOsman101/commit-sage-cli.git commit-sage
 cd commit-sage
 mask compile              # -> ~/.local/bin/commit-sage
@@ -177,7 +177,7 @@ Unknown section/key or bad type -> exit 1 with clear message.
 
 All assume you're inside a git repo and `commit-sage` is on `$PATH`.
 
-```shell
+```bash
 # 1 — basic generate: staged diff -> AI message on stdout (pipe-able)
 commit-sage generate
 
@@ -400,7 +400,7 @@ compensate.
 Environment variables remain an alternative for the key: set `GEMINI_API_KEY`,
 `OPENAI_API_KEY`, etc. before running. Single-run:
 
-```shell
+```bash
 OPENAI_API_KEY='sk-...' commit-sage generate --model openai/gpt-5
 ```
 

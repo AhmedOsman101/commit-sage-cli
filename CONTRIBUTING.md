@@ -6,7 +6,7 @@ Thanks for your interest! Here's how to get started:
 
 1. Clone the repo:
 
-```sh
+```bash
 git clone https://github.com/AhmedOsman101/commit-sage-cli.git
 cd commit-sage-cli
 ```
@@ -21,7 +21,7 @@ cd commit-sage-cli
 
 4. Run the project locally (I recommend using ollama as your provider when developing):
 
-```sh
+```bash
 mask run
 ```
 

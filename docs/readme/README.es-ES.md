@@ -38,7 +38,7 @@ Cuatro formas — todas instalan el mismo binario `commit-sage`.
 
 Descarga el artefacto para tu plataforma desde [Releases](https://github.com/AhmedOsman101/commit-sage-cli/releases).
 
-```shell
+```bash
 # ejemplo: Linux x64 — elige el artefacto que coincida con `uname -s` / `uname -m`
 curl -L -o commit-sage https://github.com/AhmedOsman101/commit-sage-cli/releases/latest/download/commit-sage-linux-x64
 chmod +x commit-sage
@@ -59,7 +59,7 @@ Los instaladores DMG de macOS y NSIS de Windows también se publican — ver aba
 
 ### Instalación rápida (Linux y macOS)
 
-```shell
+```bash
 curl -fsSL https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/main/installer/unix.sh | bash
 ```
 
@@ -70,7 +70,7 @@ añade `~/.local/bin` a tu config de shell y verifica con `commit-sage --version
 
 Personaliza:
 
-```shell
+```bash
 INSTALL_DIR=~/bin VERSION=1.8.0 bash <(curl -fsSL https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/main/installer/unix.sh)
 ```
 
@@ -78,7 +78,7 @@ Ver [`installer/README.md`](../../installer/README.md) para el curl manual + con
 
 ### AUR (Arch Linux)
 
-```shell
+```bash
 paru -S commit-sage-bin
 # yay -S commit-sage-bin
 ```
@@ -102,7 +102,7 @@ que sigue las versiones de GitHub.
 
 Requiere [Bun](https://bun.sh/) y [mask](https://github.com/jacobdeichert/mask).
 
-```shell
+```bash
 git clone https://github.com/AhmedOsman101/commit-sage-cli.git commit-sage
 cd commit-sage
 mask compile              # -> ~/.local/bin/commit-sage
@@ -177,7 +177,7 @@ Sección/clave desconocida o tipo erróneo -> salida 1 con mensaje claro.
 
 Todos asumen que estás dentro de un repo git y `commit-sage` está en tu `$PATH`.
 
-```shell
+```bash
 # 1 — generación básica: diff staged -> mensaje IA a stdout (canalizable)
 commit-sage generate
 
@@ -403,7 +403,7 @@ mensaje — el reintento por truncado duplica el budget para compensar.
 Las variables de entorno siguen siendo alternativa para la clave: define `GEMINI_API_KEY`,
 `OPENAI_API_KEY`, etc. antes de ejecutar. Para una sola ejecución:
 
-```shell
+```bash
 OPENAI_API_KEY='sk-...' commit-sage generate --model openai/gpt-5
 ```
 

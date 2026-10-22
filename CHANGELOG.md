@@ -6,7 +6,7 @@
 
 - **Groq, ready to go.** `groq` is a built-in preset — set a key and pick a model; nothing else to configure:
 
-```shell
+```bash
 export GROQ_API_KEY='gsk_...'
 commit-sage generate --model groq/openai/gpt-oss-120b
 ```
@@ -15,7 +15,7 @@ commit-sage generate --model groq/openai/gpt-oss-120b
 
 - **Any OpenAI-compatible gateway, by name.** Point the tool at a router or proxy you already use, and address it like a built-in provider:
 
-```shell
+```bash
 export OMNIROUTE_API_KEY='...'
 commit-sage generate --model omniroute/kimi-k2
 ```
@@ -43,7 +43,6 @@ commit-sage generate --model omniroute/kimi-k2
 
 - **Nothing to migrate.** Existing configs load as-is — every key in this release is additive. One edge case: keyless configs relying on the LLM SDK's own env fallback now read `MOONSHOTAI_API_KEY` (was `MOONSHOT_API_KEY`) for `moonshotai` and `ZAI_API_KEY` (was `OPENAI_API_KEY`) for `zai`. Set the key in `providers.<name>.apiKey` (or under the new name) if you rely on it.
 
-
 ## [3.0.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v2.3.0...v3.0.0) (2026-10-10)
 
 > **⚠ BREAKING CHANGES**
@@ -69,14 +68,14 @@ commit-sage generate --model omniroute/kimi-k2
 - Config stays at `~/.config/commitSage/config.json`. One edge case: `XDG_CONFIG_HOME`/`XDG_CACHE_HOME` are now honored, so XDG-based setups may see the config/cache in the XDG location instead of the default.
 - **More message styles.** Four new formats — `emojiKarma`, `google`, `atom`, `detailed` — bringing the catalog to 11. Each one works in all six built-in languages, so `commit-sage generate --format google --lang japanese` just works:
 
-```shell
+```bash
 commit-sage generate --format emojiKarma
 commit-sage config set commit.commitFormat detailed
 ```
 
 - **Guidance that sticks.** If you find yourself repeating the same context every run, set it once and stop typing it:
 
-```shell
+```bash
 commit-sage config set commit.customInstructions "Write in the imperative mood."
 ```
 
@@ -112,7 +111,7 @@ line — with `placement`. Rather decide per commit? `--ref PROJ-1 --ref
 PROJ-2` stamps explicit IDs onto one run, and `--refs` asks you just this
 once. Trying it out needs no config at all:
 
-```shell
+```bash
 commit-sage generate --ref PROJ-123
 ```
 

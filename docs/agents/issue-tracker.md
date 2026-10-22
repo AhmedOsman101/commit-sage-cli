@@ -17,7 +17,7 @@ Issues and specs for this repo live as GitHub issues (`AhmedOsman101/commit-sage
 
 For long bodies, stage first under `.scratch/<feature>/NN-slug.md` then:
 
-```sh
+```bash
 gh issue create --title "..." --body-file .scratch/<feature>/NN-slug.md --label "..."
 ```
 
