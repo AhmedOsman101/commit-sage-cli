@@ -64,6 +64,14 @@ const CONVENTIONAL_TYPE = {
 type ConventionalType =
   (typeof CONVENTIONAL_TYPE)[keyof typeof CONVENTIONAL_TYPE];
 
+/**
+ * Type substituted wherever classification ends up UNKNOWN (unclassifiable
+ * paths, mixed-type collapse, aggregate count format). `chore` keeps every
+ * message Conventional-shaped without implying a version bump: release
+ * tooling maps it to no SemVer change (no patch, no minor).
+ */
+const UNKNOWN_FALLBACK: ConventionalType = CONVENTIONAL_TYPE.CHORE;
+
 // Classification constants (wholesale from auto-commit-msg).
 const CI_DIRS = [".circleci", ".github/workflows"];
 const CI_NAMES = [
@@ -484,7 +492,8 @@ function msgFromChanges(changes: FileChange[]): ConvCommitMsg {
       description: namedDescription(changes),
     };
   }
-  // AGGREGATE_MIN or more — count format, never prefix.
+  // AGGREGATE_MIN or more — count format. The missing prefix is filled in by
+  // the UNKNOWN fallback at formatting time.
   return {
     typePrefix: CONVENTIONAL_TYPE.UNKNOWN,
     description: countDescription(changes),
@@ -492,8 +501,11 @@ function msgFromChanges(changes: FileChange[]): ConvCommitMsg {
 }
 
 function formatMsg(msg: ConvCommitMsg): string {
-  if (msg.typePrefix === CONVENTIONAL_TYPE.UNKNOWN) return msg.description;
-  return `${msg.typePrefix}: ${msg.description}`;
+  const type =
+    msg.typePrefix === CONVENTIONAL_TYPE.UNKNOWN
+      ? UNKNOWN_FALLBACK
+      : msg.typePrefix;
+  return `${type}: ${msg.description}`;
 }
 
 // ─── Truncation (NOT in auto-commit-msg — adapter addition) ─────────────────
