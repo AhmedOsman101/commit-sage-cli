@@ -3,6 +3,38 @@
 ## [3.2.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v3.1.0...v3.2.0) (2026-10-25)
 
 
+### What's changed for the users
+
+- **Breaking changes are first-class.** Generated messages now mark them the way the ecosystem expects — `!` before the colon and/or a `BREAKING CHANGE:` footer:
+
+```git-commit
+feat(api)!: remove deprecated v1 endpoints
+
+BREAKING CHANGE: /v1/* routes are gone; clients must migrate to /v2/*.
+```
+
+The `!` alone is enough; the footer is optional, and release tooling reads both as a major bump either way.
+
+- **Reverts follow the spec's recommendation.** Undoing a commit produces `revert: <original headline>` with a `Refs:` footer carrying the reverted SHAs, so history pairs the revert with the release it rolled back.
+
+- **`--offline` output is always typed.** The static generator no longer emits bare descriptions when it can't classify a change — those get a `chore:` prefix instead:
+
+```bash
+$ commit-sage generate --offline
+chore: update a.ts and helpers.ts
+```
+
+`chore` maps to no release in SemVer tooling (no patch, no minor), so unclassifiable churn can't bump your version by accident.
+
+- **Smarter `docs` typing.** `docs` now means "changes that document the project or code" — README, manpages, guides, CHANGELOG, code comments, any file type — instead of "any `.md` file is `docs`". Scopes get explicit guidance too, so generated messages lean on them when they help.
+
+- **Subject budget.** Generated subjects aim for ~50 characters with a hard limit of 80 — short where it counts, never cut mid-thought.
+
+- **All six languages, same rules.** The built-in translations (ru, zh, ja, de, fr) now carry the exact instructions the English template does; previously they only included a subset, so a Japanese run could miss rules an English run followed.
+
+- **Nothing to migrate.** No new flags, config keys, or prompts — every change lands purely in how messages are written and typed.
+
+
 ### Features
 
 * **prompt:** align conventional template with the Conventional Commits spec ([8d9de4d](https://github.com/AhmedOsman101/commit-sage-cli/commit/8d9de4d33aec7367077e0afde6409865f438ed71))
