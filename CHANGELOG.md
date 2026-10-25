@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.2.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v3.1.0...v3.2.0) (2026-10-25)
+
+
+### Features
+
+* **prompt:** align conventional template with the Conventional Commits spec ([8d9de4d](https://github.com/AhmedOsman101/commit-sage-cli/commit/8d9de4d33aec7367077e0afde6409865f438ed71))
+
+
+### Bug Fixes
+
+* **offline:** fall back to a chore prefix when the type is unknown ([6848834](https://github.com/AhmedOsman101/commit-sage-cli/commit/6848834355cfd237276a7975bb0f52e74d5fdc91))
+
 ## [3.1.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v3.0.0...v3.1.0) (2026-10-12)
 
 ### What's changed for the users
