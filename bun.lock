@@ -15,7 +15,7 @@
         "@openrouter/ai-sdk-provider": "^3.1.0",
         "ai": "^7.0.137",
         "gpt-tokenizer": "^4.0.0",
-        "lib-result": "^6.0.0",
+        "lib-result": "^6.1.0",
         "ollama-ai-provider-v2": "^4.0.1",
         "picocolors": "^1.1.1",
         "zod": "^4.6.5",
@@ -167,7 +167,7 @@
 
     "json-schema": ["json-schema@0.4.0", "", {}, "sha512-es94M3nTIfsEPisRafak+HDLfHXnKBhV3vU5eqPcS3flIWqcxJWgXHXiey3YrpaNsanY5ei1VoYEbOzijuq9BA=="],
 
-    "lib-result": ["lib-result@6.0.0", "", {}, "sha512-EfEMMIhxEJB9V8PT5BU8YZRe4avQWVg8hvWa5wwYqKhk5x/gqLMJmnjOvYGPMic9Ifqb1WB6Z0oMtXmEaVoqsA=="],
+    "lib-result": ["lib-result@6.1.0", "", {}, "sha512-Xd52PEQFoAFCg+P1nYCmbtrb51cnweXIwrX6dPB998c61TKYCXIogbPU8fRBhj68SG5P3UKOGlEY03ZiRwVxHw=="],
 
     "ollama-ai-provider-v2": ["ollama-ai-provider-v2@4.0.1", "", { "dependencies": { "@ai-sdk/provider": "^4.0.2", "@ai-sdk/provider-utils": "^5.0.5" }, "peerDependencies": { "ai": "^7.0.0", "zod": "^4.0.16" } }, "sha512-JHw/Knt4kOTSwQ0oqorbdgzukK6iE73U3MPUyOuCEBpAQGAzm80CQDwyaXMwF80yFjY21RY9qfzkoLyPFFts/w=="],
 
