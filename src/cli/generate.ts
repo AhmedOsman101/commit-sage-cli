@@ -42,7 +42,7 @@ async function guardNonTTY(opts: Record<string, unknown>): Promise<true> {
     const modelStr = (
       modelResult.isOk()
         ? (modelResult.ok as unknown as string)
-        : "openai/gpt-5-nano"
+        : "openai/gpt-5.6-luna"
     ) as string;
     const split = splitProviderModel(modelStr);
     providerType = (
@@ -87,7 +87,7 @@ class GenerateCommand extends Command {
       )
       .option(
         "--model <name:string>",
-        'Model for this run in provider/model format (e.g. "openai/gpt-5-nano"). First slash splits provider from model id; multi-segment ids preserved ("9router/kc/stealth/ox-alpha"). Overrides config model.'
+        'Model for this run in provider/model format (e.g. "openai/gpt-5.6-luna"). First slash splits provider from model id; multi-segment ids preserved ("9router/kc/stealth/ox-alpha"). Overrides config model.'
       )
       .option(
         "--format <name:string>",
