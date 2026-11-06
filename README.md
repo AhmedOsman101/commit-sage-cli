@@ -5,11 +5,6 @@
 Generate meaningful git commit messages with AI — or offline static analysis
 — right from your terminal.
 
-> **v2.0.0** — `commit-sage` is a full-fledged, cross-platform
-> CLI (`generate`, `commit`, `config`) with flag overrides, an interactive staging
-> flow, and `--offline` fallback. Breaking change from v1: bare `commit-sage` now
-> prints help instead of silently generating. See [CHANGELOG](./CHANGELOG.md).
-
 ## Overview
 
 Commit Sage turns your `git diff` into a commit message. Two paths, one surface:
