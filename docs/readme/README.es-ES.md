@@ -213,17 +213,17 @@ Más en `docs/demos/` (gifs):  -->
 
 Una tabla — ambos subcomandos aceptan los mismos 9 flags (commit añade 3 más abajo).
 
-| Flag               | Descripción                                                                                                                                                                                     | Notas                                                                                                                                       |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--offline`        | Usa generador de análisis estático (sin API). Siempre forma convencional `<type>: <desc>` o simple `<desc>`; trunca en límite de palabra `--max-length`.                                        | Ignora `--format`; sigue respetando `--max-length`; necesita filas `git diff-index` — archivos untracked no aparecerán hasta hacer stage.   |
-| `--context <text>` | Inyecta `## External Context\n<text>` antes del diff en el prompt IA.                                                                                                                           | **Solo IA** — ignorado con `--offline`.                                                                                                     |
-| `--model <name>`   | Modelo para esta ejecución en formato `proveedor/modelo` (ej. `openai/gpt-5-nano`). La primera barra separa proveedor de modelo; ids multisegmento preservados (`9router/kc/stealth/ox-alpha`). | Sobrescritura por ejecución del `model` top-level; cualquier string `proveedor/modelo` aceptado — el proveedor valida al llamar.            |
-| `--format <name>`  | Plantilla de commit: `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform`, `emojiKarma`, `google`, `atom`, `detailed`, `previous`.                                                                                           | **Solo IA** — ignorado con `--offline` (offline siempre convencional). Default `conventional` (ver `commit.commitFormat`). `previous` imita tu historial reciente (cuerpos/footers incluidos). |
-| `--lang <name>`    | Idioma del commit (BCP-47, guardado tal cual, ej. `en`, `en-US`, `jp`). Cualquier otro valor es un idioma personalizado — ver [Idiomas personalizados](#idiomas-personalizados).                 | Sobrescritura por ejecución de `commit.commitLanguage`; etiquetas nativas normalizadas internamente. Una etiqueta desconocida propone traducir una vez (salida 0 si se rechaza o sin TTY). |
-| `--max-length <n>` | Sobrescribe `commit.maxLength` para este mensaje.                                                                                                                                               | Aplica a **ambos** IA y `--offline` (truncado en límite de palabra + `…`).                                                                  |
-| `--edit`           | Abrir antes de guardar.                                                                                                                                                                         | `generate`: tempfile + `$EDITOR`/`$VISUAL` -> imprime final a stdout. `commit`: pasa `-e` a `git commit` -> editor sobre el mensaje staged. |
-| `--ref <token>`    | Adjunta token(s) de ref explícitos para esta ejecución. Repetible: `--ref PROJ-1 --ref PROJ-2` renderiza ambos.                                                                                 | **Solo IA** — ignorado con `--offline`. Gana a `--refs` y a `commit.refs.source`; implica refs para la ejecución aunque `commit.refs.enabled` sea false. |
-| `--refs`           | Fuerza un único prompt interactivo de refs para esta ejecución, aunque `commit.refs.source` sea `branch` o `input`.                                                                           | **Solo IA** — ignorado con `--offline`. Solo TTY; sin TTY avisa y omite refs (salida 0). Implica refs para la ejecución aunque `commit.refs.enabled` sea false. |
+| Flag               | Descripción                                                                                                                                                                                       | Notas                                                                                                                                                                                          |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--offline`        | Usa generador de análisis estático (sin API). Siempre forma convencional `<type>: <desc>` o simple `<desc>`; trunca en límite de palabra `--max-length`.                                          | Ignora `--format`; sigue respetando `--max-length`; necesita filas `git diff-index` — archivos untracked no aparecerán hasta hacer stage.                                                      |
+| `--context <text>` | Inyecta `## External Context\n<text>` antes del diff en el prompt IA.                                                                                                                             | **Solo IA** — ignorado con `--offline`.                                                                                                                                                        |
+| `--model <name>`   | Modelo para esta ejecución en formato `proveedor/modelo` (ej. `openai/gpt-5.6-luna`). La primera barra separa proveedor de modelo; ids multisegmento preservados (`9router/kc/stealth/ox-alpha`). | Sobrescritura por ejecución del `model` top-level; cualquier string `proveedor/modelo` aceptado — el proveedor valida al llamar.                                                               |
+| `--format <name>`  | Plantilla de commit: `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform`, `emojiKarma`, `google`, `atom`, `detailed`, `previous`.                                                 | **Solo IA** — ignorado con `--offline` (offline siempre convencional). Default `conventional` (ver `commit.commitFormat`). `previous` imita tu historial reciente (cuerpos/footers incluidos). |
+| `--lang <name>`    | Idioma del commit (BCP-47, guardado tal cual, ej. `en`, `en-US`, `jp`). Cualquier otro valor es un idioma personalizado — ver [Idiomas personalizados](#idiomas-personalizados).                  | Sobrescritura por ejecución de `commit.commitLanguage`; etiquetas nativas normalizadas internamente. Una etiqueta desconocida propone traducir una vez (salida 0 si se rechaza o sin TTY).     |
+| `--max-length <n>` | Sobrescribe `commit.maxLength` para este mensaje.                                                                                                                                                 | Aplica a **ambos** IA y `--offline` (truncado en límite de palabra + `…`).                                                                                                                     |
+| `--edit`           | Abrir antes de guardar.                                                                                                                                                                           | `generate`: tempfile + `$EDITOR`/`$VISUAL` -> imprime final a stdout. `commit`: pasa `-e` a `git commit` -> editor sobre el mensaje staged.                                                    |
+| `--ref <token>`    | Adjunta token(s) de ref explícitos para esta ejecución. Repetible: `--ref PROJ-1 --ref PROJ-2` renderiza ambos.                                                                                   | **Solo IA** — ignorado con `--offline`. Gana a `--refs` y a `commit.refs.source`; implica refs para la ejecución aunque `commit.refs.enabled` sea false.                                       |
+| `--refs`           | Fuerza un único prompt interactivo de refs para esta ejecución, aunque `commit.refs.source` sea `branch` o `input`.                                                                               | **Solo IA** — ignorado con `--offline`. Solo TTY; sin TTY avisa y omite refs (salida 0). Implica refs para la ejecución aunque `commit.refs.enabled` sea false.                                |
 
 Flags solo de `commit`:
 
@@ -279,9 +279,9 @@ Cada `set`/`edit` valida contra `config.schema.json` (generado desde
 Un único string canónico selecciona proveedor y modelo. División en la primera
 `/` — izquierda proveedor, derecha modelo (barras siguientes preservadas):
 
-| Clave   | Tipo                   | Por defecto           | Descripción                                                                                         |
-| ------- | ---------------------- | --------------------- | --------------------------------------------------------------------------------------------------- |
-| `model` | `string` (forma `a/b`) | `"openai/gpt-5-nano"` | `"9router/kc/stealth/ox-alpha"` -> proveedor `9router`, modelo `kc/stealth/ox-alpha`. Falla sin `/` |
+| Clave   | Tipo                   | Por defecto             | Descripción                                                                                         |
+| ------- | ---------------------- | ----------------------- | --------------------------------------------------------------------------------------------------- |
+| `model` | `string` (forma `a/b`) | `"openai/gpt-5.6-luna"` | `"9router/kc/stealth/ox-alpha"` -> proveedor `9router`, modelo `kc/stealth/ox-alpha`. Falla sin `/` |
 
 El transporte por proveedor vive en el registro `providers`. `providers.defaults`
 guarda defaults IA compartidos; `providers.<name>` sobrescribe por proveedor
@@ -352,13 +352,13 @@ Subconjuntos honestos por proveedor (reflejados en el JSON schema; cualquier
 otro valor pasa tal cual — tú eres responsable de lo que la API haga con
 él):
 
-| Proveedor(es)                                        | Niveles                             |
-| ---------------------------------------------------- | ----------------------------------- |
-| `openai`, `groq`, `zai`                              | `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` |
-| `anthropic`                                          | `low`, `medium`, `high`, `xhigh`, `max` |
-| `gemini`                                             | `minimal`, `low`, `medium`, `high`  |
-| `xai`                                                | `low`, `high` (`medium` se mapea a `high` en silencio) |
-| `ollama`, `openrouter`, `deepseek`, `mistral`, `moonshotai`, `minimax` | ignorado (no se envían opciones de reasoning) |
+| Proveedor(es)                                                          | Niveles                                                    |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `openai`, `groq`, `zai`                                                | `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` |
+| `anthropic`                                                            | `low`, `medium`, `high`, `xhigh`, `max`                    |
+| `gemini`                                                               | `minimal`, `low`, `medium`, `high`                         |
+| `xai`                                                                  | `low`, `high` (`medium` se mapea a `high` en silencio)     |
+| `ollama`, `openrouter`, `deepseek`, `mistral`, `moonshotai`, `minimax` | ignorado (no se envían opciones de reasoning)              |
 
 Los gateways desconocidos aceptan el set completo (`none`, `xhigh`, `max`,
 `ultra` incluidos) como passthrough literal.
@@ -373,32 +373,32 @@ mensaje — el reintento por truncado duplica el budget para compensar.
 
 ### Todas las secciones de un vistazo
 
-| Sección      | Clave                | Tipo      | Por defecto         | Notas                                                                                                             |
-| ------------ | -------------------- | --------- | ------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `generation` | `maxRetries`         | `number`  | `3`                 | Reintento en fallo de API                                                                                         |
-| `generation` | `retryDelay`         | `number`  | `1000`              | Backoff de reintento                                                                                              |
-| `generation` | `temperature`        | `number`  | `0.7`               | Temperatura del modelo (default global; presets por modelo pueden sobrescribir)                                   |
-| `generation` | `maxPromptTokens`    | `number`  | `100000`            | Tokens de diff enviados a la IA (truncado contado por tokens)                                                     |
-| `generation` | `maxOutputTokens`    | `number`  | `4096`              | Presupuesto de salida por intento; overrides por proveedor/modelo ganan; se duplica en reintentos por truncado (techo 32768) |
-| `generation` | `diffStrategy`       | `string`  | `"auto"`            | `staged` / `unstaged` / `auto`                                                                                    |
-| `providers`  | `defaults.timeoutMs` | `number`  | `60000`             | Timeout compartido                                                                                                |
-| `providers`  | `defaults.reasoning` | `string`  | `"off"`             | Default compartido de reasoning                                                                                   |
-| `providers`  | `defaults.apiType`   | `string`  | `"openai-chat"`     | Tipo API compartido                                                                                               |
-| `providers`  | `<name>.baseUrl`     | `string`  | por proveedor       | ej. `ollama` -> `"http://localhost:11434/api"`; `openrouter` -> `"https://openrouter.ai/api/v1"`                  |
-| `providers`  | `<name>.apiKey`      | `string`  | `"$<NAME>_API_KEY"` | Prefijo `$` lee env, si no literal; opcional para locales                                                         |
-| `providers`  | `<name>.apiType`     | `string`  | hereda              | `openai-chat`, `openai-responses`, `anthropic`                                                                    |
-| `commit`     | `autoCommit`         | `boolean` | `false`             | Omite confirmación `Commit changes?` (o usa `-y/--yes`)                                                           |
-| `commit`     | `autoPush`           | `boolean` | `false`             | Omite confirmación `Push to <branch>?` (o usa `-y/--yes`)                                                         |
-| `commit`     | `commitFormat`       | `string`  | `"conventional"`    | `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform` (`freeform` solo IA), `emojiKarma`, `google`, `atom`, `detailed`, `previous` (estilo del historial) |
-| `commit`     | `onlyStagedChanges`  | `boolean` | `true`              | Cuando es true y nada staged tras el selector, `commit` sale con `No staged changes`; si no, cae a `diffStrategy` |
-| `commit`     | `commitLanguage`     | `string`  | `"english"`         | BCP-47, guardado tal cual (`en`, `en-US`, `jp` …); `--lang` sobrescribe. Seis idiomas nativos (`english`, `russian`, `chinese`, `japanese`, `german`, `french`); cualquier otro valor es un [idioma personalizado](#idiomas-personalizados) |
-| `commit`     | `customInstructions` | `string`  | `""`                | Guía permanente inyectada como `## Custom Instructions` para cada formato. Termina en `.md` y el archivo existe → se lee el archivo; si no texto literal. Vacío ⇒ sección omitida |
-| `commit`     | `promptForRefs`      | `boolean` | `false`             | **Obsoleto**, reemplazado por `commit.refs`. Se conserva para que configs existentes validen; nunca se lee |
-| `commit`     | `refs`               | `object`  | `{enabled:false,source:"prompt",value:"",placement:"end",branchPattern:"[A-Z][A-Z0-9]*-[0-9]+"}` | Footer de refs de issues/tickets — ver [Issue refs](#issue-refs); vía `config edit`, `get/set` superficial |
-| `commit`     | `maxLength`          | `number`  | `80`                | Límite de subject; `--max-length` por ejecución                                                                   |
-| `commit`     | `bodyStyle`          | `string`  | `"subject-body"`    | `subject-only`, `subject-body`, `subject-body-footer`                                                             |
-| `commit`     | `recentCommits`      | `object`  | `{enabled:false,count:5,scope:"all"}` | Mensajes recientes como ejemplos de estilo (`enabled`, `count` 1–20, `scope` `all`/`mine`); vía `config edit`, `get/set` superficial |
-| `git`        | `timeoutMs`          | `number`  | `30000`             | Timeout de subprocesos git (diff, status, blame, log); `0` desactiva; blame/log degradan a vacío con aviso, diff es error duro |
+| Sección      | Clave                | Tipo      | Por defecto                                                                                      | Notas                                                                                                                                                                                                                                       |
+| ------------ | -------------------- | --------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `generation` | `maxRetries`         | `number`  | `3`                                                                                              | Reintento en fallo de API                                                                                                                                                                                                                   |
+| `generation` | `retryDelay`         | `number`  | `1000`                                                                                           | Backoff de reintento                                                                                                                                                                                                                        |
+| `generation` | `temperature`        | `number`  | `0.7`                                                                                            | Temperatura del modelo (default global; presets por modelo pueden sobrescribir)                                                                                                                                                             |
+| `generation` | `maxPromptTokens`    | `number`  | `100000`                                                                                         | Tokens de diff enviados a la IA (truncado contado por tokens)                                                                                                                                                                               |
+| `generation` | `maxOutputTokens`    | `number`  | `4096`                                                                                           | Presupuesto de salida por intento; overrides por proveedor/modelo ganan; se duplica en reintentos por truncado (techo 32768)                                                                                                                |
+| `generation` | `diffStrategy`       | `string`  | `"auto"`                                                                                         | `staged` / `unstaged` / `auto`                                                                                                                                                                                                              |
+| `providers`  | `defaults.timeoutMs` | `number`  | `60000`                                                                                          | Timeout compartido                                                                                                                                                                                                                          |
+| `providers`  | `defaults.reasoning` | `string`  | `"off"`                                                                                          | Default compartido de reasoning                                                                                                                                                                                                             |
+| `providers`  | `defaults.apiType`   | `string`  | `"openai-chat"`                                                                                  | Tipo API compartido                                                                                                                                                                                                                         |
+| `providers`  | `<name>.baseUrl`     | `string`  | por proveedor                                                                                    | ej. `ollama` -> `"http://localhost:11434/api"`; `openrouter` -> `"https://openrouter.ai/api/v1"`                                                                                                                                            |
+| `providers`  | `<name>.apiKey`      | `string`  | `"$<NAME>_API_KEY"`                                                                              | Prefijo `$` lee env, si no literal; opcional para locales                                                                                                                                                                                   |
+| `providers`  | `<name>.apiType`     | `string`  | hereda                                                                                           | `openai-chat`, `openai-responses`, `anthropic`                                                                                                                                                                                              |
+| `commit`     | `autoCommit`         | `boolean` | `false`                                                                                          | Omite confirmación `Commit changes?` (o usa `-y/--yes`)                                                                                                                                                                                     |
+| `commit`     | `autoPush`           | `boolean` | `false`                                                                                          | Omite confirmación `Push to <branch>?` (o usa `-y/--yes`)                                                                                                                                                                                   |
+| `commit`     | `commitFormat`       | `string`  | `"conventional"`                                                                                 | `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform` (`freeform` solo IA), `emojiKarma`, `google`, `atom`, `detailed`, `previous` (estilo del historial)                                                                     |
+| `commit`     | `onlyStagedChanges`  | `boolean` | `true`                                                                                           | Cuando es true y nada staged tras el selector, `commit` sale con `No staged changes`; si no, cae a `diffStrategy`                                                                                                                           |
+| `commit`     | `commitLanguage`     | `string`  | `"english"`                                                                                      | BCP-47, guardado tal cual (`en`, `en-US`, `jp` …); `--lang` sobrescribe. Seis idiomas nativos (`english`, `russian`, `chinese`, `japanese`, `german`, `french`); cualquier otro valor es un [idioma personalizado](#idiomas-personalizados) |
+| `commit`     | `customInstructions` | `string`  | `""`                                                                                             | Guía permanente inyectada como `## Custom Instructions` para cada formato. Termina en `.md` y el archivo existe -> se lee el archivo; si no texto literal. Vacío ⇒ sección omitida                                                          |
+| `commit`     | `promptForRefs`      | `boolean` | `false`                                                                                          | **Obsoleto**, reemplazado por `commit.refs`. Se conserva para que configs existentes validen; nunca se lee                                                                                                                                  |
+| `commit`     | `refs`               | `object`  | `{enabled:false,source:"prompt",value:"",placement:"end",branchPattern:"[A-Z][A-Z0-9]*-[0-9]+"}` | Footer de refs de issues/tickets — ver [Issue refs](#issue-refs); vía `config edit`, `get/set` superficial                                                                                                                                  |
+| `commit`     | `maxLength`          | `number`  | `80`                                                                                             | Límite de subject; `--max-length` por ejecución                                                                                                                                                                                             |
+| `commit`     | `bodyStyle`          | `string`  | `"subject-body"`                                                                                 | `subject-only`, `subject-body`, `subject-body-footer`                                                                                                                                                                                       |
+| `commit`     | `recentCommits`      | `object`  | `{enabled:false,count:5,scope:"all"}`                                                            | Mensajes recientes como ejemplos de estilo (`enabled`, `count` 1–20, `scope` `all`/`mine`); vía `config edit`, `get/set` superficial                                                                                                        |
+| `git`        | `timeoutMs`          | `number`  | `30000`                                                                                          | Timeout de subprocesos git (diff, status, blame, log); `0` desactiva; blame/log degradan a vacío con aviso, diff es error duro                                                                                                              |
 
 Las variables de entorno siguen siendo alternativa para la clave: define `GEMINI_API_KEY`,
 `OPENAI_API_KEY`, etc. antes de ejecutar. Para una sola ejecución:
@@ -420,8 +420,8 @@ Ollama no necesita clave. Las claves guardadas en el archivo JSON siguen el mism
     "customInstructions": "Write in the imperative mood. Never reference ticket IDs in the subject.",
 
     // o ruta a un archivo Markdown — leído cuando termina en .md y existe
-    "customInstructions": "~/.config/commitSage/instructions.md"
-  }
+    "customInstructions": "~/.config/commitSage/instructions.md",
+  },
 }
 ```
 
@@ -450,8 +450,8 @@ Las traducciones se cachean en `translations.json` junto a tu archivo de config,
 ```jsonc
 {
   "swahili": {
-    "conventional": "<translated format instructions>"
-  }
+    "conventional": "<translated format instructions>",
+  },
 }
 ```
 
@@ -471,9 +471,9 @@ Las entradas cacheadas se usan en silencio — sin prompt en ejecuciones posteri
       "source": "prompt", // prompt | branch | input
       "value": "", // token(s) fijos para source input; separados por comas/espacios
       "placement": "end", // end | start | prefix
-      "branchPattern": "[A-Z][A-Z0-9]*-[0-9]+" // regex sobre la rama para source branch
-    }
-  }
+      "branchPattern": "[A-Z][A-Z0-9]*-[0-9]+", // regex sobre la rama para source branch
+    },
+  },
 }
 ```
 

@@ -213,17 +213,17 @@ More in `docs/demos/` (gifs):  -->
 
 One table — both subcommands accept the same 9 flags (commit adds 3 more below).
 
-| Flag               | Description                                                                                                                                                                       | Notes                                                                                                                                       |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--offline`        | Use static-analysis generator (no API). Always conventional-shape `<type>: <desc>`; unclassifiable changes fall back to `chore`. Truncates at `--max-length` word boundary.                                   | Ignores `--format`; still respects `--max-length`; needs `git diff-index` status rows — untracked files won't appear until staged.          |
-| `--context <text>` | Inject `## External Context\n<text>` before the diff in the AI prompt.                                                                                                            | **AI-only** — ignored with `--offline`.                                                                                                     |
-| `--model <name>`   | Model for this run in `provider/model` format (e.g. `openai/gpt-5.6-luna`). First slash splits provider from model id; multi-segment ids preserved (`9router/kc/stealth/ox-alpha`). | Per-run override of top-level `model`; any `provider/model` string accepted — provider validates at call time.                              |
-| `--format <name>`  | Commit template: `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform`, `emojiKarma`, `google`, `atom`, `detailed`, `previous`.                                                  | **AI-only** — ignored with `--offline` (offline always conventional). Default `conventional` (see `commit.commitFormat`). `previous` mimics your recent history (bodies/footers included). |
-| `--lang <name>`    | Commit language (BCP-47, stored as-given, e.g. `en`, `en-US`, `jp`). Any other value is a custom language — see [Custom languages](#custom-languages).                               | Per-run override of `commit.commitLanguage`; native tags normalized internally. An unknown tag prompts to translate once (exit 0 if declined or non-TTY). |
-| `--max-length <n>` | Override `commit.maxLength` for this message.                                                                                                                                     | Applies to **both** AI and `--offline` (offline truncation uses word boundary + `…`).                                                       |
-| `--edit`           | Open before saving.                                                                                                                                                               | `generate`: tempfile + `$EDITOR`/`$VISUAL` -> print final to stdout. `commit`: passes `-e` to `git commit` -> editor on the staged message. |
-| `--ref <token>`    | Attach explicit ref token(s) for this run. Repeatable: `--ref PROJ-1 --ref PROJ-2` renders both.                                                                                  | **AI-only** — ignored with `--offline`. Wins over `--refs` and `commit.refs.source`; implies refs for the run even when `commit.refs.enabled` is false. |
-| `--refs`           | Force a single interactive refs prompt for this run, even when `commit.refs.source` is `branch` or `input`.                                                                       | **AI-only** — ignored with `--offline`. TTY-only; non-TTY warns and skips refs (exit 0). Implies refs for the run even when `commit.refs.enabled` is false. |
+| Flag               | Description                                                                                                                                                                         | Notes                                                                                                                                                                                      |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--offline`        | Use static-analysis generator (no API). Always conventional-shape `<type>: <desc>`; unclassifiable changes fall back to `chore`. Truncates at `--max-length` word boundary.         | Ignores `--format`; still respects `--max-length`; needs `git diff-index` status rows — untracked files won't appear until staged.                                                         |
+| `--context <text>` | Inject `## External Context\n<text>` before the diff in the AI prompt.                                                                                                              | **AI-only** — ignored with `--offline`.                                                                                                                                                    |
+| `--model <name>`   | Model for this run in `provider/model` format (e.g. `openai/gpt-5.6-luna`). First slash splits provider from model id; multi-segment ids preserved (`9router/kc/stealth/ox-alpha`). | Per-run override of top-level `model`; any `provider/model` string accepted — provider validates at call time.                                                                             |
+| `--format <name>`  | Commit template: `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform`, `emojiKarma`, `google`, `atom`, `detailed`, `previous`.                                       | **AI-only** — ignored with `--offline` (offline always conventional). Default `conventional` (see `commit.commitFormat`). `previous` mimics your recent history (bodies/footers included). |
+| `--lang <name>`    | Commit language (BCP-47, stored as-given, e.g. `en`, `en-US`, `jp`). Any other value is a custom language — see [Custom languages](#custom-languages).                              | Per-run override of `commit.commitLanguage`; native tags normalized internally. An unknown tag prompts to translate once (exit 0 if declined or non-TTY).                                  |
+| `--max-length <n>` | Override `commit.maxLength` for this message.                                                                                                                                       | Applies to **both** AI and `--offline` (offline truncation uses word boundary + `…`).                                                                                                      |
+| `--edit`           | Open before saving.                                                                                                                                                                 | `generate`: tempfile + `$EDITOR`/`$VISUAL` -> print final to stdout. `commit`: passes `-e` to `git commit` -> editor on the staged message.                                                |
+| `--ref <token>`    | Attach explicit ref token(s) for this run. Repeatable: `--ref PROJ-1 --ref PROJ-2` renders both.                                                                                    | **AI-only** — ignored with `--offline`. Wins over `--refs` and `commit.refs.source`; implies refs for the run even when `commit.refs.enabled` is false.                                    |
+| `--refs`           | Force a single interactive refs prompt for this run, even when `commit.refs.source` is `branch` or `input`.                                                                         | **AI-only** — ignored with `--offline`. TTY-only; non-TTY warns and skips refs (exit 0). Implies refs for the run even when `commit.refs.enabled` is false.                                |
 
 Commit-only flags:
 
@@ -279,8 +279,8 @@ Every `set`/`edit` validates against `config.schema.json` (generated from
 One canonical string selects the provider and model. Split on the first `/` —
 left is the provider, right is the model id (further slashes preserved):
 
-| Key     | Type                   | Default               | Description                                                                                           |
-| ------- | ---------------------- | --------------------- | ----------------------------------------------------------------------------------------------------- |
+| Key     | Type                   | Default                 | Description                                                                                           |
+| ------- | ---------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------- |
 | `model` | `string` (`a/b` shape) | `"openai/gpt-5.6-luna"` | `"9router/kc/stealth/ox-alpha"` -> provider `9router`, model `kc/stealth/ox-alpha`. Fails without `/` |
 
 Per-provider transport lives in the `providers` registry. `providers.defaults`
@@ -349,13 +349,13 @@ with reasoning on (temperature is omitted, no level forced).
 Honest subsets per provider (mirrored in the JSON schema; anything else
 passes through as-is — you own what the API does with it):
 
-| Provider(s)                                          | Levels                              |
-| ---------------------------------------------------- | ----------------------------------- |
-| `openai`, `groq`, `zai`                              | `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` |
-| `anthropic`                                          | `low`, `medium`, `high`, `xhigh`, `max` |
-| `gemini`                                             | `minimal`, `low`, `medium`, `high`  |
-| `xai`                                                | `low`, `high` (`medium` silently maps to `high`) |
-| `ollama`, `openrouter`, `deepseek`, `mistral`, `moonshotai`, `minimax` | ignored (no reasoning options are sent) |
+| Provider(s)                                                            | Levels                                                     |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `openai`, `groq`, `zai`                                                | `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` |
+| `anthropic`                                                            | `low`, `medium`, `high`, `xhigh`, `max`                    |
+| `gemini`                                                               | `minimal`, `low`, `medium`, `high`                         |
+| `xai`                                                                  | `low`, `high` (`medium` silently maps to `high`)           |
+| `ollama`, `openrouter`, `deepseek`, `mistral`, `moonshotai`, `minimax` | ignored (no reasoning options are sent)                    |
 
 Unknown gateways accept the full set (`none`, `xhigh`, `max`, `ultra`
 included) as verbatim passthrough.
@@ -370,32 +370,32 @@ compensate.
 
 ### All sections at a glance
 
-| Section      | Key                  | Type      | Default             | Notes                                                                                                                      |
-| ------------ | -------------------- | --------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `generation` | `maxRetries`         | `number`  | `3`                 | Retry on API call                                                                                                          |
-| `generation` | `retryDelay`         | `number`  | `1000`              | Retry backoff                                                                                                              |
-| `generation` | `temperature`        | `number`  | `0.7`               | Model temperature (global default; per-model presets may override)                                                         |
-| `generation` | `maxPromptTokens`    | `number`  | `100000`            | Diff tokens sent to AI (token-counted truncation)                                                                          |
-| `generation` | `maxOutputTokens`    | `number`  | `4096`              | Output budget per attempt; per-provider/model overrides win; doubled on truncation retries (cap 32768)                      |
-| `generation` | `diffStrategy`       | `string`  | `"auto"`            | `staged` / `unstaged` / `auto`                                                                                             |
-| `providers`  | `defaults.timeoutMs` | `number`  | `60000`             | Shared request timeout                                                                                                     |
-| `providers`  | `defaults.reasoning` | `string`  | `"off"`             | Shared reasoning default                                                                                                   |
-| `providers`  | `defaults.apiType`   | `string`  | `"openai-chat"`     | Shared API type                                                                                                            |
-| `providers`  | `<name>.baseUrl`     | `string`  | per-provider        | e.g. `ollama` -> `"http://localhost:11434/api"`; `openrouter` -> `"https://openrouter.ai/api/v1"`                          |
-| `providers`  | `<name>.apiKey`      | `string`  | `"$<NAME>_API_KEY"` | `$`-prefix reads env, else literal; optional for local providers                                                           |
-| `providers`  | `<name>.apiType`     | `string`  | inherits            | `openai-chat`, `openai-responses`, `anthropic`                                                                             |
-| `commit`     | `autoCommit`         | `boolean` | `false`             | Skip `Commit changes?` confirm (or use `-y/--yes`)                                                                         |
-| `commit`     | `autoPush`           | `boolean` | `false`             | Skip `Push to <branch>?` confirm (or use `-y/--yes`)                                                                       |
-| `commit`     | `commitFormat`       | `string`  | `"conventional"`    | `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform` (`freeform` AI-only), `emojiKarma`, `google`, `atom`, `detailed`, `previous` (recent-history style) |
-| `commit`     | `onlyStagedChanges`  | `boolean` | `true`              | When true and nothing staged after picker, `commit` exits 0 with `No staged changes`; else falls through to `diffStrategy` |
-| `commit`     | `commitLanguage`     | `string`  | `"english"`         | BCP-47, stored as-given (`en`, `en-US`, `jp` …); `--lang` overrides. Six native languages (`english`, `russian`, `chinese`, `japanese`, `german`, `french`); any other value is a [custom language](#custom-languages) |
-| `commit`     | `customInstructions` | `string`  | `""`                | Standing guidance injected as `## Custom Instructions` for every format. Ends in `.md` and the file exists → read the file; else literal text. Empty ⇒ section omitted |
-| `commit`     | `promptForRefs`      | `boolean` | `false`             | **Deprecated**, superseded by `commit.refs`. Kept so existing configs validate; never read |
-| `commit`     | `refs`               | `object`  | `{enabled:false,source:"prompt",value:"",placement:"end",branchPattern:"[A-Z][A-Z0-9]*-[0-9]+"}` | Issue/ticket refs footer — see [Issue refs](#issue-refs); managed via `config edit`, `get/set` stays shallow |
-| `commit`     | `maxLength`          | `number`  | `80`                | Subject truncation limit; `--max-length` per-run                                                                           |
-| `commit`     | `bodyStyle`          | `string`  | `"subject-body"`    | `subject-only`, `subject-body`, `subject-body-footer`                                                                      |
-| `commit`     | `recentCommits`      | `object`  | `{enabled:false,count:5,scope:"all"}` | Recent commit messages as style examples (`enabled`, `count` 1–20, `scope` `all`/`mine`); managed via `config edit`, `get/set` stays shallow |
-| `git`        | `timeoutMs`          | `number`  | `30000`             | Git subprocess timeout (diff, status, blame, log); `0` disables; blame/log degrade to empty with a warning, diff is a hard error |
+| Section      | Key                  | Type      | Default                                                                                          | Notes                                                                                                                                                                                                                  |
+| ------------ | -------------------- | --------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `generation` | `maxRetries`         | `number`  | `3`                                                                                              | Retry on API call                                                                                                                                                                                                      |
+| `generation` | `retryDelay`         | `number`  | `1000`                                                                                           | Retry backoff                                                                                                                                                                                                          |
+| `generation` | `temperature`        | `number`  | `0.7`                                                                                            | Model temperature (global default; per-model presets may override)                                                                                                                                                     |
+| `generation` | `maxPromptTokens`    | `number`  | `100000`                                                                                         | Diff tokens sent to AI (token-counted truncation)                                                                                                                                                                      |
+| `generation` | `maxOutputTokens`    | `number`  | `4096`                                                                                           | Output budget per attempt; per-provider/model overrides win; doubled on truncation retries (cap 32768)                                                                                                                 |
+| `generation` | `diffStrategy`       | `string`  | `"auto"`                                                                                         | `staged` / `unstaged` / `auto`                                                                                                                                                                                         |
+| `providers`  | `defaults.timeoutMs` | `number`  | `60000`                                                                                          | Shared request timeout                                                                                                                                                                                                 |
+| `providers`  | `defaults.reasoning` | `string`  | `"off"`                                                                                          | Shared reasoning default                                                                                                                                                                                               |
+| `providers`  | `defaults.apiType`   | `string`  | `"openai-chat"`                                                                                  | Shared API type                                                                                                                                                                                                        |
+| `providers`  | `<name>.baseUrl`     | `string`  | per-provider                                                                                     | e.g. `ollama` -> `"http://localhost:11434/api"`; `openrouter` -> `"https://openrouter.ai/api/v1"`                                                                                                                      |
+| `providers`  | `<name>.apiKey`      | `string`  | `"$<NAME>_API_KEY"`                                                                              | `$`-prefix reads env, else literal; optional for local providers                                                                                                                                                       |
+| `providers`  | `<name>.apiType`     | `string`  | inherits                                                                                         | `openai-chat`, `openai-responses`, `anthropic`                                                                                                                                                                         |
+| `commit`     | `autoCommit`         | `boolean` | `false`                                                                                          | Skip `Commit changes?` confirm (or use `-y/--yes`)                                                                                                                                                                     |
+| `commit`     | `autoPush`           | `boolean` | `false`                                                                                          | Skip `Push to <branch>?` confirm (or use `-y/--yes`)                                                                                                                                                                   |
+| `commit`     | `commitFormat`       | `string`  | `"conventional"`                                                                                 | `conventional`, `angular`, `karma`, `emoji`, `semantic`, `freeform` (`freeform` AI-only), `emojiKarma`, `google`, `atom`, `detailed`, `previous` (recent-history style)                                                |
+| `commit`     | `onlyStagedChanges`  | `boolean` | `true`                                                                                           | When true and nothing staged after picker, `commit` exits 0 with `No staged changes`; else falls through to `diffStrategy`                                                                                             |
+| `commit`     | `commitLanguage`     | `string`  | `"english"`                                                                                      | BCP-47, stored as-given (`en`, `en-US`, `jp` …); `--lang` overrides. Six native languages (`english`, `russian`, `chinese`, `japanese`, `german`, `french`); any other value is a [custom language](#custom-languages) |
+| `commit`     | `customInstructions` | `string`  | `""`                                                                                             | Standing guidance injected as `## Custom Instructions` for every format. Ends in `.md` and the file exists -> read the file; else literal text. Empty ⇒ section omitted                                                |
+| `commit`     | `promptForRefs`      | `boolean` | `false`                                                                                          | **Deprecated**, superseded by `commit.refs`. Kept so existing configs validate; never read                                                                                                                             |
+| `commit`     | `refs`               | `object`  | `{enabled:false,source:"prompt",value:"",placement:"end",branchPattern:"[A-Z][A-Z0-9]*-[0-9]+"}` | Issue/ticket refs footer — see [Issue refs](#issue-refs); managed via `config edit`, `get/set` stays shallow                                                                                                           |
+| `commit`     | `maxLength`          | `number`  | `80`                                                                                             | Subject truncation limit; `--max-length` per-run                                                                                                                                                                       |
+| `commit`     | `bodyStyle`          | `string`  | `"subject-body"`                                                                                 | `subject-only`, `subject-body`, `subject-body-footer`                                                                                                                                                                  |
+| `commit`     | `recentCommits`      | `object`  | `{enabled:false,count:5,scope:"all"}`                                                            | Recent commit messages as style examples (`enabled`, `count` 1–20, `scope` `all`/`mine`); managed via `config edit`, `get/set` stays shallow                                                                           |
+| `git`        | `timeoutMs`          | `number`  | `30000`                                                                                          | Git subprocess timeout (diff, status, blame, log); `0` disables; blame/log degrade to empty with a warning, diff is a hard error                                                                                       |
 
 Environment variables remain an alternative for the key: set `GEMINI_API_KEY`,
 `OPENAI_API_KEY`, etc. before running. Single-run:
@@ -417,8 +417,8 @@ Ollama needs no key. Keys stored in the JSON file follow the same `provider/mode
     "customInstructions": "Write in the imperative mood. Never reference ticket IDs in the subject.",
 
     // or a path to a Markdown file — read when it ends in .md and exists
-    "customInstructions": "~/.config/commitSage/instructions.md"
-  }
+    "customInstructions": "~/.config/commitSage/instructions.md",
+  },
 }
 ```
 
@@ -447,8 +447,8 @@ Translations are cached in `translations.json` beside your config file, keyed by
 ```jsonc
 {
   "swahili": {
-    "conventional": "<translated format instructions>"
-  }
+    "conventional": "<translated format instructions>",
+  },
 }
 ```
 
@@ -468,9 +468,9 @@ Cached entries are used silently — no prompt on later runs. **To invalidate on
       "source": "prompt", // prompt | branch | input
       "value": "", // fixed token(s) for source input; comma/space separated
       "placement": "end", // end | start | prefix
-      "branchPattern": "[A-Z][A-Z0-9]*-[0-9]+" // regex over the branch name for source branch
-    }
-  }
+      "branchPattern": "[A-Z][A-Z0-9]*-[0-9]+", // regex over the branch name for source branch
+    },
+  },
 }
 ```
 
