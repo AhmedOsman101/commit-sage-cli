@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.2.1](https://github.com/AhmedOsman101/commit-sage-cli/compare/v3.2.0...v3.2.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* **cli:** default generate to openai/gpt-5.6-luna ([ddbc640](https://github.com/AhmedOsman101/commit-sage-cli/commit/ddbc640c32ad62e33f5d8ab39b8904202709f91b))
+* **cli:** update the --model example in commit ([85ef66e](https://github.com/AhmedOsman101/commit-sage-cli/commit/85ef66e1ef85db73f95db219649e4112c9abbd81))
+* **config:** default model to openai/gpt-5.6-luna ([5436fa6](https://github.com/AhmedOsman101/commit-sage-cli/commit/5436fa66f1445487ef42ceba94f9355ed7288c34))
+* **config:** move provider defaults to gpt-5.6-luna and claude-sonnet-5-5 ([9d6be8d](https://github.com/AhmedOsman101/commit-sage-cli/commit/9d6be8d73f706841f6a8a86e750e25633281f7ff))
+* move default models off gpt-5-nano and claude-sonnet-4-5 before they retire ([2bcb870](https://github.com/AhmedOsman101/commit-sage-cli/commit/2bcb87017e2f2530d32bd0f42aa0f53c66881106))
+
 ## [3.2.0](https://github.com/AhmedOsman101/commit-sage-cli/compare/v3.1.0...v3.2.0) (2026-10-25)
 
 
