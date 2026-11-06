@@ -42,7 +42,7 @@ const TRANSLATIONS_PATH = join(CONFIG_DIR, "translations.json");
 const DEFAULT_CONFIG: Readonly<Config> = {
   $schema:
     "https://raw.githubusercontent.com/AhmedOsman101/commit-sage-cli/refs/heads/main/config.schema.json",
-  model: "openai/gpt-5-nano",
+  model: "openai/gpt-5.6-luna",
   generation: {
     maxRetries: 3,
     retryDelay: 1000,
