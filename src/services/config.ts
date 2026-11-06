@@ -101,8 +101,8 @@ class ConfigService {
 
         const modelMap: Record<ProviderType, string> = {
           gemini: "gemini-2.5-flash-lite",
-          openai: "gpt-5-nano",
-          anthropic: "claude-sonnet-4-5",
+          openai: "gpt-5.6-luna",
+          anthropic: "claude-sonnet-5-5",
           deepseek: "deepseek-chat",
           mistral: "mistral-small-latest",
           xai: "grok-3-mini",
@@ -551,7 +551,7 @@ class ConfigService {
             modelPart = split.ok.model;
           } else {
             providerPart = "openai";
-            modelPart = "gpt-5-nano";
+            modelPart = "gpt-5.6-luna";
           }
           if (key === "type") providerPart = value as string;
           else modelPart = value as string;
