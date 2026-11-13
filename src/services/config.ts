@@ -99,19 +99,20 @@ class ConfigService {
         const hasType = "type" in provider;
         const hasModel = "model" in provider;
 
-        const modelMap: Record<ProviderType, string> = {
-          gemini: "gemini-2.5-flash-lite",
+        const modelMap = {
+          gemini: "gemini-4-hydrogen",
           openai: "gpt-5.6-luna",
-          anthropic: "claude-sonnet-5-5",
-          deepseek: "deepseek-chat",
+          anthropic: "claude-haiku-5-5",
+          deepseek: "deepseek-flash",
           mistral: "mistral-small-latest",
           xai: "grok-3-mini",
           ollama: "llama3.2",
           moonshotai: "kimi-k2.5",
-          zai: "glm-4.5-flash",
+          zai: "glm-4.7-flash",
           minimax: "MiniMax-M2.5",
-          openrouter: "openai/gpt-4.1-mini",
-        } as Record<ProviderType, string>;
+          openrouter: "openrouter/free",
+          groq: "openai/gpt-oss-120b",
+        } satisfies Record<ProviderType, string>;
 
         if (hasType && hasModel) {
           const t = provider.type as string;
@@ -126,7 +127,7 @@ class ConfigService {
           changed = true;
         } else if (hasType && !hasModel) {
           const oldType = provider.type as ProviderType;
-          const newModel = modelMap[oldType] || "gemini-2.5-flash-lite";
+          const newModel = modelMap[oldType] || "gemini-4-hydrogen";
           config.model = `${oldType}/${newModel}`;
           warnings.push(
             `Migrated provider.type→model ("${oldType}/${newModel}") — added default model`

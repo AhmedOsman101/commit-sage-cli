@@ -1,27 +1,28 @@
 # Provider Catalog: Complete Inventory Across All Codebases
 
-Goal: Single source of truth for all providers. CLI target: 14 providers (11 current + 3 from VS Code v3).
+Goal: Single source of truth for all providers. CLI target: 12 providers (11 original + the `groq` preset).
 Priority: Free/local-first providers first (grilling decision).
 
-## Current CLI Providers (11)
+## Current CLI Providers (12)
 
-Defined in src/services/providers/*.ts, all extending ModelService base class.
+Defined in `src/services/providers/*.ts` as adapters, registered via `defineProvider` / `registerAdapter` in `providerRegistry.ts`. The per-provider "Model Default" is the migration fallback from `ConfigService.migrateConfig` (`modelMap`); the active model is the top-level `model` string.
 
-| Provider | Class | Model Default | API Base | Auth | Free Tier | Notes |
-|----------|-------|---------------|----------|------|-----------|-------|
-| gemini | GeminiService | gemini-2.5-flash-lite | generativelanguage.googleapis.com | API Key | Yes | Vercel AI SDK google provider |
-| openai | OpenAIService | gpt-5-nano | api.openai.com/v1 | API Key | No | Vercel AI SDK openai |
-| anthropic | AnthropicService | claude-sonnet-4-5 | api.anthropic.com | API Key | No | Vercel AI SDK anthropic |
-| deepseek | DeepSeekService | deepseek-chat | api.deepseek.com | API Key | Yes (cheap) | OpenAI-compatible |
-| mistral | MistralService | mistral-small-latest | api.mistral.ai | API Key | Yes | |
-| xai | XAIService | grok-3-mini | api.x.ai | API Key | Yes | OpenAI-compatible |
-| ollama | OllamaService | llama3.2 | localhost:11434 | None | Yes (local) | Custom implementation |
-| moonshotai | MoonshotService | kimi-k2.5 | api.moonshot.ai | API Key | Yes | Chinese provider |
-| zai | ZAIService | glm-4.5-flash | api.z.ai | API Key | Yes | Chinese provider (GLM) |
-| minimax | MinimaxService | MiniMax-M2.5 | api.minimax.chat | API Key | Yes | Chinese provider |
-| openrouter | OpenRouterService | openai/gpt-4.1-mini | openrouter.ai/api/v1 | API Key | Yes (free models) | Meta-provider, needs PKCE |
+| Provider | Adapter | Model Default | API Base | Auth | Free Tier | Notes |
+|----------|---------|---------------|----------|------|-----------|-------|
+| gemini | `geminiAdapter` | `gemini-4-hydrogen` | generativelanguage.googleapis.com | API Key | Yes | `thinkingLevel` for 3.x/4.x, `thinkingBudget` for 2.5 |
+| openai | `openaiAdapter` | `gpt-5.6-luna` | api.openai.com/v1 | API Key | No | AI SDK `@ai-sdk/openai` |
+| anthropic | `anthropicAdapter` | `claude-haiku-5-5` | api.anthropic.com | API Key | No | AI SDK `@ai-sdk/anthropic` |
+| deepseek | `deepseekAdapter` | `deepseek-flash` | api.deepseek.com | API Key | Yes (cheap) | OpenAI-compatible |
+| mistral | `mistralAdapter` | `mistral-small-latest` | api.mistral.ai | API Key | Yes | rolling "latest small" alias |
+| xai | `xaiAdapter` | `grok-3-mini` | api.x.ai | API Key | Yes | OpenAI-compatible |
+| ollama | `ollamaAdapter` | `llama3.2` | localhost:11434 | None | Yes (local) | custom transport |
+| moonshotai | `moonshotaiAdapter` | `kimi-k2.5` | api.moonshot.ai | API Key | Yes | Chinese provider |
+| zai | `zaiAdapter` | `glm-4.7-flash` | api.z.ai | API Key | Yes | Chinese provider (GLM) |
+| minimax | `minimaxAdapter` | `MiniMax-M2.5` | api.minimax.chat | API Key | Yes | Chinese provider |
+| openrouter | `openrouterAdapter` | `openrouter/free` | openrouter.ai/api/v1 | API Key | Yes (free models) | meta-provider; free-models router |
+| groq | `groqAdapter` | `openai/gpt-oss-120b` | api.groq.com/openai/v1 | API Key | Yes | fast free-tier inference |
 
-Architecture: All extend ModelService base class -> use Vercel AI SDK generateText (except Ollama). Retry/backoff/reasoning in base.
+Architecture: each provider is an adapter registered through `defineProvider` / `registerAdapter`; the Vercel AI SDK handles transport for all except Ollama (custom). Reasoning options are supplied per adapter.
 
 ## VS Code v2.2.13 Providers (4)
 
@@ -49,14 +50,14 @@ Architecture: All extend ModelService base class -> use Vercel AI SDK generateTe
 
 ## Missing Providers to Add to CLI
 
-### 1. Groq (High Priority — Free, Fast)
+### 1. Groq (Added — Free, Fast)
+> Status: **added** as `groqAdapter` (see the provider table above). Default model: `openai/gpt-oss-120b`.
 - API: api.groq.com/openai/v1 (OpenAI-compatible)
-- Models: llama-3.1-70b-versatile, llama-3.1-8b-instant, mixtral-8x7b, gemma2-9b-it
+- Models: `openai/gpt-oss-120b` (default), `qwen/qwen3-8b-27b` (lighter, same free tier)
 - Free tier: 14,400 req/day, 30 RPM
-- Implementation: Can use Vercel AI SDK openai provider with custom baseUrl, or new GroqService extending ModelService
-- Config:
+- Config (Config V2 shape):
 ```json
-"groq": { "model": "llama-3.1-70b-versatile", "baseUrl": "https://api.groq.com/openai/v1" }
+"groq": { "baseUrl": "https://api.groq.com/openai/v1", "apiKey": "$GROQ_API_KEY" }
 ```
 
 ### 2. Codestral (Medium Priority — Code Specialist)
@@ -105,32 +106,19 @@ Auto-discovery: On startup, probe known local endpoints (localhost:1234, :8000, 
 | Vision | Yes | Yes | Yes | No | No | No | No | No | No | No | Yes | No | No | Partial |
 | PKCE OAuth | No | No | No | No | No | No | No | No | No | No | Yes | No | No | No |
 
-## Configuration Schema (Target)
+## Configuration Shape (Config V2)
+
+The shipped config uses a top-level `model` string plus a `providers` registry — there is no `provider.type` object (legacy configs are migrated by `ConfigService.migrateConfig`). `providers.defaults` holds shared AI defaults; `providers.<name>` overrides transport per provider. The per-provider "Model Default" values in the table above are migration fallbacks only; the active model is always the top-level `model` string.
 
 ```json
 {
-  "provider": {
-    "type": "gemini|openai|anthropic|deepseek|mistral|xai|ollama|moonshotai|zai|minimax|openrouter|groq|codestral|openai-compatible",
-    "model": "string"
-  },
-  "gemini": { "model": "gemini-2.5-flash-lite", "thinkingBudget": 0, "thinkingLevel": "low" },
-  "openai": { "model": "gpt-5-nano", "baseUrl": "https://api.openai.com/v1", "reasoning": "off" },
-  "anthropic": { "model": "claude-sonnet-4-5", "reasoning": "off" },
-  "deepseek": { "model": "deepseek-chat", "baseUrl": "https://api.deepseek.com" },
-  "mistral": { "model": "mistral-small-latest" },
-  "xai": { "model": "grok-3-mini", "reasoning": "off" },
-  "ollama": { "baseUrl": "http://localhost:11434", "model": "llama3.2" },
-  "moonshotai": { "model": "kimi-k2.5" },
-  "zai": { "model": "glm-4.5-flash" },
-  "minimax": { "model": "MiniMax-M2.5" },
-  "openrouter": { "model": "openai/gpt-4.1-mini" },
-  "groq": { "model": "llama-3.1-70b-versatile", "baseUrl": "https://api.groq.com/openai/v1" },
-  "codestral": { "model": "codestral-latest", "baseUrl": "https://codestral.mistral.ai/v1" },
-  "openaiCompatible": {
-    "spec": "lmstudio|vllm|llamacpp|ollama-openai|custom",
-    "baseUrl": "http://localhost:1234/v1",
-    "model": "auto",
-    "apiKey": ""
+  "model": "openai/gpt-5.6-luna",
+  "providers": {
+    "defaults": { "timeoutMs": 60000, "reasoning": "off", "apiType": "openai-chat" },
+    "openai": { "baseUrl": "https://api.openai.com/v1", "apiKey": "$OPENAI_API_KEY", "apiType": "openai-chat" },
+    "ollama": { "baseUrl": "http://localhost:11434/api" },
+    "openrouter": { "baseUrl": "https://openrouter.ai/api/v1" },
+    "groq": { "baseUrl": "https://api.groq.com/openai/v1", "apiKey": "$GROQ_API_KEY" }
   }
 }
 ```
