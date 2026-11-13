@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.2](https://github.com/AhmedOsman101/commit-sage-cli/compare/v3.2.1...v3.2.2) (2026-11-13)
+
+
+### Features
+
+* **config:** update default model mappings ([924a678](https://github.com/AhmedOsman101/commit-sage-cli/commit/924a6782a48bf740e908aebbd72c6c8ffac27755))
+
 ## [3.2.1](https://github.com/AhmedOsman101/commit-sage-cli/compare/v3.2.0...v3.2.1) (2026-11-06)
 
 
