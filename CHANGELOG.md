@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.2.3](https://github.com/AhmedOsman101/commit-sage-cli/compare/commit-sage-v3.2.2...commit-sage-v3.2.3) (2026-11-14)
+
+
+### Bug Fixes
+
+- **release**: trigger release workflow on new release ([804f6c4](https://github.com/AhmedOsman101/commit-sage-cli/commit/804f6c40c310cefeb85fee3f9eb107fd917418b6))
+- **release:** switch version truth from version.txt to package.json ([dde8c2a](https://github.com/AhmedOsman101/commit-sage-cli/commit/dde8c2aa4d79ea273500fb7a835fbdd30299b19f))
+
+_🤖 This is a dummy release 🤖_
+
 ## [3.2.2](https://github.com/AhmedOsman101/commit-sage-cli/compare/v3.2.1...v3.2.2) (2026-11-13)
 
 

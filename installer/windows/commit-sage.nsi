@@ -12,12 +12,12 @@ InstallDirRegKey HKLM "Software\commitSage" "InstallDir"
 RequestExecutionLevel admin
 
 ; Version info — keep in sync with package.json (bumped by release-please)
-VIProductVersion "3.2.2.0"
+VIProductVersion "3.2.3.0"
 VIAddVersionKey "ProductName" "Commit Sage"
 VIAddVersionKey "CompanyName" "Commit Sage"
 VIAddVersionKey "FileDescription" "Commit Sage Installer"
-VIAddVersionKey "FileVersion" "3.2.2"
-VIAddVersionKey "ProductVersion" "3.2.2"
+VIAddVersionKey "FileVersion" "3.2.3"
+VIAddVersionKey "ProductVersion" "3.2.3"
 VIAddVersionKey "LegalCopyright" "Commit Sage"
 
 ; Interface Settings
