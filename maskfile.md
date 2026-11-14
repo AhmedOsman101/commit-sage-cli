@@ -264,7 +264,7 @@ eval 'argv=(${args})'
 remote="$(git remote get-url origin)"
 repoUrl="${remote/git@github.com:/https://github.com/}.git"
 
-if [[ "${FORCE}" == "true" ]]; then
+if [[ "${force}" == "true" ]]; then
   # Force release: create tag, then create release (triggers workflow)
   VERSION="$(jq -r .version package.json)"
   TAG_NAME="v${VERSION}"
