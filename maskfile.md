@@ -309,5 +309,9 @@ fi
   - desc: Verify in sync instead of writing; exits non-zero on drift
 
 ```bash
-bun run scripts/sync-installer-version.ts ${check:+--check}
+if ${check:-false}; then
+  bun run scripts/sync-installer-version.ts --check
+else
+  bun run scripts/sync-installer-version.ts
+fi
 ```

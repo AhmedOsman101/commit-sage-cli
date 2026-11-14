@@ -17,10 +17,9 @@ const ROOT = resolve(import.meta.dir, "..");
 const PKG_PATH = resolve(ROOT, "package.json");
 const NSI_PATH = resolve(ROOT, "installer", "windows", "commit-sage.nsi");
 
-const MODE_WRITE = "write";
 // Check mode is only triggered by a bare `--check` arg, e.g.
 // `mask sync-installer-version --check` or `bun run scripts/sync-installer-version.ts --check`.
-const MODE_CHECK = Bun.argv.includes("--check") ? "check" : MODE_WRITE;
+const MODE = Bun.argv.includes("--check") ? "check" : "write";
 
 const pkg = JSON.parse(readFileSync(PKG_PATH, "utf8"));
 const version: string | undefined = pkg.version;
@@ -50,7 +49,7 @@ for (const [pattern, replacement] of REPLACEMENTS) {
 }
 const changed = source !== original;
 
-if (MODE_CHECK) {
+if (MODE === "check") {
   if (changed) {
     console.error(
       `Installer version is out of sync (package.json ${version}, NSIS ${nsiVersion}).\n` +
