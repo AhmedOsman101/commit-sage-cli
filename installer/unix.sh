@@ -177,7 +177,7 @@ main() {
   echo -e "${GREEN}Commit Sage Installer${NC}"
   echo "=========================="
 
-  # Get version if not set (fallback to version.txt if offline/API fails)
+  # Get version if not set (fallback when offline/API fails)
   if [[ "${VERSION}" == "1.0.0" ]]; then
     log_info "Fetching latest version..."
     fetched="$(get_latest_version || true)"

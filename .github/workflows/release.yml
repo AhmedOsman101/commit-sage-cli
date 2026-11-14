@@ -70,6 +70,24 @@ jobs:
           name: binaries
           path: bin/
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "latest"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Setup Mask
+        uses: taiki-e/install-action@v2
+        with:
+          tool: mask
+
+      - name: Sync NSIS installer version from package.json
+        # release-please bumps package.json; keep the NSIS version keys in sync
+        # so the built installer carries the released version.
+        run: mask sync-installer-version
+
       - name: Install NSIS
         run: choco install nsis -y
 

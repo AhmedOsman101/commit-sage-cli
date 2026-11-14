@@ -207,6 +207,8 @@ baseDir="$(git rev-parse --show-toplevel)"
 
 mkdir -p "${baseDir}/bin" &>/dev/null
 
+$MASK sync-installer-version
+
 # --- Build the binaries --- #
 # Drop stale binaries.
 rm -f "${baseDir}"/bin/commit-sage-* &>/dev/null
@@ -264,7 +266,7 @@ repoUrl="${remote/git@github.com:/https://github.com/}.git"
 
 if [[ "${FORCE}" == "true" ]]; then
   # Force release: create tag, then create release (triggers workflow)
-  VERSION="$(cat version.txt)"
+  VERSION="$(jq -r .version package.json)"
   TAG_NAME="v${VERSION}"
 
   echo "Force releasing v${VERSION}..."
@@ -293,4 +295,19 @@ else
     --config-file="release-please-config.json" \
     "${argv[@]}"
 fi
+```
+
+## sync-installer-version
+
+> Sync the version baked into the NSIS Windows installer from `package.json`
+
+**OPTIONS**
+
+- check
+  - flags: --check
+  - type: boolean
+  - desc: Verify in sync instead of writing; exits non-zero on drift
+
+```bash
+bun run scripts/sync-installer-version.ts ${check:+--check}
 ```

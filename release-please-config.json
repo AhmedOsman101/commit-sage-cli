@@ -2,13 +2,11 @@
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/v17.11.2/schemas/config.json",
   "packages": {
     ".": {
-      "release-type": "simple",
+      "release-type": "node",
+      "changelog-path": "CHANGELOG.md",
       "draft": false,
       "draft-pull-request": true,
-      "include-v-in-tag": true,
-      "changelog-type": "default",
-      "version-file": "version.txt",
-      "extra-files": ["package.json"]
+      "include-v-in-tag": true
     }
   }
 }

@@ -34,3 +34,21 @@ jobs:
 
       - name: Run Biome formatter
         run: biome check .
+
+  installer-version:
+    name: Installer version in sync
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "latest"
+
+      - name: Verify NSIS installer version matches package.json
+        # Fails the build if the NSIS version keys drift from package.json.
+        # release-please bumps package.json on release; the installer must follow.
+        run: bun run scripts/sync-installer-version.ts --check

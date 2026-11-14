@@ -11,13 +11,13 @@ InstallDir "$PROGRAMFILES\commitSage"
 InstallDirRegKey HKLM "Software\commitSage" "InstallDir"
 RequestExecutionLevel admin
 
-; Version info — keep in sync with version.txt
-VIProductVersion "1.8.0.0"
+; Version info — keep in sync with package.json (bumped by release-please)
+VIProductVersion "3.2.2.0"
 VIAddVersionKey "ProductName" "Commit Sage"
 VIAddVersionKey "CompanyName" "Commit Sage"
 VIAddVersionKey "FileDescription" "Commit Sage Installer"
-VIAddVersionKey "FileVersion" "1.8.0"
-VIAddVersionKey "ProductVersion" "1.8.0"
+VIAddVersionKey "FileVersion" "3.2.2"
+VIAddVersionKey "ProductVersion" "3.2.2"
 VIAddVersionKey "LegalCopyright" "Commit Sage"
 
 ; Interface Settings
@@ -40,30 +40,30 @@ VIAddVersionKey "LegalCopyright" "Commit Sage"
 ; Installer Section
 Section "Install"
   SetOutPath "$INSTDIR"
-  
+
   ; Install binary
   File "..\..\bin\commit-sage-windows-x64.exe"
-  
+
   ; Store installation folder
   WriteRegStr HKLM "Software\commitSage" "InstallDir" "$INSTDIR"
-  
+
   ; Create uninstaller
   WriteUninstaller "$INSTDIR\uninstall.exe"
-  
+
   ; Add to PATH
   DetailPrint "Adding to PATH..."
   ReadRegStr $0 HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path"
   StrCpy $1 "$0;$INSTDIR"
   WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path" "$1"
-  
+
   ; Notify Windows of PATH change
   System::Call 'Kernel32::SendMessageTimeoutA(i 0xffff, i 0x001A, i 0, t "Environment", i 2, i 5000, i r0)'
-  
+
   ; Start Menu shortcuts
   CreateDirectory "$SMPROGRAMS\Commit Sage"
   CreateShortCut "$SMPROGRAMS\Commit Sage\Commit Sage.lnk" "$INSTDIR\commit-sage-windows-x64.exe"
   CreateShortCut "$SMPROGRAMS\Commit Sage\Uninstall.lnk" "$INSTDIR\uninstall.exe"
-  
+
   ; Desktop shortcut
   CreateShortCut "$DESKTOP\Commit Sage.lnk" "$INSTDIR\commit-sage-windows-x64.exe"
 SectionEnd
@@ -73,16 +73,16 @@ Section "Uninstall"
   ; Remove files
   Delete "$INSTDIR\commit-sage-windows-x64.exe"
   Delete "$INSTDIR\uninstall.exe"
-  
+
   ; Remove shortcuts
   Delete "$SMPROGRAMS\Commit Sage\Commit Sage.lnk"
   Delete "$SMPROGRAMS\Commit Sage\Uninstall.lnk"
   RMDir "$SMPROGRAMS\Commit Sage"
   Delete "$DESKTOP\Commit Sage.lnk"
-  
+
   ; Remove install directory
   RMDir "$INSTDIR"
-  
+
   ; Remove registry keys
   DeleteRegKey HKLM "Software\commitSage"
 SectionEnd

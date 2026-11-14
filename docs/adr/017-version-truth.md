@@ -1,3 +1,5 @@
-# 0017 — `version.txt` leads, `package.json` follows via release-please
+# 0017 — Version truth
 
-`release-please` keeps `version-file: version.txt` and now lists `package.json` (not the deleted `deno.json`) under `extra-files`, so one release bumps both files together and `src/cli/version.ts` (which reads `package.json`) can never drift from the tag. Chosen over switching the version-file to `package.json` because it preserves the existing release flow byte-for-byte — same PR shape, same tag derivation — with the smallest possible diff. The staged `deno.json` deletion is what forced the call: leaving the ghost entry would fail every release.
+`release-please` runs with `release-type: node`, which bumps `package.json` on every release. `src/cli/version.ts` reads `package.json`, so the CLI version always matches the tag with no separate version file.
+
+There is no `version.txt` in the repo — it was removed once `release-type: node` took over version management.

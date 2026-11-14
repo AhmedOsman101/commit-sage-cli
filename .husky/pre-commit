@@ -60,3 +60,5 @@ printf "\e[34mDoing type checks...\e[0m\n"
 if ! bun check; then
   yesNo "Typechecking failed.\nDo you want to proceed with the commit?" || abort
 fi
+
+mask sync-installer-version 1>/dev/null

@@ -14,7 +14,7 @@
 | **commitFormat** | `commit.commitFormat ∈ {conventional, angular, karma, emoji, semantic, freeform}`. `freeform` is AI-only; `--offline` always emits conventional shape regardless of this. |
 | **commitLanguage / lang** | `commit.commitLanguage` is a BCP-47 tag stored as-given (`en`, `en-US`, `jp` …). Flag `--lang` overrides per-run. `PromptService.normalizeLanguage` maps to canonical internally (`ja`/`jp` → Japanese prompt; unknown → warn + english). |
 | **diffStrategy / onlyStagedChanges** | `generation.diffStrategy ∈ {auto,staged,unstaged}` + `commit.onlyStagedChanges` boolean gate the diff sent to AI/offline. |
-| **Root/help/version** | `src/cli/root.ts:buildRootCommand` — `commit-sage` bare prints help (git/npm convention), `help [sub]` explicit, `--version`/`-V` prints `VERSION` from `package.json` (release-please bumps `version.txt` + `package.json` together), unknown flags throw → exit 2, aborts → 130. |
+| **Root/help/version** | `src/cli/root.ts:buildRootCommand` — `commit-sage` bare prints help (git/npm convention), `help [sub]` explicit, `--version`/`-V` prints `VERSION` from `package.json` (release-please bumps `package.json` on release), unknown flags throw → exit 2, aborts → 130. |
 
 ## Invariants to preserve
 
