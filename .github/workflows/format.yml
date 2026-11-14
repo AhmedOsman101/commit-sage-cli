@@ -6,37 +6,8 @@ on:
   pull_request:
     branches: [main]
 
-env:
-  BIOME_VERSION: 2.5.11
-
 jobs:
   biome-format:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Cache Biome
-        id: cache-biome
-        uses: actions/cache@v5
-        with:
-          path: /usr/local/bin/biome
-          key: biome-${{ env.BIOME_VERSION }}-linux-x64
-          restore-keys: biome-${{ env.BIOME_VERSION }}-
-
-      - name: Install Biome
-        if: steps.cache-biome.outputs.cache-hit != 'true'
-        run: |
-          curl -L https://github.com/biomejs/biome/releases/download/%40biomejs%2Fbiome%40${{ env.BIOME_VERSION }}/biome-linux-x64 -o biome
-          chmod +x biome
-          sudo mv biome /usr/local/bin/biome
-
-      - name: Run Biome formatter
-        run: biome check .
-
-  installer-version:
-    name: Installer version in sync
     runs-on: ubuntu-latest
 
     steps:
@@ -48,7 +19,18 @@ jobs:
         with:
           bun-version: "latest"
 
-      - name: Verify NSIS installer version matches package.json
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Setup Mask
+        uses: taiki-e/install-action@v2
+        with:
+          tool: mask
+
+      - name: Run linting
+        run: mask lint
+
+      - name: Check installer version in sync
         # Fails the build if the NSIS version keys drift from package.json.
         # release-please bumps package.json on release; the installer must follow.
-        run: bun run scripts/sync-installer-version.ts --check
+        run: mask sync-installer-version --check
